@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+	exitOnStandardFault="yes" name="Process2" suppressJoinFailure="yes"
+	targetNamespace="http://www.iaas.uni-stuttgart.de" xmlns:ns="http://www.iaas.uni-stuttgart.de"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsu="http://www.iaas.uni-stuttgart.de"
+	xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract">
+	<variables>
+		<variable name="process2TestVar1" type="xsd:string" />
+		<variable name="process2TestVar2" messageType="ns:controlLinkMessage" />
+	</variables>
+	<correlationSets>
+	</correlationSets>
+	<sequence name="Sequence1">
+		<assign name="B1" validate="no">
+			<copy>
+				<from>
+					<literal>Stelle1</literal>
+				</from>
+				<to variable="process2TestVar1"></to>
+			</copy>
+		</assign>
+		<receive inputVariable="process2TestVar2" name="Receive1"
+			wsu:id="4E5KJ">
+		</receive>
+		<assign name="B2" validate="no">
+			<copy>
+				<from>
+					<literal>Stelle2</literal>
+				</from>
+				<to variable="process2TestVar1"></to>
+			</copy>
+		</assign>
+		<invoke name="Invoke2" variable="process2TestVar2" wsu:id="IBNS5">
+		</invoke>
+		<assign name="B3" validate="no">
+			<copy>
+				<from>
+					<literal>Stelle3</literal>
+				</from>
+				<to variable="process2TestVar1"></to>
+			</copy>
+		</assign>
+	</sequence>
+</process>

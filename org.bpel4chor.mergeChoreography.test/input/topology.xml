@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topology name="TestMergeProcessTopology"
+	targetNamespace="urn:HPI_IAAS:choreography:schemas:choreography:topology:2006/12"
+	xmlns:cns="http://www.iaas.uni-stuttgart.de"
+	xmlns="urn:HPI_IAAS:choreography:schemas:choreography:topology:2006/12">
+	<participantTypes>
+		<participantType name="p1Type"
+			participantBehaviorDescription="cns:Process1" />
+		<participantType name="p2Type"
+			participantBehaviorDescription="cns:Process2" />
+	</participantTypes>
+
+	<participants>
+		<participant name="process1" type="p1Type" />
+		<participant name="process2" type="p2Type" />
+	</participants>
+
+	<messageLinks>
+		<messageLink name="controlLinkMessageLink" messageName="controlLinkMessage"
+			sender="process1" sendActivity="Invoke1" receiver="process2"
+			receiveActivity="Receive1" />
+		<messageLink name="controlLinkMessageLink1" messageName="controlLinkMessage"
+			sender="process2" sendActivity="Invoke2" receiver="process1"
+			receiveActivity="Receive2" />
+	</messageLinks>
+
+</topology>
