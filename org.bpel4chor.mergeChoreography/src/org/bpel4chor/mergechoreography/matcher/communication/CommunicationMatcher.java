@@ -22,10 +22,7 @@ import org.bpel4chor.mergechoreography.matcher.communication.sync.SyncMatcher1;
 import org.bpel4chor.mergechoreography.pattern.communication.CommunicationPattern;
 import org.bpel4chor.mergechoreography.util.BPEL4ChorModelHelper;
 import org.bpel4chor.model.topology.impl.MessageLink;
-import org.bpel4chor.utils.MyBPELUtils;
 import org.eclipse.bpel.model.Activity;
-import org.eclipse.bpel.model.CatchAll;
-import org.eclipse.bpel.model.Flow;
 import org.eclipse.bpel.model.Invoke;
 import org.eclipse.bpel.model.Process;
 
@@ -82,51 +79,89 @@ public class CommunicationMatcher implements Serializable {
 		Process sender = null;
 		List<Process> senders = null;
 		Invoke invoke = null;
-		if (link.getSenders().size() > 0) {
-			senders = new ArrayList<>();
-			for (String senderProc : link.getSenders()) {
-				senders.add(BPEL4ChorModelHelper.resolveProcessByName(senderProc, choreographyPackage));
-			}
-			invoke = (Invoke) MyBPELUtils.resolveActivity(link.getSendActivity(), senders.get(0));
-		} else {
-			sender = BPEL4ChorModelHelper.resolveProcessByName(link.getSender(), choreographyPackage);
-			invoke = (Invoke) BPEL4ChorModelHelper.resolveActivity(link.getSendActivity(), sender);
-			
-			// TODO: Richtig impln !!!
-			if (invoke == null) {
-				if ((sender.getFaultHandlers() != null) && ((sender.getFaultHandlers().getCatch().size() > 0) || (sender.getFaultHandlers().getCatchAll() != null))) {
-					CatchAll catchAll = sender.getFaultHandlers().getCatchAll();
-					for (Activity act : ((Flow) catchAll.getActivity()).getActivities()) {
-						if (act.getName().equals(link.getSendActivity())) {
-							invoke = (Invoke) act;
-						}
+		
+		// First analyse, send and receive activity
+		Activity sending = null;
+		Activity receiving = null;
+		Process sendProc = null;
+		Process recProc = null;
+		
+		sendProc = BPEL4ChorModelHelper.resolveProcessByName(link.getSender(), choreographyPackage);
+		recProc = BPEL4ChorModelHelper.resolveProcessByName(link.getReceiver(), choreographyPackage);
+		sending = BPEL4ChorModelHelper.resolveActivity(link.getSendActivity(), sendProc);
+		receiving = BPEL4ChorModelHelper.resolveActivity(link.getReceiveActivity(), recProc);
+		
+		this.log.log(Level.INFO, "Sender Process => " + sendProc);
+		this.log.log(Level.INFO, "Receiver Process => " + recProc);
+		this.log.log(Level.INFO, "Send Activity => " + sending);
+		this.log.log(Level.INFO, "Receive Activity => " + receiving);
+		
+		// Check if we have async communication
+		if (sending instanceof Invoke) {
+			if (((Invoke) sending).getOutputVariable() == null) {
+				// We have async communication
+				this.log.log(Level.INFO, "Async Invoke found, now running AsyncMatcher ....");
+				for (LinkMatcher matcher : CommunicationMatcher.asyncMatcher) {
+					CommunicationPattern pattern = matcher.match(link, choreographyPackage);
+					if (pattern != null) {
+						return pattern;
 					}
 				}
-			}
-			
-			this.log.log(Level.INFO, "FOUND invoke => " + invoke);
-		}
-		if (invoke.getOutputVariable() == null) {
-			// We have async communication
-			this.log.log(Level.INFO, "Async Invoke found, now running AsyncMatcher ....");
-			for (LinkMatcher matcher : CommunicationMatcher.asyncMatcher) {
-				CommunicationPattern pattern = matcher.match(link, choreographyPackage);
-				if (pattern != null) {
-					return pattern;
+				throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
+			} else {
+				// We have sync communication
+				
+				// Now we need to find the corresponding replying messagelink
+				MessageLink replyLink = BPEL4ChorModelHelper.findReplyingMessageLink(link, choreographyPackage);
+				this.log.log(Level.INFO, "Found Replying ML => " + replyLink.getName());
+				
+				choreographyPackage.addVisitedLink(replyLink);
+				
+				this.log.log(Level.INFO, "Sync Invoke found, now running SyncMatcher ....");
+				for (LinkMatcher matcher : CommunicationMatcher.syncMatcher) {
+					CommunicationPattern pattern = matcher.match(link, choreographyPackage);
+					if (pattern != null) {
+						return pattern;
+					}
 				}
+				throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
 			}
-			throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
-		} else {
-			// We have sync communication
-			this.log.log(Level.INFO, "Sync Invoke found, now running SyncMatcher ....");
-			for (LinkMatcher matcher : CommunicationMatcher.syncMatcher) {
-				CommunicationPattern pattern = matcher.match(link, choreographyPackage);
-				if (pattern != null) {
-					return pattern;
-				}
-			}
-			throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
 		}
+		
+		// if (link.getSenders().size() > 0) {
+		// senders = new ArrayList<>();
+		// for (String senderProc : link.getSenders()) {
+		// senders.add(BPEL4ChorModelHelper.resolveProcessByName(senderProc,
+		// choreographyPackage));
+		// }
+		// invoke = (Invoke) MyBPELUtils.resolveActivity(link.getSendActivity(),
+		// senders.get(0));
+		// } else {
+		// sender = BPEL4ChorModelHelper.resolveProcessByName(link.getSender(),
+		// choreographyPackage);
+		// invoke = (Invoke)
+		// BPEL4ChorModelHelper.resolveActivity(link.getSendActivity(), sender);
+		//
+		// // TODO: Richtig impln !!!
+		// if (invoke == null) {
+		// if ((sender.getFaultHandlers() != null) &&
+		// ((sender.getFaultHandlers().getCatch().size() > 0) ||
+		// (sender.getFaultHandlers().getCatchAll() != null))) {
+		// CatchAll catchAll = sender.getFaultHandlers().getCatchAll();
+		// for (Activity act : ((Flow) catchAll.getActivity()).getActivities())
+		// {
+		// if (act.getName().equals(link.getSendActivity())) {
+		// invoke = (Invoke) act;
+		// }
+		// }
+		// }
+		// }
+		//
+		// this.log.log(Level.INFO, "FOUND invoke => " + invoke);
+		// }
+		
+		// TODO: Entfernen bitte !!
+		return null;
 	}
 	
 	public CommunicationMatcher() {

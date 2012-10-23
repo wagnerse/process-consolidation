@@ -14,7 +14,7 @@ public class Runner {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.asyncPattern2u4Flow2FlowFHChoreo);
+		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.syncPattern1Flow2FlowChoreo);
 		choreographyMerger1.merge("D:\\Arbeit\\Diplom\\tmpout\\testChoreos\\testoutput.bpel", "Process1");
 		
 		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
@@ -24,6 +24,7 @@ public class Runner {
 			if (process != null) {
 				BPEL4ChorWriter.writeBPEL(package1.getMergedProcess(), System.out);
 			}
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

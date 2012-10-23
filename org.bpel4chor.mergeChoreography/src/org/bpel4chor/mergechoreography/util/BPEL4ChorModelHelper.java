@@ -671,4 +671,37 @@ public class BPEL4ChorModelHelper {
 		}
 		return null;
 	}
+	
+	/**
+	 * Find the corresponding replying messagelink
+	 * 
+	 * @param ml The invoking {@link MessageLink}
+	 * @param choreographyPackage The {@link ChoreographyPackage} holding all
+	 *            data
+	 * @return found {@link MessageLink} or null
+	 */
+	public static MessageLink findReplyingMessageLink(MessageLink ml, ChoreographyPackage choreographyPackage) {
+		// First analyse, send and receive activity
+		Activity sending = null;
+		Activity receiving = null;
+		Process sendProc = null;
+		Process recProc = null;
+		
+		sendProc = BPEL4ChorModelHelper.resolveProcessByName(ml.getSender(), choreographyPackage);
+		recProc = BPEL4ChorModelHelper.resolveProcessByName(ml.getReceiver(), choreographyPackage);
+		sending = BPEL4ChorModelHelper.resolveActivity(ml.getSendActivity(), sendProc);
+		receiving = BPEL4ChorModelHelper.resolveActivity(ml.getReceiveActivity(), recProc);
+		
+		if (sending != null) {
+			Invoke sendAct = (Invoke) sending;
+			for (MessageLink link : choreographyPackage.getTopology().getMessageLinks()) {
+				Process recProcess = BPEL4ChorModelHelper.resolveProcessByName(link.getReceiver(), choreographyPackage);
+				Activity recAct = BPEL4ChorModelHelper.resolveActivity(link.getReceiveActivity(), recProcess);
+				if (recAct.getName().equals(sendAct.getName())) {
+					return link;
+				}
+			}
+		}
+		return null;
+	}
 }

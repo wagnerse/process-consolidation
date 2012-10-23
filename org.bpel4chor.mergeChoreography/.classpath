@@ -4,8 +4,8 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.bpel4chor.model"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/org.bpel4chor.splitProcess"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.bpel.model"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.bpel4chor.splitProcess"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
