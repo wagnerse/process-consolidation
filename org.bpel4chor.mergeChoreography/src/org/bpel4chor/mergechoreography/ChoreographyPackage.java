@@ -25,6 +25,7 @@ import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Topology;
 import org.bpel4chor.splitprocess.utils.RandomIdGenerator;
 import org.bpel4chor.splitprocess.utils.SplitProcessConstants;
+import org.bpel4chor.utils.BPEL4ChorConstants;
 import org.bpel4chor.utils.BPEL4ChorReader;
 import org.bpel4chor.utils.FragmentDuplicator;
 import org.eclipse.bpel.model.Activity;
@@ -187,7 +188,10 @@ public class ChoreographyPackage implements Serializable {
 						
 						URI uri = URI.createFileURI(entry.getName());
 						BPELResource resource = (BPELResource) resourceSet.createResource(uri);
-						this.pbds.add(BPEL4ChorReader.readBPEL(resource, stream));
+						Process proc2Add = BPEL4ChorReader.readBPEL(resource, stream);
+						// Set Abstract Process profile !!
+						proc2Add.setAbstractProcessProfile(BPEL4ChorConstants.PBD_ABSTRACT_PROCESS_PROFILE);
+						this.pbds.add(proc2Add);
 					} else if (entry.getName().substring(entry.getName().length() - 4, entry.getName().length()).equals("wsdl")) {
 						ResourceSet rs = new ResourceSetImpl();
 						rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("wsdl", new WSDLResourceFactoryImpl());
