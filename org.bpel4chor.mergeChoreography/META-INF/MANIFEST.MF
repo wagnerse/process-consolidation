@@ -6,11 +6,19 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: org.bpel4chor.mergechoreography.Activator
 Bundle-Vendor: Peter Debicki
 Require-Bundle: org.eclipse.ui,
- org.eclipse.core.runtime
+ org.eclipse.core.runtime,
+ de.uni_stuttgart.iaas.bpel.model.utilities
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
-Import-Package: javax.wsdl;version="1.6.0",
+Import-Package: de.uni_stuttgart.iaas.bpel.model.utilities.exceptions,
+ javax.wsdl;version="1.6.0",
+ org.bpel4chor.model.grounding.impl,
+ org.bpel4chor.model.pbd.impl,
+ org.bpel4chor.model.topology.impl,
+ org.bpel4chor.utils,
+ org.bpel4chor.utils.exceptions,
  org.eclipse.bpel.model,
+ org.eclipse.bpel.model.partnerlinktype,
  org.eclipse.bpel.model.resource,
  org.eclipse.bpel.model.util,
  org.eclipse.emf.common,
@@ -22,4 +30,5 @@ Import-Package: javax.wsdl;version="1.6.0",
  org.eclipse.wst.wsdl,
  org.eclipse.wst.wsdl.internal.impl,
  org.eclipse.wst.wsdl.internal.util,
+ org.eclipse.xsd,
  org.eclipse.xsd.util

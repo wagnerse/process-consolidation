@@ -1,30 +1,25 @@
 package org.bpel4chor.mergechoreography.matcher.communication;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
 import org.bpel4chor.mergechoreography.exceptions.NoApplicableMatcherFoundException;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher1;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher10;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher11;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher2;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher3;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher4;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher5;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher7;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher8;
-import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher9;
-import org.bpel4chor.mergechoreography.matcher.communication.sync.SyncMatcher1;
-import org.bpel4chor.mergechoreography.pattern.communication.CommunicationPattern;
-import org.bpel4chor.mergechoreography.util.BPEL4ChorModelHelper;
+import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher30;
+import org.bpel4chor.mergechoreography.matcher.communication.sync.SyncMatcher30;
+import org.bpel4chor.mergechoreography.pattern.MergePattern;
+import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
+import org.bpel4chor.mergechoreography.util.ClassComparator;
+import org.bpel4chor.mergechoreography.util.ClassLoadingUtil;
 import org.bpel4chor.model.topology.impl.MessageLink;
-import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.Invoke;
-import org.eclipse.bpel.model.Process;
+import org.eclipse.bpel.model.PartnerActivity;
+import org.eclipse.bpel.model.Reply;
 
 /**
  * Matcher Class for Matching BPEL Process Behavior
@@ -39,27 +34,11 @@ public class CommunicationMatcher implements Serializable {
 	
 	private static final long serialVersionUID = 471002085247211487L;
 	
-	protected Logger log;
+	protected Logger log = Logger.getLogger(this.getClass().getPackage().getName());
 	
 	/** Lists of registered LinkMatcher */
-	private static List<LinkMatcher> asyncMatcher;
-	private static List<LinkMatcher> syncMatcher;
-	
-	static {
-		CommunicationMatcher.asyncMatcher = new ArrayList<>();
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher9());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher1());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher2());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher3());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher4());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher5());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher7());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher8());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher10());
-		CommunicationMatcher.asyncMatcher.add(new AsyncMatcher11());
-		CommunicationMatcher.syncMatcher = new ArrayList<>();
-		CommunicationMatcher.syncMatcher.add(new SyncMatcher1());
-	}
+	private List<AsyncMatcher> asyncMatcher = new ArrayList<>();
+	private List<SyncMatcher> syncMatcher = new ArrayList<>();
 	
 	
 	/**
@@ -67,104 +46,147 @@ public class CommunicationMatcher implements Serializable {
 	 * 
 	 * @param mergedProcess Merged BPEL Process
 	 * @param process PBD to be merged in
-	 * @param choreographyPackage The {@link ChoreographyPackage} holding all
-	 *            data
+	 * @param pkg The {@link ChoreographyPackage} holding all data
 	 * @return {@link Pattern} to be applied
 	 * @throws NoApplicableMatcherFoundException
 	 */
-	public CommunicationPattern match(MessageLink link, ChoreographyPackage choreographyPackage) throws NoApplicableMatcherFoundException {
+	public MergePattern match(MessageLink link, ChoreographyPackage pkg) {
 		// Check if link.sendActivity is a sync or async call
 		this.log.log(Level.INFO, "Running CommunicationMatcher .....");
 		this.log.log(Level.INFO, "For MessageLink => " + link.getName());
-		Process sender = null;
-		List<Process> senders = null;
-		Invoke invoke = null;
 		
-		// First analyse, send and receive activity
-		Activity sending = null;
-		Activity receiving = null;
-		Process sendProc = null;
-		Process recProc = null;
+		PartnerActivity send = (PartnerActivity) ChoreoMergeUtil.resolveActivity(link.getSendActivity());
 		
-		sendProc = BPEL4ChorModelHelper.resolveProcessByName(link.getSender(), choreographyPackage);
-		recProc = BPEL4ChorModelHelper.resolveProcessByName(link.getReceiver(), choreographyPackage);
-		sending = BPEL4ChorModelHelper.resolveActivity(link.getSendActivity(), sendProc);
-		receiving = BPEL4ChorModelHelper.resolveActivity(link.getReceiveActivity(), recProc);
-		
-		this.log.log(Level.INFO, "Sender Process => " + sendProc);
-		this.log.log(Level.INFO, "Receiver Process => " + recProc);
-		this.log.log(Level.INFO, "Send Activity => " + sending);
-		this.log.log(Level.INFO, "Receive Activity => " + receiving);
-		
-		// Check if we have async communication
-		if (sending instanceof Invoke) {
-			if (((Invoke) sending).getOutputVariable() == null) {
-				// We have async communication
-				this.log.log(Level.INFO, "Async Invoke found, now running AsyncMatcher ....");
-				for (LinkMatcher matcher : CommunicationMatcher.asyncMatcher) {
-					CommunicationPattern pattern = matcher.match(link, choreographyPackage);
-					if (pattern != null) {
-						return pattern;
-					}
-				}
-				throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
-			} else {
-				// We have sync communication
-				
-				// Now we need to find the corresponding replying messagelink
-				MessageLink replyLink = BPEL4ChorModelHelper.findReplyingMessageLink(link, choreographyPackage);
-				this.log.log(Level.INFO, "Found Replying ML => " + replyLink.getName());
-				
-				choreographyPackage.addVisitedLink(replyLink);
-				
-				this.log.log(Level.INFO, "Sync Invoke found, now running SyncMatcher ....");
-				for (LinkMatcher matcher : CommunicationMatcher.syncMatcher) {
-					CommunicationPattern pattern = matcher.match(link, choreographyPackage);
-					if (pattern != null) {
-						return pattern;
-					}
-				}
-				throw new NoApplicableMatcherFoundException("No Matching pattern found for MessageLink " + link.getName());
-			}
+		// Check if we have a Reply-Link
+		if (send instanceof Reply) {
+			return null;
 		}
 		
-		// if (link.getSenders().size() > 0) {
-		// senders = new ArrayList<>();
-		// for (String senderProc : link.getSenders()) {
-		// senders.add(BPEL4ChorModelHelper.resolveProcessByName(senderProc,
-		// choreographyPackage));
-		// }
-		// invoke = (Invoke) MyBPELUtils.resolveActivity(link.getSendActivity(),
-		// senders.get(0));
-		// } else {
-		// sender = BPEL4ChorModelHelper.resolveProcessByName(link.getSender(),
-		// choreographyPackage);
-		// invoke = (Invoke)
-		// BPEL4ChorModelHelper.resolveActivity(link.getSendActivity(), sender);
-		//
-		// // TODO: Richtig impln !!!
-		// if (invoke == null) {
-		// if ((sender.getFaultHandlers() != null) &&
-		// ((sender.getFaultHandlers().getCatch().size() > 0) ||
-		// (sender.getFaultHandlers().getCatchAll() != null))) {
-		// CatchAll catchAll = sender.getFaultHandlers().getCatchAll();
-		// for (Activity act : ((Flow) catchAll.getActivity()).getActivities())
-		// {
-		// if (act.getName().equals(link.getSendActivity())) {
-		// invoke = (Invoke) act;
-		// }
-		// }
-		// }
-		// }
-		//
-		// this.log.log(Level.INFO, "FOUND invoke => " + invoke);
-		// }
-		
-		// TODO: Entfernen bitte !!
+		// Check if we have Async Communication
+		if (send instanceof Invoke) {
+			
+			if (((Invoke) send).getOutputVariable() == null) {
+				// we have async communication
+				this.log.info("Async Invoke found, now running AsyncMatcher ....");
+				List<Matcher> matches = new ArrayList<>();
+				for (AsyncMatcher matcher : this.asyncMatcher) {
+					this.log.info("Checking asyncMatcher : " + matcher.getClass().getName() + " for MLink : " + link.getName());
+					matcher.match(link, pkg);
+					// Check if Matcher is instanceof AsyncMatcher3.0 and just
+					// one forbidden condition is true
+					if ((matcher instanceof AsyncMatcher30) && (this.oneConditionTrue(matcher.evaluateConditions()))) {
+						// skip the link
+						return null;
+					}
+					if (this.allConditionsTrue(matcher.evaluateConditions())) {
+						this.log.info("AsyncMatcher => " + matcher.getClass().getName() + " all conditions true !!");
+						matches.add(matcher);
+					}
+				}
+				MergePattern bestMatch = this.getBestMatch(matches);
+				this.log.info("AsyncMatcher best match for MLink : " + link.getName() + "  => " + (bestMatch != null ? bestMatch.getClass().getName() : null));
+				return bestMatch;
+			} else {
+				// we must have sync communication
+				this.log.info("Sync Invoke found, now running SyncMatcher ....");
+				List<Matcher> matches = new ArrayList<>();
+				
+				// find a replying Message Link
+				MessageLink mlSend = link;
+				MessageLink mlReply = ChoreoMergeUtil.findReplyingMessageLink(mlSend);
+				
+				for (SyncMatcher matcher : this.syncMatcher) {
+					this.log.info("Checking syncMatcher : " + matcher.getClass().getName() + " for MLinkSend : " + mlSend.getName() + " and MLinkReply : " + mlReply.getName());
+					matcher.match(mlSend, mlReply, pkg);
+					// Check if Matcher is instanceof SyncMatcher3.0 and just
+					// one forbidden condition is true
+					if ((matcher instanceof SyncMatcher30) && (this.oneConditionTrue(matcher.evaluateConditions()))) {
+						// skip the link
+						return null;
+					}
+					if (this.allConditionsTrue(matcher.evaluateConditions())) {
+						this.log.info("SyncMatcher => " + matcher.getClass().getName() + " all conditions true !!");
+						matches.add(matcher);
+					}
+				}
+				MergePattern bestMatch = this.getBestMatch(matches);
+				this.log.info("SyncMatcher best match for MLinkSend : " + mlSend.getName() + " and MLinkReply : " + mlReply.getName() + "  => " + (bestMatch != null ? bestMatch.getClass().getName() : null));
+				return bestMatch;
+			}
+		}
 		return null;
 	}
 	
 	public CommunicationMatcher() {
-		this.log = Logger.getLogger(this.getClass().getPackage().getName());
+		try {
+			Class<?>[] asyncMatchers = ClassLoadingUtil.getClasses("org.bpel4chor.mergechoreography.matcher.communication.async");
+			Class<?>[] syncMatchers = ClassLoadingUtil.getClasses("org.bpel4chor.mergechoreography.matcher.communication.sync");
+			Arrays.sort(syncMatchers, new ClassComparator());
+			Arrays.sort(asyncMatchers, new ClassComparator());
+			for (Class<?> class1 : asyncMatchers) {
+				this.log.info("CommunicationMatcher: adding asyncMatcher to List: " + class1.getName());
+				this.asyncMatcher.add((AsyncMatcher) class1.newInstance());
+			}
+			for (Class<?> class1 : syncMatchers) {
+				this.log.info("CommunicationMatcher: adding syncMatcher to List: " + class1.getName());
+				this.syncMatcher.add((SyncMatcher) class1.newInstance());
+			}
+		} catch (ClassNotFoundException | IOException | InstantiationException
+				| IllegalAccessException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Check whether all results are true
+	 * 
+	 * @param results {@link List} of {@link Boolean}
+	 * @return true or false
+	 */
+	private boolean allConditionsTrue(List<Boolean> results) {
+		if (results.size() == 0) {
+			return false;
+		}
+		for (Boolean result : results) {
+			if (result == false) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Check whether one result is true
+	 * 
+	 * @param results {@link List} of {@link Boolean}
+	 * @return
+	 */
+	private boolean oneConditionTrue(List<Boolean> results) {
+		for (Boolean result : results) {
+			if (result == true) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Return the best matching {@link MergePattern}
+	 * 
+	 * @param matches {@link List} of {@link AsyncMatcher}s
+	 * @return {@link MergePattern} or null
+	 */
+	private MergePattern getBestMatch(List<Matcher> matches) {
+		int highestMatchSize = 0;
+		MergePattern bestMatch = null;
+		for (Matcher matcher : matches) {
+			this.log.info("getBestMatch evaluating matcher " + matcher.getClass().getCanonicalName());
+			if (matcher.evaluateConditions().size() > highestMatchSize) {
+				this.log.info("" + matcher.evaluateConditions().size() + " > " + highestMatchSize);
+				highestMatchSize = matcher.evaluateConditions().size();
+				bestMatch = matcher.getPattern();
+			}
+		}
+		return bestMatch;
 	}
 }
