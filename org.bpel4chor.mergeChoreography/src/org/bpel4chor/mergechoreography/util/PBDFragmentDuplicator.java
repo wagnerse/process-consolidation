@@ -176,9 +176,10 @@ public class PBDFragmentDuplicator {
 		Flow newFlow = BPELFactory.eINSTANCE.createFlow();
 		FragmentDuplicator.copyStandardAttributes(act, newFlow);
 		
-		// Insert newFlow in our pbd2MergdFlows-Map
-		PBDFragmentDuplicator.log.info("Adding <flow>-<flow> relation for : " + act + " , and : " + newFlow);
-		PBDFragmentDuplicator.pkg.getPbd2MergedFlows().put(act, newFlow);
+		// // Insert newFlow in our pbd2MergdFlows-Map
+		// PBDFragmentDuplicator.log.info("Adding <flow>-<flow> relation for : "
+		// + act + " , and : " + newFlow);
+		// PBDFragmentDuplicator.pkg.getPbd2MergedFlows().put(act, newFlow);
 		
 		Links links = BPELFactory.eINSTANCE.createLinks();
 		newFlow.setLinks(links);
@@ -845,7 +846,11 @@ public class PBDFragmentDuplicator {
 		newEvent.setOperation(oldOnEvent.getOperation());
 		newEvent.setPartnerLink(oldOnEvent.getPartnerLink());
 		newEvent.setPortType(oldOnEvent.getPortType());
-		newEvent.setVariable(ChoreoMergeUtil.resolveVariableInMergedProcess(oldOnEvent.getVariable()));
+		
+		// !!! The Variable of the <onEvent>-branch constitutes an implicit
+		// declaration in the associated <scope> so we need a copy !!
+		newEvent.setVariable(PBDFragmentDuplicator.copyVariable(oldOnEvent.getVariable()));
+		// newEvent.setVariable(ChoreoMergeUtil.resolveVariableInMergedProcess(oldOnEvent.getVariable()));
 		newEvent.setXSDElement(oldOnEvent.getXSDElement());
 		newEvent.setActivity(PBDFragmentDuplicator.copyActivity(oldOnEvent.getActivity()));
 		

@@ -17,6 +17,4 @@ public interface SyncMatcher extends Matcher {
 	
 	public MergePattern match(MessageLink mlSend, MessageLink mlReply, ChoreographyPackage choreographyPackage);
 	
-	public MergePattern getPattern();
-	
 }

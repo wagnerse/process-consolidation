@@ -1,8 +1,5 @@
 package org.bpel4chor.mergechoreography;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.zip.ZipFile;
 
@@ -14,7 +11,6 @@ import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
 import org.bpel4chor.utils.BPEL4ChorUtil;
-import org.bpel4chor.utils.BPEL4ChorWriter;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
@@ -89,14 +85,7 @@ public class ChoreographyMerger implements Serializable {
 		// Create New initial executable BPEL Process and
 		// copy all vars and activities into it
 		this.mergeChoreography();
-		
-		try {
-			// Save wsdl files
-			FileOutputStream outputStream = new FileOutputStream(new File(fileName));
-			BPEL4ChorWriter.writeAbstractBPEL(this.choreographyPackage.getMergedProcess(), outputStream);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		this.choreographyPackage.saveMergedChoreography(fileName);
 		
 		// TODO: Später fertig coden
 		ZipFile temp = null;
@@ -175,21 +164,41 @@ public class ChoreographyMerger implements Serializable {
 				BPELExtensibleElement recAct = ChoreoMergeUtil.resolveActivity(ml.getReceiveActivity());
 				
 				Invoke s = (Invoke) sendAct;
-				Activity r = null;// (Receive) recAct;
+				BPELExtensibleElement r = null; // (Receive) recAct;
+				boolean rIsOnEventOfProcess = false;
 				if (recAct instanceof Receive) {
-					r = (Activity) recAct;
+					r = recAct;
 				} else if (recAct instanceof OnMessage) {
 					r = (Activity) recAct.eContainer();
+				} else if (recAct instanceof OnEvent) {
+					if (recAct.eContainer() instanceof Process) {
+						// If we have an <onEvent> of <process>
+						r = (Process) recAct.eContainer().eContainer();
+					} else {
+						// If we have an <onEvent> of <scope>
+						r = (Scope) recAct.eContainer().eContainer();
+					}
+					
 				}
 				Scope scpS = ChoreoMergeUtil.getHighestScopeOfActivity(s);
-				Scope scpR = ChoreoMergeUtil.getHighestScopeOfActivity(r);
+				
+				BPELExtensibleElement scpR = null; // ChoreoMergeUtil.getHighestScopeOfActivity(r);
+				if (r instanceof Process) {
+					scpR = r;
+				} else if (r instanceof Scope) {
+					scpR = r;
+				} else {
+					scpR = ChoreoMergeUtil.getHighestScopeOfActivity((Activity) r);
+				}
+				
+				String recName = (r instanceof Process ? ((Process) r).getName() : ((Activity) r).getName());
 				
 				// Set PartnerLinks, Operation and PortType for s
 				if (scpS.getPartnerLinks() == null) {
 					scpS.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 				}
 				PartnerLink newPLS = BPELFactory.eINSTANCE.createPartnerLink();
-				newPLS.setName(s.getName() + "TO" + r.getName() + "PLS");
+				newPLS.setName(s.getName() + "TO" + recName + "PLS");
 				newPLS.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
 				newPLS.setPartnerRole(recPLRole);
 				scpS.getPartnerLinks().getChildren().add(newPLS);
@@ -198,15 +207,31 @@ public class ChoreographyMerger implements Serializable {
 				s.setPortType(recPortType);
 				
 				// Set PartnerLinks, Operation and PortType for r
-				if (scpR.getPartnerLinks() == null) {
-					scpR.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
-				}
+				
+				// if (scpR.getPartnerLinks() == null) {
+				// scpR.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
+				// }
 				
 				PartnerLink newPLR = BPELFactory.eINSTANCE.createPartnerLink();
-				newPLR.setName(s.getName() + "TO" + r.getName() + "PLR");
+				newPLR.setName(s.getName() + "TO" + recName + "PLR");
 				newPLR.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
 				newPLR.setMyRole(recPLRole);
-				scpR.getPartnerLinks().getChildren().add(newPLR);
+				
+				if (scpR instanceof Process) {
+					Process proc = (Process) scpR;
+					if (proc.getPartnerLinks() == null) {
+						proc.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
+					}
+					proc.getPartnerLinks().getChildren().add(newPLR);
+				} else {
+					Scope scp = (Scope) scpR;
+					if (scp.getPartnerLinks() == null) {
+						scp.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
+					}
+					scp.getPartnerLinks().getChildren().add(newPLR);
+				}
+				
+				// scpR.getPartnerLinks().getChildren().add(newPLR);
 				
 				if (recAct instanceof Receive) {
 					((PartnerActivity) recAct).setPartnerLink(newPLR);

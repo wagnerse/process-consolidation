@@ -1980,17 +1980,20 @@ public class ChoreoMergeUtil {
 	 */
 	public static void combineJCWithLink(Activity act, Link link) {
 		String jcNew = "$" + link.getName();
-		if (act.getTargets().getJoinCondition() != null) {
-			jcNew += " and (" + act.getTargets().getJoinCondition().getBody() + ")";
-		} else {
-			String jcOld = ChoreoMergeUtil.targetDisjunctor(act);
-			if (!jcOld.equals("")) {
-				jcNew += " and (" + jcOld + ")";
+		if (act.getTargets() != null) {
+			if (act.getTargets().getJoinCondition() != null) {
+				jcNew += " and (" + act.getTargets().getJoinCondition().getBody() + ")";
+			} else {
+				String jcOld = ChoreoMergeUtil.targetDisjunctor(act);
+				if (!jcOld.equals("")) {
+					jcNew += " and (" + jcOld + ")";
+				}
 			}
+			Condition newCondition = BPELFactory.eINSTANCE.createCondition();
+			newCondition.setBody(jcNew);
+			act.getTargets().setJoinCondition(newCondition);
 		}
-		Condition newCondition = BPELFactory.eINSTANCE.createCondition();
-		newCondition.setBody(jcNew);
-		act.getTargets().setJoinCondition(newCondition);
+		
 	}
 	
 	public static void setPkg(ChoreographyPackage pkg) {

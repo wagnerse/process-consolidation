@@ -1,26 +1,19 @@
 package org.bpel4chor.mergechoreography.test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+
+import org.apache.log4j.Logger;
 
 public class UtilTester {
+	
+	private static Logger log = Logger.getLogger(UtilTester.class);
+	
 	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		List<String> list = new ArrayList<>();
-		list.add("Eins");
-		list.add("Zwei");
-		list.add("Drei");
-		list.add("Vier");
-		list.add("Fünf");
-		System.out.println(list.indexOf("Eins"));
-		System.out.println(list.indexOf("Zwei"));
-		System.out.println(list.indexOf("Drei"));
-		System.out.println(list.indexOf("Vier"));
-		System.out.println(list.indexOf("Fünf"));
-		
+		String testDir = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput";
+		boolean success = (new File(testDir + java.io.File.separator + "testDir")).mkdir();
 	}
-	
 }

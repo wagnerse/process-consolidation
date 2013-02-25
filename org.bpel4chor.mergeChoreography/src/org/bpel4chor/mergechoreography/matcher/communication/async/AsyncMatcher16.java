@@ -89,6 +89,7 @@ public class AsyncMatcher16 implements AsyncMatcher {
 		if (cond2.evaluate()) {
 			this.log.info("AsyncMatcher 1.6 succLinks.size()  : " + pattern16.getSuccLinks().size());
 			for (MessageLink succLink : pattern16.getSuccLinks()) {
+				this.results.add(true);
 				this.log.info("AsyncMatcher 1.6 succLink    : " + succLink.getName());
 				this.log.info("AsyncMatcher 1.6 succS       : " + succLink.getSendActivity());
 			}
@@ -117,67 +118,71 @@ public class AsyncMatcher16 implements AsyncMatcher {
 		
 		for (MessageLink mLink : this.pkg.getTopology().getMessageLinks()) {
 			if (!(this.pkg.isLinkVisited(mLink))) {
-				Invoke otherS = (Invoke) ChoreoMergeUtil.resolveActivity(mLink.getSendActivity());
-				this.log.info("Checking mLink : " + mLink.getName() + " for s : " + s.getName() + " otherS : " + otherS.getName());
-				
-				// Check if sendActivity sLink from mLink is asynchronously
-				// communicating
-				if (otherS.getOutputVariable() == null) {
+				if (ChoreoMergeUtil.resolveActivity(mLink.getSendActivity()) instanceof Invoke) {
+					Invoke otherS = (Invoke) ChoreoMergeUtil.resolveActivity(mLink.getSendActivity());
+					this.log.info("Checking mLink : " + mLink.getName() + " for s : " + s.getName() + " otherS : " + otherS.getName());
 					
-					// Now check if otherS is in succ(s)
-					boolean isOtherSinSuccS = false;
-					if (ChoreoMergeUtil.getSucceedingActivities(s) != null) {
-						for (Activity succSact : ChoreoMergeUtil.getSucceedingActivities(s)) {
-							if (succSact == otherS) {
-								isOtherSinSuccS = true;
-								break;
+					// Check if sendActivity sLink from mLink is asynchronously
+					// communicating
+					if (otherS.getOutputVariable() == null) {
+						
+						// Now check if otherS is in succ(s)
+						boolean isOtherSinSuccS = false;
+						if (ChoreoMergeUtil.getSucceedingActivities(s) != null) {
+							for (Activity succSact : ChoreoMergeUtil.getSucceedingActivities(s)) {
+								if (succSact == otherS) {
+									isOtherSinSuccS = true;
+									break;
+								}
 							}
 						}
-					}
-					if (isOtherSinSuccS) {
-						// Check if otherS is connected via link with s and if
-						// this <source> has no <transitionCondition> set
-						Source sToOtherS = ChoreoMergeUtil.getMatchingSource(s, otherS);
-						
-						this.log.info("otherS is in succ(s).");
-						
-						boolean hasOtherSmoreTargets = false;
-						boolean hasSToOtherSTCs = false;
-						
-						if (sToOtherS != null) {
-							if (sToOtherS.getTransitionCondition() == null) {
-								// Check if otherS has any other <target>s
-								Target fromS = ChoreoMergeUtil.getMatchingTarget(s, otherS);
-								
-								if (fromS != null) {
-									for (Target target : otherS.getTargets().getChildren()) {
-										if (fromS != target) {
-											hasOtherSmoreTargets = true;
-											break;
+						if (isOtherSinSuccS) {
+							// Check if otherS is connected via link with s and
+							// if
+							// this <source> has no <transitionCondition> set
+							Source sToOtherS = ChoreoMergeUtil.getMatchingSource(s, otherS);
+							
+							this.log.info("otherS is in succ(s).");
+							
+							boolean hasOtherSmoreTargets = false;
+							boolean hasSToOtherSTCs = false;
+							
+							if (sToOtherS != null) {
+								if (sToOtherS.getTransitionCondition() == null) {
+									// Check if otherS has any other <target>s
+									Target fromS = ChoreoMergeUtil.getMatchingTarget(s, otherS);
+									
+									if (fromS != null) {
+										for (Target target : otherS.getTargets().getChildren()) {
+											if (fromS != target) {
+												hasOtherSmoreTargets = true;
+												break;
+											}
 										}
 									}
+								} else {
+									hasSToOtherSTCs = true;
 								}
 							} else {
-								hasSToOtherSTCs = true;
+								// It MUST be an activity succeeding s in a
+								// sequence
+								// Check if otherS has <target>s
+								if ((otherS.getTargets() != null) && (otherS.getTargets().getChildren().size() > 0)) {
+									hasOtherSmoreTargets = true;
+								}
 							}
-						} else {
-							// It MUST be an activity succeeding s in a sequence
-							// Check if otherS has <target>s
-							if ((otherS.getTargets() != null) && (otherS.getTargets().getChildren().size() > 0)) {
-								hasOtherSmoreTargets = true;
+							if (!hasOtherSmoreTargets && !hasSToOtherSTCs) {
+								succS = otherS;
+								succLink = mLink;
+								this.pkg.addVisitedLink(mLink);
+								MLEnvironmentAnalyzer analyzerSucc = new MLEnvironmentAnalyzer(mLink, this.pkg);
+								((AsyncPattern16) this.pattern).addMLinkEnv(analyzerSucc.getEnvironment());
+								((AsyncPattern16) this.pattern).addMessageLink(mLink);
+								
+								// Check following activities
+								this.analyseOtherMLinks(succS);
+								break;
 							}
-						}
-						if (!hasOtherSmoreTargets && !hasSToOtherSTCs) {
-							succS = otherS;
-							succLink = mLink;
-							this.pkg.addVisitedLink(mLink);
-							MLEnvironmentAnalyzer analyzerSucc = new MLEnvironmentAnalyzer(mLink, this.pkg);
-							((AsyncPattern16) this.pattern).addMLinkEnv(analyzerSucc.getEnvironment());
-							((AsyncPattern16) this.pattern).addMessageLink(mLink);
-							
-							// Check following activities
-							this.analyseOtherMLinks(succS);
-							break;
 						}
 					}
 				}

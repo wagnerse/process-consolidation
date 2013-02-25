@@ -1,6 +1,7 @@
 package org.bpel4chor.mergechoreography;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -29,6 +30,7 @@ import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Topology;
 import org.bpel4chor.utils.BPEL4ChorConstants;
 import org.bpel4chor.utils.BPEL4ChorReader;
+import org.bpel4chor.utils.BPEL4ChorWriter;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
@@ -81,11 +83,6 @@ public class ChoreographyPackage implements Serializable {
 	/** List of "Non-Mergeable-Message-Links" */
 	private List<MessageLink> nmml;
 	/**
-	 * Map of {@link Flow}-to-{@link Flow} relation from the pbds to the new
-	 * mergedProcess
-	 */
-	private Map<Flow, Flow> pbd2MergedFlows;
-	/**
 	 * Map of {@link Variable}-to-{@link Variable} relation from the pbds to the
 	 * new mergedProcess
 	 */
@@ -105,7 +102,6 @@ public class ChoreographyPackage implements Serializable {
 		this.visitedLinks = new ArrayList<>();
 		this.old2New = new HashMap<>();
 		this.nmml = new ArrayList<>();
-		this.pbd2MergedFlows = new HashMap<>();
 		this.pbd2MergedVars = new HashMap<>();
 		this.pbd2MergedLinks = new HashMap<>();
 		
@@ -211,9 +207,12 @@ public class ChoreographyPackage implements Serializable {
 				}
 				
 			});
+			
+			zipFileSystem.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/**
@@ -231,14 +230,36 @@ public class ChoreographyPackage implements Serializable {
 	}
 	
 	/**
-	 * Method for initializing the merged BPEL Process with the leadProcess
+	 * Save merged Choreography to given fileName
 	 * 
-	 * @param leadProcess The leading {@link Process}
+	 * @param fileName Filename to save Choreography to
+	 */
+	public void saveMergedChoreography(String fileName) {
+		try {
+			// Save wsdl files
+			for (Definition def : this.getWsdls()) {
+				FileOutputStream outputStream = new FileOutputStream(new File(fileName + def.getQName().getLocalPart() + ".wsdl"));
+				BPEL4ChorWriter.writeWSDL(def, outputStream);
+			}
+			// Save BPEL File of mergedProcess
+			FileOutputStream outputStream = new FileOutputStream(new File(fileName + this.getMergedProcess().getName() + ".bpel"));
+			BPEL4ChorWriter.writeAbstractBPEL(this.getMergedProcess(), outputStream);
+		} catch (IOException | WSDLException e1) {
+			e1.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Method for initializing the merged BPEL Process with the leadProcess
 	 */
 	public void initMergedProcess() {
 		
 		// Create new BPEL Process
 		this.mergedProcess = BPELFactory.eINSTANCE.createProcess();
+		
+		// TODO: Woher nehmen wir die Infos genaus ?? Neue Parameter in
+		// initMergedMethode !!
 		
 		// Set standard attributes to values of leadingProcess
 		this.mergedProcess.setTargetNamespace(this.pbds.get(0).getTargetNamespace());
@@ -405,10 +426,6 @@ public class ChoreographyPackage implements Serializable {
 	
 	public List<MessageLink> getNMML() {
 		return this.nmml;
-	}
-	
-	public Map<Flow, Flow> getPbd2MergedFlows() {
-		return this.pbd2MergedFlows;
 	}
 	
 	public Map<Variable, Variable> getPbd2MergedVars() {

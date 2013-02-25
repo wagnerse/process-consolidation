@@ -56,4 +56,5 @@ public class Constants {
 	public static String syncPattern30SinWhileChoreo = Constants.baseDir + File.separator + "SP30SinWhile.zip";
 	public static String syncPattern30SinWhileMultiReplyChoreo = Constants.baseDir + File.separator + "SP30SinWhileMultiReply.zip";
 	public static String syncPattern30SinWhileMultiReplyWSDLChoreo = Constants.baseDir + File.separator + "SP30SinWhileMultiReplyWSDL.zip";
+	public static String demoChoreo = Constants.baseDir + File.separator + "DemoChoreo.zip";
 }
