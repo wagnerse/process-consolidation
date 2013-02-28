@@ -13,6 +13,9 @@ import java.io.File;
  */
 public class Constants {
 	
+	// The outputPath for the merged choreographies
+	public static String mergeOutputPath = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput";
+	
 	private static File baseDir = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorChoreographies");
 	
 	public static String asyncPattern11Choreo = Constants.baseDir + File.separator + "ASP11.zip";
@@ -57,4 +60,5 @@ public class Constants {
 	public static String syncPattern30SinWhileMultiReplyChoreo = Constants.baseDir + File.separator + "SP30SinWhileMultiReply.zip";
 	public static String syncPattern30SinWhileMultiReplyWSDLChoreo = Constants.baseDir + File.separator + "SP30SinWhileMultiReplyWSDL.zip";
 	public static String demoChoreo = Constants.baseDir + File.separator + "DemoChoreo.zip";
+	public static String correlationPropagatorChoreo = Constants.baseDir + File.separator + "CorrelationPropagator.zip";
 }

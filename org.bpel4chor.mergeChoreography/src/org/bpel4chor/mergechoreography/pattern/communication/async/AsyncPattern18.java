@@ -49,6 +49,9 @@ public class AsyncPattern18 extends MergePattern {
 		
 		Receive r = (Receive) this.linkEnvs.get(0).getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		// First we uplift the vR used by r into the process<scope> of the
 		// merged process
 		Variable vR = ChoreoMergeUtil.resolveVariable(r.getVariable().getName(), r);
@@ -70,6 +73,10 @@ public class AsyncPattern18 extends MergePattern {
 		// for bpel:joinFailure inside the <flow> of rScope.
 		for (MLEnvironment mlEnv : this.linkEnvs) {
 			Invoke inv = (Invoke) mlEnv.getS();
+			
+			// Propagate possible correlationSet initializations
+			ChoreoMergeUtil.propagateCorrelInit(inv);
+			
 			If newIf = ChoreoMergeUtil.createIfFromInvoke(inv, guard, vR);
 			
 			// Create new <throw> with bpel:joinFailure

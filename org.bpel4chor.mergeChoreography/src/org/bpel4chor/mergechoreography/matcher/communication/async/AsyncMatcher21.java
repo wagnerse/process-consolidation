@@ -49,6 +49,9 @@ public class AsyncMatcher21 implements AsyncMatcher {
 	@Override
 	public MergePattern match(MessageLink link, ChoreographyPackage pkg) {
 		
+		// clear previous results
+		this.results.clear();
+		
 		// Test Call to our new LinkEnvironmentAnalyzer
 		MLEnvironmentAnalyzer analyzer = new MLEnvironmentAnalyzer(link, pkg);
 		this.env = analyzer.getEnvironment();

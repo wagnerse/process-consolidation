@@ -39,6 +39,10 @@ public class AsyncPattern15 extends MergePattern {
 		Invoke s = (Invoke) this.env.getS();
 		Receive r = (Receive) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		// First we uplift the vR used by r into the process<scope> of the
 		// merged process
 		Variable vR = ChoreoMergeUtil.resolveVariable(r.getVariable().getName(), r);

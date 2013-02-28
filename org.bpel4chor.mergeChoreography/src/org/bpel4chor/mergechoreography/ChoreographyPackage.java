@@ -297,59 +297,24 @@ public class ChoreographyPackage implements Serializable {
 		
 	}
 	
-	/**
-	 * Returns the PBD with the given Name from the PBD List
-	 * 
-	 * @param procName The name of the PBD
-	 * @return PBD with given name, or null
-	 */
-	public Process getPBDbyProcessName(String procName) {
-		for (Process process : this.pbds) {
-			if (process.getName().equals(procName)) {
-				return process;
-			}
-		}
-		return null;
-	}
-	
 	public List<Process> getPbds() {
 		return this.pbds;
-	}
-	
-	public void setPbds(List<Process> pbds) {
-		this.pbds = pbds;
 	}
 	
 	public List<Definition> getWsdls() {
 		return this.wsdls;
 	}
 	
-	public void setWsdls(List<Definition> wsdls) {
-		this.wsdls = wsdls;
-	}
-	
 	public Topology getTopology() {
 		return this.topology;
-	}
-	
-	public void setTopology(Topology topology) {
-		this.topology = topology;
 	}
 	
 	public Grounding getGrounding() {
 		return this.grounding;
 	}
 	
-	public void setGrounding(Grounding grounding) {
-		this.grounding = grounding;
-	}
-	
 	public Map<Process, Definition> getPbd2wsdl() {
 		return this.pbd2wsdl;
-	}
-	
-	public void setPbd2wsdl(Map<Process, Definition> pbd2wsdl) {
-		this.pbd2wsdl = pbd2wsdl;
 	}
 	
 	/**
@@ -368,10 +333,6 @@ public class ChoreographyPackage implements Serializable {
 	
 	public Process getMergedProcess() {
 		return this.mergedProcess;
-	}
-	
-	public void setMergedProcess(Process mergedProcess) {
-		this.mergedProcess = mergedProcess;
 	}
 	
 	/**
@@ -393,17 +354,6 @@ public class ChoreographyPackage implements Serializable {
 	public void addNMML(MessageLink link) {
 		if (this.nmml.indexOf(link) == -1) {
 			this.nmml.add(link);
-		}
-	}
-	
-	/**
-	 * Adds {@link MessageLink}s to the visited Links
-	 * 
-	 * @param links The visited {@link MessageLink}s
-	 */
-	public void addVisitedLinks(List<MessageLink> links) {
-		for (MessageLink link : links) {
-			this.addVisitedLink(link);
 		}
 	}
 	

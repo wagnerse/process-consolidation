@@ -45,6 +45,11 @@ public class SyncPattern23 extends MergePattern {
 		Pick rec = (Pick) this.env.getR();
 		Reply repl = (Reply) this.envReply.getS();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(rec);
+		ChoreoMergeUtil.propagateCorrelInit(repl);
+		
 		// We need the <onMessage> from the pick containing vRec
 		OnMessage rOM = (OnMessage) ChoreoMergeUtil.resolveActivity(this.mLinkSend.getReceiveActivity());
 		

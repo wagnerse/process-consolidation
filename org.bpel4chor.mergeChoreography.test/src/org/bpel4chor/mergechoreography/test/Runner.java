@@ -1,7 +1,16 @@
 package org.bpel4chor.mergechoreography.test;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bpel4chor.mergechoreography.ChoreographyMerger;
+import org.bpel4chor.mergechoreography.ChoreographyPackage;
 import org.bpel4chor.mergechoreography.test.util.Constants;
+import org.bpel4chor.utils.AbstractBPELWriter;
+import org.bpel4chor.utils.BPEL4ChorReader;
+import org.eclipse.bpel.model.Process;
+import org.eclipse.bpel.model.resource.BPELResource;
 
 public class Runner {
 	
@@ -10,11 +19,27 @@ public class Runner {
 	 */
 	public static void main(String[] args) {
 		
-		// String outputPath =
-		// "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput\\";
-		// Map<String, String> args2 = new HashMap<>();
-		//
-		// args2.put("", "");
+		String outputPath = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput\\";
+		Map<String, String> args2 = new HashMap<>();
+		
+		args2.put("", "");
+		
+		// CorrelationPropagator ASP11
+		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.correlationPropagatorChoreo);
+		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
+		choreographyMerger1.merge(outputPath + "CorrelationPropagator\\");
+		Process process1 = package1.getMergedProcess();
+		if (process1 != null) {
+			try {
+				AbstractBPELWriter writer = new AbstractBPELWriter();
+				
+				writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath + "CorrelationPropagator\\" + process1.getName() + ".bpel").eResource(), System.out, args2);
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		//
 		// // ASP11
 		// ChoreographyMerger choreographyMerger1 = new
@@ -36,10 +61,14 @@ public class Runner {
 		// }
 		// }
 		
-		String outPath = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\DemoChoreo\\bpelContent\\mergeOutput\\";
+		// Test Demo !!
 		
-		ChoreographyMerger choreoMerger = new ChoreographyMerger(Constants.demoChoreo);
-		choreoMerger.merge(outPath);
+		// String outPath =
+		// "D:\\Arbeit\\Diplom\\eclwkspBPEL\\DemoChoreo\\bpelContent\\mergeOutput\\";
+		//
+		// ChoreographyMerger choreoMerger = new
+		// ChoreographyMerger(Constants.demoChoreo);
+		// choreoMerger.merge(outPath);
 		
 		// // ASP11 with FH and CH in <invoke> s
 		// ChoreographyMerger choreographyMerger2 = new

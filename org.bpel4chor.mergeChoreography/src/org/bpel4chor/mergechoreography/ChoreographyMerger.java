@@ -87,7 +87,6 @@ public class ChoreographyMerger implements Serializable {
 		this.mergeChoreography();
 		this.choreographyPackage.saveMergedChoreography(fileName);
 		
-		// TODO: Später fertig coden
 		ZipFile temp = null;
 		return temp;
 	}
@@ -273,15 +272,6 @@ public class ChoreographyMerger implements Serializable {
 	 */
 	public ChoreographyPackage getChoreographyPackage() {
 		return this.choreographyPackage;
-	}
-	
-	/**
-	 * Set {@link ChoreographyPackage}
-	 * 
-	 * @param choreographyPackage The new {@link ChoreographyPackage}
-	 */
-	public void setChoreographyPackage(ChoreographyPackage choreographyPackage) {
-		this.choreographyPackage = choreographyPackage;
 	}
 	
 }

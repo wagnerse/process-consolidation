@@ -9,16 +9,12 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
-import org.bpel4chor.mergechoreography.exceptions.SourceNotFoundInActivityException;
-import org.bpel4chor.mergechoreography.exceptions.TargetNotFoundInActivityException;
 import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
 import org.bpel4chor.model.topology.impl.Topology;
-import org.bpel4chor.utils.BPEL4ChorUtil;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.Assign;
 import org.eclipse.bpel.model.BPELExtensibleElement;
@@ -30,6 +26,8 @@ import org.eclipse.bpel.model.CompensationHandler;
 import org.eclipse.bpel.model.Condition;
 import org.eclipse.bpel.model.Copy;
 import org.eclipse.bpel.model.Correlation;
+import org.eclipse.bpel.model.CorrelationSet;
+import org.eclipse.bpel.model.Correlations;
 import org.eclipse.bpel.model.Else;
 import org.eclipse.bpel.model.ElseIf;
 import org.eclipse.bpel.model.Empty;
@@ -124,60 +122,6 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
-	 * Resolves the given Process from the given choreographyPackage
-	 * 
-	 * @param name The name of the {@link Participant}
-	 * @return The found {@link Process}, or null
-	 */
-	public static Process resolveProcessByName(String name) {
-		String processName = ChoreoMergeUtil.getTypeByName(BPEL4ChorUtil.resolveParticipant(ChoreoMergeUtil.pkg.getTopology(), name).getType(), ChoreoMergeUtil.pkg.getTopology()).getParticipantBehaviorDescription().getLocalPart();
-		for (Process process : ChoreoMergeUtil.pkg.getPbds()) {
-			if (process.getName().equals(processName)) {
-				return process;
-			}
-		}
-		return null;
-	}
-	
-	/**
-	 * Returns the corresponding {@link MessageLink} from the {@link Topology}
-	 * 
-	 * @param invoke The {@link Invoke}
-	 * @return The searched {@link MessageLink}
-	 */
-	public static MessageLink findByInvokeActivity(Invoke invoke) {
-		for (MessageLink link : ChoreoMergeUtil.pkg.getTopology().getMessageLinks()) {
-			if (link.getSendActivity().equals(invoke.getName())) {
-				return link;
-			}
-		}
-		return null;
-	}
-	
-	/**
-	 * Return {@link Activity} in given {@link EObject} with {@link Link} as
-	 * {@link Target}
-	 * 
-	 * @param cont {@link EObject}
-	 * @param link {@link Link}
-	 * @return
-	 */
-	public static Activity getActivityByTarget(EObject cont, Link link) {
-		if (cont instanceof Flow) {
-			for (Activity act : ((Flow) cont).getActivities()) {
-				if (act.getTargets() != null) {
-					for (Target target : act.getTargets().getChildren()) {
-						if (target.getLink().getName().equals(link.getName())) {
-							return act;
-						}
-					}
-				}
-			}
-		}
-		return null;
-	}
-	
-	/**
 	 * Find the {@link Source}s of the given {@link Activity} following
 	 * {@link Target} links
 	 * 
@@ -227,72 +171,6 @@ public class ChoreoMergeUtil {
 			}
 		}
 		return foundActs;
-	}
-	
-	/**
-	 * Find {@link Activity} which is targeted by the given {@link Source}
-	 * 
-	 * @param cont The {@link EObject} containing the {@link Activity}
-	 * @param source The {@link Source} to follow
-	 * @return Found {@link Activity}, null else
-	 */
-	public static Activity findActivityBySource(EObject cont, Source source) {
-		while (!(cont instanceof Process)) {
-			if (cont instanceof Sequence) {
-				Sequence seq = (Sequence) cont;
-				for (Activity act : seq.getActivities()) {
-					if (act.getTargets() != null) {
-						for (Target target : act.getTargets().getChildren()) {
-							if (target.getLink().getName().equals(source.getLink().getName())) {
-								return act;
-							}
-						}
-					}
-				}
-			} else if (cont instanceof Flow) {
-				Flow flow = (Flow) cont;
-				for (Activity act : flow.getActivities()) {
-					if (act.getTargets() != null) {
-						for (Target target : act.getTargets().getChildren()) {
-							if (target.getLink().getName().equals(source.getLink().getName())) {
-								return act;
-							}
-						}
-					}
-				}
-			}
-			// We couldn't find the activity so walk up
-			cont = cont.eContainer();
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Find {@link Activity} which has source by the given {@link Target}
-	 * 
-	 * @param cont The {@link EObject} containing the {@link Activity}
-	 * @param source The {@link Target} to follow
-	 * @return Found {@link Activity}, null else
-	 */
-	public static Activity findActivityByTarget(EObject cont, Target target) {
-		while (!(cont instanceof Process)) {
-			
-			if ((cont instanceof Sequence) || (cont instanceof Flow)) {
-				for (Activity act : (cont instanceof Sequence ? ((Sequence) cont).getActivities() : ((Flow) cont).getActivities())) {
-					if (act.getSources() != null) {
-						for (Source source : act.getSources().getChildren()) {
-							if (source.getLink().getName().equals(target.getLink().getName())) {
-								return act;
-							}
-						}
-					}
-				}
-			}
-			// We couldn't find the activity so walk up
-			cont = cont.eContainer();
-		}
-		return null;
 	}
 	
 	/**
@@ -365,95 +243,6 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
-	 * Copies all sources from act1 to act2 if any existed
-	 * 
-	 * @param act1 {@link Activity} with sources to be copied
-	 * @param act2 {@link Activity} to copy sources to
-	 */
-	public static void copySources(Activity act1, Activity act2) {
-		if (act1.getSources() != null) {
-			if (act2.getSources() == null) {
-				act2.setSources(BPELFactory.eINSTANCE.createSources());
-			}
-			for (Source source : act1.getSources().getChildren()) {
-				Source newSource = BPELFactory.eINSTANCE.createSource();
-				newSource.setLink(source.getLink());
-				ChoreoMergeUtil.log.log(Level.INFO, "Copying source with linkName: " + newSource.getLink().getName() + " to activity : " + act2.getName());
-				act2.getSources().getChildren().add(newSource);
-			}
-		}
-	}
-	
-	/**
-	 * Copies all targets from act1 to act2 if any existed
-	 * 
-	 * @param act1 {@link Activity} with targets to be copied
-	 * @param act2 {@link Activity} to copy targets to
-	 */
-	public static void copyTargets(Activity act1, Activity act2) {
-		if (act1.getTargets() != null) {
-			if (act2.getTargets() == null) {
-				act2.setTargets(BPELFactory.eINSTANCE.createTargets());
-			}
-			for (Target target : act1.getTargets().getChildren()) {
-				Target newTarget = BPELFactory.eINSTANCE.createTarget();
-				newTarget.setLink(target.getLink());
-				ChoreoMergeUtil.log.log(Level.INFO, "Copying target with linkName: " + newTarget.getLink().getName() + " to activity : " + act2.getName());
-				act2.getTargets().getChildren().add(newTarget);
-			}
-			if (act1.getTargets().getJoinCondition() != null) {
-				act2.getTargets().setJoinCondition(FragmentDuplicator.copyCondition(act1.getTargets().getJoinCondition()));
-			}
-		}
-	}
-	
-	/**
-	 * Removes the link with the given name from the sources of the given
-	 * {@link Activity}
-	 * 
-	 * @param activity The {@link Activity} to erase the source from
-	 * @param linkName The name of the link of the source
-	 * @throws SourceNotFoundInActivityException
-	 */
-	public static void removeSourceLink(Activity activity, String linkName) throws SourceNotFoundInActivityException {
-		Source found = null;
-		for (Source source : activity.getSources().getChildren()) {
-			if (source.getLink().getName().equals(linkName)) {
-				found = source;
-				break;
-			}
-		}
-		if (found != null) {
-			activity.getSources().getChildren().remove(found);
-		} else {
-			throw new SourceNotFoundInActivityException("There is no link with name " + linkName + " as Source in " + activity.getName());
-		}
-	}
-	
-	/**
-	 * Removes the link with the given name from the targets of the given
-	 * {@link Activity}
-	 * 
-	 * @param activity The {@link Activity} to erase the target from
-	 * @param linkName The name of the link of the source
-	 * @throws TargetNotFoundInActivityException
-	 */
-	public static void removeTargetLink(Activity activity, String linkName) throws TargetNotFoundInActivityException {
-		Target found = null;
-		for (Target target : activity.getTargets().getChildren()) {
-			if (target.getLink().getName().equals(linkName)) {
-				found = target;
-				break;
-			}
-		}
-		if (found != null) {
-			activity.getTargets().getChildren().remove(found);
-		} else {
-			throw new TargetNotFoundInActivityException("There is no link with name " + linkName + " as Target in " + activity.getName());
-		}
-	}
-	
-	/**
 	 * Looks up the source with the given name in the given activity
 	 * 
 	 * @param activity The {@link Activity} containing the source
@@ -479,9 +268,6 @@ public class ChoreoMergeUtil {
 	 * @return The found {@link Target} or null
 	 */
 	public static Target findTargetInActivity(Activity activity, String linkName) {
-		if ((activity == null) || (linkName == null)) {
-			throw new NullPointerException("Null parameter error! activity == null:" + (activity == null) + " linkName == null:" + (linkName == null));
-		}
 		if (activity.getTargets() != null) {
 			for (Target target : activity.getTargets().getChildren()) {
 				if (target.getLink().getName().equals(linkName)) {
@@ -508,19 +294,6 @@ public class ChoreoMergeUtil {
 		}
 		if (found != null) {
 			activity.getSources().getChildren().remove(found);
-		}
-	}
-	
-	/**
-	 * Removes the source from the given activity
-	 * 
-	 * @param act The {@link Activity} containing the source
-	 * @param source The {@link Source} to be removed
-	 */
-	public static void removeSourceFromActivity(Activity act, Source source) {
-		act.getSources().getChildren().remove(source);
-		if (act.getSources().getChildren().size() == 0) {
-			act.setSources(null);
 		}
 	}
 	
@@ -565,11 +338,11 @@ public class ChoreoMergeUtil {
 	public static void addTargetToActivity(Activity activity, Target target) {
 		if (activity.getTargets() == null) {
 			activity.setTargets(BPELFactory.eINSTANCE.createTargets());
-		} else {
-			if (ChoreoMergeUtil.findTargetInActivity(activity, target.getLink().getName()) == null) {
-				activity.getTargets().getChildren().add(target);
-			}
 		}
+		if (ChoreoMergeUtil.findTargetInActivity(activity, target.getLink().getName()) == null) {
+			activity.getTargets().getChildren().add(target);
+		}
+		
 	}
 	
 	/**
@@ -581,25 +354,27 @@ public class ChoreoMergeUtil {
 	public static void addSourceToActivity(Activity activity, Source source) {
 		if (activity.getSources() == null) {
 			activity.setSources(BPELFactory.eINSTANCE.createSources());
-		} else {
-			if (ChoreoMergeUtil.findSourceInActivity(activity, source.getLink().getName()) == null) {
-				activity.getSources().getChildren().add(source);
-			}
 		}
+		if (ChoreoMergeUtil.findSourceInActivity(activity, source.getLink().getName()) == null) {
+			activity.getSources().getChildren().add(source);
+		}
+		
 	}
 	
 	/**
-	 * Returns the condition expression of the target with the given name from
-	 * the given activity
+	 * Returns the joinCondition for given {@link Activity}. If no jc is
+	 * specified it is created through disjunction of the used {@link Target}
+	 * {@link Link}s.
 	 * 
-	 * @param activity The {@link Activity} containing the target
-	 * @param linkName The name of the link of the {@link Target}
-	 * @return Condition expression String, null if no condition found
+	 * @param act {@link Activity} to determine jc from
+	 * @return String containing the jc
 	 */
-	public static String getJoinConditionForTarget(Activity activity, String linkName) {
-		if ((activity.getTargets() != null) && (activity.getTargets().getJoinCondition() != null)) {
-			if (activity.getTargets().getJoinCondition().getBody().toString().indexOf(linkName) != -1) {
-				return linkName;
+	public static String getJoinCondition(Activity act) {
+		if ((act.getTargets() != null)) {
+			if (act.getTargets().getJoinCondition() != null) {
+				return act.getTargets().getJoinCondition().getBody().toString();
+			} else {
+				return ChoreoMergeUtil.targetDisjunctor(act);
 			}
 		}
 		return null;
@@ -715,33 +490,6 @@ public class ChoreoMergeUtil {
 			before.add(seqPreAct);
 		}
 		
-		// // if we have a sequence
-		// if (actContainer instanceof Sequence) {
-		// Sequence seq = (Sequence) actContainer;
-		// // check if activity has predecessor
-		// int posAct = seq.getActivities().indexOf(act);
-		// if (posAct != 0) {
-		// // we have some
-		// if (before == null) {
-		// before = new ArrayList<>();
-		// }
-		// before.add(seq.getActivities().get(posAct - 1));
-		// return before;
-		// } else {
-		// // else check if the sequence have any
-		// return (before != null ? before :
-		// ChoreoMergeUtil.getPreceedingActivities(seq));
-		//
-		// }
-		// } else {
-		// while (!(actContainer instanceof Activity) && !(actContainer
-		// instanceof Process)) {
-		// // we walk up till we get an activity container
-		// actContainer = actContainer.eContainer();
-		// }
-		// return (before != null ? before :
-		// ChoreoMergeUtil.getPreceedingActivities((Activity) actContainer));
-		// }
 		return (before != null ? new ArrayList<>(before) : null);
 	}
 	
@@ -775,34 +523,6 @@ public class ChoreoMergeUtil {
 			}
 			after.add(seqSuccAct);
 		}
-		
-		// // if we have a sequence
-		// if (actContainer instanceof Sequence) {
-		// Sequence seq = (Sequence) actContainer;
-		// // check if activity has predecessor
-		// int posAct = seq.getActivities().indexOf(act);
-		// if (posAct < (seq.getActivities().size() - 1)) {
-		// // we have some
-		// if (after == null) {
-		// after = new ArrayList<>();
-		// }
-		// after.add(seq.getActivities().get(posAct + 1));
-		// return after;
-		// } else {
-		// // else check if the sequence have any
-		// return (after != null ? after :
-		// ChoreoMergeUtil.getSucceedingActivities(seq));
-		//
-		// }
-		// } else {
-		// while (!(actContainer instanceof Activity) && !(actContainer
-		// instanceof Process)) {
-		// // we walk up till we get an activity container
-		// actContainer = actContainer.eContainer();
-		// }
-		// return (after != null ? after :
-		// ChoreoMergeUtil.getSucceedingActivities((Activity) actContainer));
-		// }
 		return (after != null ? new ArrayList<>(after) : null);
 	}
 	
@@ -815,9 +535,6 @@ public class ChoreoMergeUtil {
 	 * @return Found {@link Activity} else null
 	 */
 	public static BPELExtensibleElement resolveActivity(String wsuID) {
-		if ((wsuID == null) || (ChoreoMergeUtil.pkg == null)) {
-			throw new NullPointerException("wsuID == null : " + (wsuID == null) + " pkg == null : " + (ChoreoMergeUtil.pkg == null));
-		}
 		return ChoreoMergeUtil.pkg.getOld2New().get(wsuID);
 	}
 	
@@ -847,9 +564,6 @@ public class ChoreoMergeUtil {
 	 * @return found {@link Variable} or null else
 	 */
 	public static Variable resolveVariable(String varName, Activity act) {
-		if ((varName == null) || (act == null)) {
-			throw new NullPointerException("argument is null. varName == null:" + (varName == null) + " act == null:" + (act == null));
-		}
 		List<Variable> vars = null;
 		EObject container = act.eContainer();
 		while (container != null) {
@@ -914,17 +628,7 @@ public class ChoreoMergeUtil {
 	 * @return Succeeding {@link Activity} or null
 	 */
 	public static Activity getSuccActivityInSequence(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		Activity succAct = null;
-		// EObject containerSub = act;
-		// EObject container = act.eContainer();
-		// while (!(container instanceof Process) && !(container instanceof
-		// Sequence)) {
-		// containerSub = container;
-		// container = container.eContainer();
-		// }
 		Activity[] result = ChoreoMergeUtil.getSequenceAndInsideActivity(act);
 		if (result != null) {
 			Sequence seq = (Sequence) result[0];
@@ -948,17 +652,7 @@ public class ChoreoMergeUtil {
 	 * @return Preceding {@link Activity} or null
 	 */
 	public static Activity getPreActivityInSequence(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		Activity preAct = null;
-		// EObject containerSub = act;
-		// EObject container = act.eContainer();
-		// while (!(container instanceof Process) && !(container instanceof
-		// Sequence)) {
-		// containerSub = container;
-		// container = container.eContainer();
-		// }
 		Activity[] result = ChoreoMergeUtil.getSequenceAndInsideActivity(act);
 		if (result != null) {
 			Sequence seq = (Sequence) result[0];
@@ -981,9 +675,6 @@ public class ChoreoMergeUtil {
 	 *         and the second element the {@link Activity}, or null
 	 */
 	public static Activity[] getSequenceAndInsideActivity(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		Activity[] result = null;
 		EObject containerSub = act;
 		EObject container = act.eContainer();
@@ -1004,9 +695,6 @@ public class ChoreoMergeUtil {
 	 * @return Found {@link Process} or null
 	 */
 	public static Process getProcessOfActivity(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		EObject container = act.eContainer();
 		while (!(container instanceof Process)) {
 			// Climb up
@@ -1022,9 +710,6 @@ public class ChoreoMergeUtil {
 	 * @return Found {@link Process} or null
 	 */
 	public static Process getProcessOfElement(BPELExtensibleElement elem) {
-		if (elem == null) {
-			throw new NullPointerException("argument is null. elem == null:" + (elem == null));
-		}
 		EObject container = elem.eContainer();
 		while (!(container instanceof Process)) {
 			// Climb up
@@ -1092,28 +777,6 @@ public class ChoreoMergeUtil {
 			flow.getLinks().getChildren().remove(found);
 			if (flow.getLinks().getChildren().size() == 0) {
 				flow.setLinks(null);
-			}
-		}
-	}
-	
-	/**
-	 * Rename the link from given activity to newName
-	 * 
-	 * @param act
-	 * @param oldName
-	 * @param newName
-	 */
-	public static void renameLinkInActivity(Activity act, String oldName, String newName) {
-		for (Source source : act.getSources().getChildren()) {
-			if (source.getLink().getName().equals(oldName)) {
-				source.getLink().setName(newName);
-				return;
-			}
-		}
-		for (Target target : act.getTargets().getChildren()) {
-			if (target.getLink().getName().equals(oldName)) {
-				target.getLink().setName(newName);
-				return;
 			}
 		}
 	}
@@ -1212,23 +875,6 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
-	 * Find the {@link Flow} which contains given {@link Activity}
-	 * 
-	 * @param act {@link Activity} to find owning {@link Flow} of
-	 * @return {@link Flow} or null
-	 */
-	public static Flow findActivityOwnerFlow(Activity act) {
-		EObject cont = act.eContainer();
-		while (!(cont instanceof Process)) {
-			if (cont instanceof Flow) {
-				return (Flow) cont;
-			}
-			cont = cont.eContainer();
-		}
-		return null;
-	}
-	
-	/**
 	 * Conjunct the linknames of the {@link Target}s of the given
 	 * {@link Activity}
 	 * 
@@ -1241,24 +887,6 @@ public class ChoreoMergeUtil {
 			expression += "$" + act.getTargets().getChildren().get(i).getLink().getName();
 			// Check if there are other links coming
 			if (i < (act.getTargets().getChildren().size() - 1)) {
-				expression += " or ";
-			}
-		}
-		return expression;
-	}
-	
-	/**
-	 * Conjunct the linknames of the given {@link Target}s
-	 * 
-	 * @param targets The {@link Target}s to be conjuncted
-	 * @return conjuncted linknames string
-	 */
-	public static String targetDisjunctor(List<Target> targets) {
-		String expression = "";
-		for (int i = 0; i < targets.size(); i++) {
-			expression += "$" + targets.get(i).getLink().getName();
-			// Check if there are other links coming
-			if (i < (targets.size() - 1)) {
 				expression += " or ";
 			}
 		}
@@ -1306,7 +934,10 @@ public class ChoreoMergeUtil {
 	public static Assign createAssignFromSendAct(PartnerActivity act, Variable vR) {
 		Assign newAssign = BPELFactory.eINSTANCE.createAssign();
 		FragmentDuplicator.copyStandardAttributes(act, newAssign);
-		FragmentDuplicator.copyStandardElements(act, newAssign);
+		// Move <sources> and <targets> from act to newAssign
+		newAssign.setSources(act.getSources());
+		newAssign.setTargets(act.getTargets());
+		
 		newAssign.setName(act.getName());
 		Copy newCopy = BPELFactory.eINSTANCE.createCopy();
 		From newFrom = BPELFactory.eINSTANCE.createFrom();
@@ -1331,9 +962,6 @@ public class ChoreoMergeUtil {
 	 * @return New {@link Copy}
 	 */
 	public static Copy createCopy(Variable from, Variable to) {
-		if ((from == null) || (to == null)) {
-			throw new NullPointerException("Arguments not set, from == null" + (from == null) + " to == null " + (to == null));
-		}
 		Copy newCopy = BPELFactory.eINSTANCE.createCopy();
 		From newFrom = BPELFactory.eINSTANCE.createFrom();
 		newFrom.setVariable(from);
@@ -1357,7 +985,9 @@ public class ChoreoMergeUtil {
 	public static Scope createScopeFromInvoke(Invoke s, Variable vR) {
 		Scope newScope = BPELFactory.eINSTANCE.createScope();
 		FragmentDuplicator.copyStandardAttributes(s, newScope);
-		FragmentDuplicator.copyStandardElements(s, newScope);
+		// Move <sources> and <targets> from act to newAssign
+		newScope.setSources(s.getSources());
+		newScope.setTargets(s.getTargets());
 		
 		// Move FaultHandlers
 		if ((s.getFaultHandler() != null) && ((s.getFaultHandler().getCatch().size() > 0) || (s.getFaultHandler().getCatchAll() != null))) {
@@ -1386,6 +1016,217 @@ public class ChoreoMergeUtil {
 		newScope.setActivity(newAssign);
 		
 		return newScope;
+	}
+	
+	/**
+	 * Get the value of the suppressJoinFailure-Attribute from given
+	 * {@link Activity}. If it's not set it is determined from enclosing scope.
+	 * 
+	 * @param act {@link Activity} to analyse attribute of
+	 * @return true or false
+	 */
+	public static boolean getSuppressJoinFailureAttribute(Activity act) {
+		// Check setting of activity
+		if (act.isSetSuppressJoinFailure()) {
+			return act.getSuppressJoinFailure();
+		}
+		
+		// Otherwise climb up and check enclosing activities
+		EObject container = act.eContainer();
+		while (!(container instanceof Process)) {
+			if (container instanceof Activity) {
+				Activity contAct = (Activity) container;
+				// Check setting of activity
+				if (contAct.isSetSuppressJoinFailure()) {
+					return contAct.getSuppressJoinFailure();
+				}
+			}
+			// Climb up
+			container = container.eContainer();
+		}
+		
+		// Otherwise the process<scope>
+		return ((Process) container).getSuppressJoinFailure();
+	}
+	
+	/**
+	 * Optimize given {@link Empty}-{@link Activity} and merge in with preceding
+	 * and succeeding activities TODO: nochmal anschauen !!
+	 * 
+	 * @param empty The {@link Empty}-{@link Activity} to be optimized
+	 */
+	public static void optimizeEmpty(Empty empty) {
+		// Check if suppressJoinFailure is set to "yes"
+		if (ChoreoMergeUtil.getSuppressJoinFailureAttribute(empty)) {
+			List<Activity> preActs = ChoreoMergeUtil.getPreceedingActivities(empty);
+			List<Activity> succActs = ChoreoMergeUtil.getSucceedingActivities(empty);
+			ChoreoMergeUtil.log.info("SuppressJoinFailure of Empty : " + empty.getName() + " is set to \"yes\".");
+			ChoreoMergeUtil.log.info("The preceding activities of Empty are : ");
+			for (Activity activity : preActs) {
+				ChoreoMergeUtil.log.info("=> " + activity.getName());
+			}
+			ChoreoMergeUtil.log.info("The succeeding activities of Empty are : ");
+			for (Activity activity : succActs) {
+				ChoreoMergeUtil.log.info("=> " + activity.getName());
+			}
+			
+			// Check if there exist some preceding or succeeding linked
+			// activities
+			if ((preActs.size() > 0) || (succActs.size() > 0)) {
+				for (Activity succAct : succActs) {
+					Link e2sAct = null;
+					String tc2succAct = null;
+					String jcSuccAct = ChoreoMergeUtil.getJoinCondition(succAct);
+					String jcEmpty = ChoreoMergeUtil.getJoinCondition(empty);
+					Source e2succAct = ChoreoMergeUtil.getMatchingSource(empty, succAct);
+					if ((e2succAct != null) && (e2succAct.getTransitionCondition() != null)) {
+						e2sAct = e2succAct.getLink();
+						tc2succAct = e2succAct.getTransitionCondition().getBody().toString();
+					}
+					
+					for (Activity preAct : preActs) {
+						Link pre2e = null;
+						String tcPreAct = null;
+						Source preAct2e = ChoreoMergeUtil.getMatchingSource(preAct, empty);
+						if (preAct2e != null) {
+							pre2e = preAct2e.getLink();
+							if (preAct2e.getTransitionCondition() != null) {
+								tcPreAct = preAct2e.getTransitionCondition().getBody().toString();
+							}
+						}
+						
+					}
+				}
+			}
+			
+		}
+		
+	}
+	
+	/**
+	 * Propagate the initiate attribute of a {@link CorrelationSet} to the
+	 * succeeding {@link Activity}s and set it to join
+	 * 
+	 * @param act {@link Activity} from which we want to propagate the attribute
+	 *            to the succeeding {@link Activity}s
+	 */
+	public static void propagateCorrelInit(Activity act) {
+		List<String> corSetNames = new ArrayList<>();
+		
+		List<Correlations> correlations = new ArrayList<>();
+		
+		// Check if type of activity (invoke, receive, reply)
+		if (act instanceof PartnerActivity) {
+			PartnerActivity partnerAct = (PartnerActivity) act;
+			
+			// Check if we have correlations
+			if (partnerAct.getCorrelations() != null) {
+				
+				correlations.add(partnerAct.getCorrelations());
+			}
+		}
+		
+		// <pick> case
+		if (act instanceof Pick) {
+			Pick pick = (Pick) act;
+			
+			// Examine <onMessage>-branches (there MUST be at least one)
+			for (OnMessage om : pick.getMessages()) {
+				// Check if we have correlations
+				if (om.getCorrelations() != null) {
+					
+					correlations.add(om.getCorrelations());
+				}
+			}
+		}
+		
+		for (Correlations cors : correlations) {
+			// Check if some of the CorrelationSets use
+			// initiate-attribute set to "yes"
+			for (Correlation cor : cors.getChildren()) {
+				if (cor.getInitiate().equals("yes") || cor.getInitiate().equals("join")) {
+					ChoreoMergeUtil.log.info("Activity : " + act);
+					ChoreoMergeUtil.log.info("Initiates corSet : " + cor.getSet().getName());
+					// Add the correlation name to corSetNames-list
+					corSetNames.add(cor.getSet().getName());
+				}
+			}
+		}
+		
+		// if there exist some initiating correlations, propagate them to the
+		// first activity of the succeeding
+		if (corSetNames.size() > 0) {
+			List<Activity> succActs = ChoreoMergeUtil.getSucceedingActivities(act);
+			if (succActs != null) {
+				for (Activity succAct : succActs) {
+					// call propagateInitFlag with a copy of the given
+					// corSetNames
+					ChoreoMergeUtil.propagateInitFlag(succAct, new ArrayList<>(corSetNames));
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * Propagate the initiate-attribute of the given {@link CorrelationSet}
+	 * -names to activity. If it has been propagated it is removed from list. If
+	 * not check succeeding activities.
+	 * 
+	 * @param act {@link Activity} to propagate initiate-attribute to
+	 * @param corSets {@link List} of names of {@link CorrelationSet}s
+	 */
+	private static void propagateInitFlag(Activity act, List<String> corSets) {
+		
+		List<Correlations> correlations = new ArrayList<>();
+		
+		if (act instanceof PartnerActivity) {
+			PartnerActivity partnerAct = (PartnerActivity) act;
+			
+			if (partnerAct.getCorrelations() != null) {
+				correlations.add(partnerAct.getCorrelations());
+			}
+		}
+		
+		// <pick> case
+		if (act instanceof Pick) {
+			Pick pick = (Pick) act;
+			
+			// Examine <onMessage>-branches (there MUST be at least one)
+			for (OnMessage om : pick.getMessages()) {
+				// Check if we have correlations
+				if (om.getCorrelations() != null) {
+					
+					correlations.add(om.getCorrelations());
+				}
+			}
+		}
+		
+		for (Correlations cors : correlations) {
+			// Check if some of the CorrelationSets use
+			// initiate-attribute set to "yes"
+			for (Correlation cor : cors.getChildren()) {
+				if (corSets.contains(cor.getSet().getName()) && cor.getInitiate().equals("no")) {
+					// Found matching correlation and set initiate to
+					// "join"
+					cor.setInitiate("join");
+					// We remove set correlation from the list corSets
+					// as it has been already used
+					corSets.remove(cor.getSet().getName());
+				}
+			}
+		}
+		
+		// Check if all corSet-names have been used, if not propagate to
+		// succeeding activities
+		if (corSets.size() > 0) {
+			List<Activity> succActs = ChoreoMergeUtil.getSucceedingActivities(act);
+			if (succActs != null) {
+				for (Activity succAct : succActs) {
+					ChoreoMergeUtil.propagateInitFlag(succAct, new ArrayList<>(corSets));
+				}
+			}
+		}
 	}
 	
 	/**
@@ -1449,7 +1290,10 @@ public class ChoreoMergeUtil {
 		Empty newEmpty = BPELFactory.eINSTANCE.createEmpty();
 		FragmentDuplicator.copyStandardAttributes(act, newEmpty);
 		newEmpty.setName(act.getName());
-		FragmentDuplicator.copyStandardElements(act, newEmpty);
+		// FragmentDuplicator.copyStandardElements(act, newEmpty);
+		// Move <sources> and <targets> from act to newAssign
+		newEmpty.setSources(act.getSources());
+		newEmpty.setTargets(act.getTargets());
 		return newEmpty;
 	}
 	
@@ -1465,7 +1309,10 @@ public class ChoreoMergeUtil {
 	public static Scope createRCScopeFromActivity(Activity act) {
 		Scope newScope = BPELFactory.eINSTANCE.createScope();
 		FragmentDuplicator.copyStandardAttributes(act, newScope);
-		FragmentDuplicator.copyStandardElements(act, newScope);
+		// FragmentDuplicator.copyStandardElements(act, newScope);
+		// Move <sources> and <targets> from act to newAssign
+		newScope.setSources(act.getSources());
+		newScope.setTargets(act.getTargets());
 		Flow newFlow = BPELFactory.eINSTANCE.createFlow();
 		newScope.setActivity(newFlow);
 		newScope.setFaultHandlers(BPELFactory.eINSTANCE.createFaultHandler());
@@ -1678,7 +1525,10 @@ public class ChoreoMergeUtil {
 	public static If createIfFromInvoke(Invoke inv, Variable gVar, Variable vR) {
 		If newIf = BPELFactory.eINSTANCE.createIf();
 		FragmentDuplicator.copyStandardAttributes(inv, newIf);
-		FragmentDuplicator.copyStandardElements(inv, newIf);
+		// FragmentDuplicator.copyStandardElements(inv, newIf);
+		// Move <sources> and <targets> from act to newAssign
+		newIf.setSources(inv.getSources());
+		newIf.setTargets(inv.getTargets());
 		Condition ifCondition = BPELFactory.eINSTANCE.createCondition();
 		ifCondition.setBody(gVar.getName() + "!=true()");
 		newIf.setCondition(ifCondition);
@@ -1778,9 +1628,6 @@ public class ChoreoMergeUtil {
 	 * @return true or false
 	 */
 	public static boolean isActivityInFCTEHandler(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		EObject container = act.eContainer();
 		while (!(container instanceof Process)) {
 			if ((container instanceof FaultHandler) || (container instanceof CompensationHandler) || (container instanceof TerminationHandler) || (container instanceof EventHandler)) {
@@ -1801,10 +1648,6 @@ public class ChoreoMergeUtil {
 	 * @return true or false
 	 */
 	public static boolean isElementInCEHandler(BPELExtensibleElement elem) {
-		if (elem == null) {
-			throw new NullPointerException("argument is null. elem == null:" + (elem == null));
-		}
-		
 		return ChoreoMergeUtil.isElementContainedIn(elem, Arrays.asList(CompensationHandler.class, EventHandler.class));
 	}
 	
@@ -1815,9 +1658,6 @@ public class ChoreoMergeUtil {
 	 * @return true or false
 	 */
 	public static boolean isElementInFCTEHandler(BPELExtensibleElement elem) {
-		if (elem == null) {
-			throw new NullPointerException("argument is null. elem == null:" + (elem == null));
-		}
 		List<Class<? extends BPELExtensibleElement>> typesToCheck = Arrays.asList(FaultHandler.class, CompensationHandler.class, TerminationHandler.class, EventHandler.class);
 		return ChoreoMergeUtil.isElementContainedIn(elem, typesToCheck);
 	}
@@ -1829,9 +1669,6 @@ public class ChoreoMergeUtil {
 	 * @return true or false
 	 */
 	public static boolean isElementInLoop(BPELExtensibleElement elem) {
-		if (elem == null) {
-			throw new NullPointerException("argument is null. elem == null:" + (elem == null));
-		}
 		List<Class<? extends BPELExtensibleElement>> typesToCheck = new ArrayList<>();
 		typesToCheck.add(While.class);
 		typesToCheck.add(RepeatUntil.class);
@@ -1848,9 +1685,6 @@ public class ChoreoMergeUtil {
 	 * @return true or false
 	 */
 	public static boolean isElementContainedIn(BPELExtensibleElement elem, List<Class<? extends BPELExtensibleElement>> list) {
-		if ((list == null) || (list.size() == 0)) {
-			throw new RuntimeException("types is null : " + (list == null) + " or includes no Classes : " + (list.size() == 0));
-		}
 		EObject container = elem.eContainer();
 		while (!(container instanceof Process)) {
 			for (Class<?> class1 : list) {
@@ -1873,9 +1707,6 @@ public class ChoreoMergeUtil {
 	 * @return {@link BPELExtensibleElement}
 	 */
 	public static BPELExtensibleElement getFCTEHandlerOfActivity(Activity act) {
-		if (act == null) {
-			throw new NullPointerException("argument is null. act == null:" + (act == null));
-		}
 		EObject container = act.eContainer();
 		while (!(container instanceof Process)) {
 			if ((container instanceof Catch) || (container instanceof CatchAll) || (container instanceof CompensationHandler) || (container instanceof TerminationHandler) || (container instanceof OnEvent) || (container instanceof OnAlarm)) {
@@ -1894,9 +1725,6 @@ public class ChoreoMergeUtil {
 	 * @return Contained {@link Activity}
 	 */
 	public static Activity getActivityFromFCTEHandler(BPELExtensibleElement fcte) {
-		if (fcte == null) {
-			throw new NullPointerException("argument is null. fcte == null:" + (fcte == null));
-		}
 		Activity act = null;
 		if (fcte instanceof Catch) {
 			act = ((Catch) fcte).getActivity();
@@ -1921,9 +1749,6 @@ public class ChoreoMergeUtil {
 	 * @param act {@link Activity} to set
 	 */
 	public static void setActivityForFCTEHandler(BPELExtensibleElement fcte, Activity act) {
-		if ((fcte == null) || (act == null)) {
-			throw new NullPointerException("argument is null. fcte == null:" + (fcte == null) + " act == null: " + (act == null));
-		}
 		if (fcte instanceof Catch) {
 			((Catch) fcte).setActivity(act);
 		} else if (fcte instanceof CatchAll) {

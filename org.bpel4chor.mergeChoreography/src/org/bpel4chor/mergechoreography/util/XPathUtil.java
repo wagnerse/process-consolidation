@@ -37,9 +37,6 @@ public class XPathUtil {
 	 *         names
 	 */
 	public static String replaceVariableName(String xpathExpr, String oldVarName, String newVarName) {
-		if ((xpathExpr == null) || (oldVarName == null) || (newVarName == null)) {
-			throw new NullPointerException("Argument is (xpath==null) : " + (xpathExpr == null) + ", (oldVarName == null) : " + (oldVarName == null) + ", (newVarName == null) : " + (newVarName == null));
-		}
 		// First replace normal Variable occurrence
 		String newExpr = xpathExpr.replaceAll(Pattern.quote("$" + oldVarName) + "(?!\\w{1})\\W??", "\\$" + newVarName);
 		// Now replace all occurrences in bpel:getVariableProperty

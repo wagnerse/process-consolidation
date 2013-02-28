@@ -49,6 +49,9 @@ public class AsyncMatcher30 implements AsyncMatcher {
 	@Override
 	public MergePattern match(MessageLink link, ChoreographyPackage pkg) {
 		
+		// clear previous results
+		this.results.clear();
+		
 		// Add link to list of visited Links
 		pkg.addVisitedLink(link);
 		

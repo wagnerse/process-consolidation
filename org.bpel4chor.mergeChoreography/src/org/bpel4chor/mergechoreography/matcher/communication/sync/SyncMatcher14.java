@@ -58,6 +58,9 @@ public class SyncMatcher14 implements SyncMatcher {
 		
 		this.pkg = pkg;
 		
+		// clear previous results
+		this.results.clear();
+		
 		// LinkEnvironmentAnalyzer
 		MLEnvironmentAnalyzer analyzerSend = new MLEnvironmentAnalyzer(mlSend, pkg);
 		this.envSend = analyzerSend.getEnvironment();

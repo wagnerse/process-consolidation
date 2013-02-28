@@ -39,6 +39,11 @@ public class SyncPattern12 extends MergePattern {
 		Receive rec = (Receive) this.env.getR();
 		Reply repl = (Reply) this.envReply.getS();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(rec);
+		ChoreoMergeUtil.propagateCorrelInit(repl);
+		
 		// First we uplift vRec used by rec and vReply used by s into
 		// the process<scope> of the merged process
 		Variable vRec = ChoreoMergeUtil.resolveVariable(rec.getVariable().getName(), rec);

@@ -56,6 +56,9 @@ public class AsyncPattern22 extends MergePattern {
 		// Invoke s = (Invoke) this.env.getS();
 		Pick r = (Pick) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		// List of already uplifted variables
 		List<Variable> uplifted = new ArrayList<>();
 		
@@ -73,6 +76,9 @@ public class AsyncPattern22 extends MergePattern {
 		for (Map.Entry<Invoke, OnMessage> oms : omsInternal.entrySet()) {
 			OnMessage rOM = oms.getValue();
 			Invoke s = oms.getKey();
+			
+			// Propagate possible correlationSet initializations
+			ChoreoMergeUtil.propagateCorrelInit(s);
 			
 			// First we uplift the vR used by rOM into the process<scope> of the
 			// merged process

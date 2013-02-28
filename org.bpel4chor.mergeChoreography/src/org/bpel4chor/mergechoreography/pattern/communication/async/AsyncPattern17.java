@@ -46,6 +46,10 @@ public class AsyncPattern17 extends MergePattern {
 		Invoke s = (Invoke) this.env.getS();
 		Receive r = (Receive) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		Sequence sSeq = (Sequence) s.eContainer();
 		String linkName = sSeq.getTargets().getChildren().get(0).getLink().getName();
 		Scope sScpe = (Scope) sSeq.eContainer();
@@ -70,28 +74,6 @@ public class AsyncPattern17 extends MergePattern {
 		// Now we delete sScpe and r
 		ChoreoMergeUtil.removeActivityFromContainer(sScpe);
 		ChoreoMergeUtil.removeActivityFromContainer(r);
-		
-		// // How to create new variable with xsd:boolean and inline
-		// initialization !!!
-		// Variable newVar = BPELFactory.eINSTANCE.createVariable();
-		// newVar.setName("testVar1");
-		// XSDTypeDefinition type =
-		// XSDFactory.eINSTANCE.createXSDSimpleTypeDefinition();
-		// type.setName("boolean");
-		// type.setTargetNamespace("http://www.w3.org/2001/XMLSchema");
-		// newVar.setType(type);
-		//
-		// Expression newFromExp = BPELFactory.eINSTANCE.createExpression();
-		// newFromExp.setBody("false()");
-		// From newFrom = BPELFactory.eINSTANCE.createFrom();
-		// newFrom.setExpression(newFromExp);
-		// newVar.setFrom(newFrom);
-		//
-		// if (this.pkg.getMergedProcess().getVariables() == null) {
-		// this.pkg.getMergedProcess().setVariables(BPELFactory.eINSTANCE.createVariables());
-		// }
-		//
-		// this.pkg.getMergedProcess().getVariables().getChildren().add(newVar);
 		
 	}
 	

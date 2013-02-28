@@ -60,6 +60,9 @@ public class AsyncMatcher22 implements AsyncMatcher {
 		
 		this.pkg = pkg;
 		
+		// clear previous results
+		this.results.clear();
+		
 		// Test Call to our new LinkEnvironmentAnalyzer
 		MLEnvironmentAnalyzer analyzer = new MLEnvironmentAnalyzer(link, pkg);
 		this.env = analyzer.getEnvironment();

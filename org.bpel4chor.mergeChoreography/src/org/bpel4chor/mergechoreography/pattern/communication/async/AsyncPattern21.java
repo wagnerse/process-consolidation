@@ -47,6 +47,10 @@ public class AsyncPattern21 extends MergePattern {
 		Invoke s = (Invoke) this.env.getS();
 		Pick r = (Pick) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		// We need the <onMessage> from the pick containing vR
 		OnMessage rOM = (OnMessage) ChoreoMergeUtil.resolveActivity(this.mLink.getReceiveActivity());
 		

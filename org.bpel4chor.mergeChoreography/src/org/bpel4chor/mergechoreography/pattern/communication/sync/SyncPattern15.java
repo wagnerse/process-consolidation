@@ -38,6 +38,11 @@ public class SyncPattern15 extends MergePattern {
 		Receive rec = (Receive) this.env.getR();
 		Reply repl = (Reply) this.envReply.getS();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(rec);
+		ChoreoMergeUtil.propagateCorrelInit(repl);
+		
 		// Get the FCTE-Handler which contain <invoke> s
 		BPELExtensibleElement fcteHandler = ChoreoMergeUtil.getFCTEHandlerOfActivity(s);
 		this.log.info("fcteHandler of <invoke> s is : " + fcteHandler);

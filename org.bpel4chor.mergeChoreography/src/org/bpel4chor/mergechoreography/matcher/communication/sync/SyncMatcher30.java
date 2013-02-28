@@ -56,6 +56,9 @@ public class SyncMatcher30 implements SyncMatcher {
 		
 		this.pkg = pkg;
 		
+		// clear previous results
+		this.results.clear();
+		
 		// Add links to list of visited Links
 		pkg.addVisitedLink(mlSend);
 		pkg.addVisitedLink(mlReply);

@@ -51,6 +51,9 @@ public class SyncMatcher11 implements SyncMatcher {
 	@Override
 	public MergePattern match(MessageLink mlSend, MessageLink mlReply, ChoreographyPackage pkg) {
 		
+		// clear previous results
+		this.results.clear();
+		
 		// LinkEnvironmentAnalyzer
 		MLEnvironmentAnalyzer analyzerSend = new MLEnvironmentAnalyzer(mlSend, pkg);
 		this.envSend = analyzerSend.getEnvironment();

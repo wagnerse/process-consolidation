@@ -9,7 +9,6 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
-import org.bpel4chor.mergechoreography.exceptions.NoApplicableMatcherFoundException;
 import org.bpel4chor.mergechoreography.matcher.communication.async.AsyncMatcher30;
 import org.bpel4chor.mergechoreography.matcher.communication.sync.SyncMatcher30;
 import org.bpel4chor.mergechoreography.pattern.MergePattern;
@@ -51,6 +50,7 @@ public class CommunicationMatcher implements Serializable {
 	 * @throws NoApplicableMatcherFoundException
 	 */
 	public MergePattern match(MessageLink link, ChoreographyPackage pkg) {
+		
 		// Check if link.sendActivity is a sync or async call
 		this.log.log(Level.INFO, "Running CommunicationMatcher .....");
 		this.log.log(Level.INFO, "For MessageLink => " + link.getName());
@@ -118,6 +118,15 @@ public class CommunicationMatcher implements Serializable {
 	}
 	
 	public CommunicationMatcher() {
+		this.initMatcher();
+	}
+	
+	/**
+	 * (Clear if needed) and load the Matcher into the corresponding lists
+	 */
+	private void initMatcher() {
+		// this.asyncMatcher.clear();
+		// this.syncMatcher.clear();
 		try {
 			Class<?>[] asyncMatchers = ClassLoadingUtil.getClasses("org.bpel4chor.mergechoreography.matcher.communication.async");
 			Class<?>[] syncMatchers = ClassLoadingUtil.getClasses("org.bpel4chor.mergechoreography.matcher.communication.sync");

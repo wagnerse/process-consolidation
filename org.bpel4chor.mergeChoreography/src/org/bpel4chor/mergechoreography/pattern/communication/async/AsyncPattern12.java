@@ -29,6 +29,10 @@ public class AsyncPattern12 extends MergePattern {
 		Invoke s = (Invoke) this.env.getS();
 		Receive r = (Receive) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(r);
+		
 		// Create new <empty> replacing the <invoke> s
 		Empty newEmptyS = ChoreoMergeUtil.createEmptyFromActivity(s);
 		

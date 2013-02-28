@@ -40,10 +40,6 @@ public class MLEnvironment implements Serializable {
 		return this.preS;
 	}
 	
-	public void setPreS(List<Activity> preS) {
-		this.preS = preS;
-	}
-	
 	public Activity getS() {
 		return this.s;
 	}
@@ -56,16 +52,8 @@ public class MLEnvironment implements Serializable {
 		return this.succS;
 	}
 	
-	public void setSuccS(List<Activity> succS) {
-		this.succS = succS;
-	}
-	
 	public List<Activity> getPreR() {
 		return this.preR;
-	}
-	
-	public void setPreR(List<Activity> preR) {
-		this.preR = preR;
 	}
 	
 	public Activity getR() {
@@ -78,10 +66,6 @@ public class MLEnvironment implements Serializable {
 	
 	public List<Activity> getSuccR() {
 		return this.succR;
-	}
-	
-	public void setSuccR(List<Activity> succR) {
-		this.succR = succR;
 	}
 	
 }

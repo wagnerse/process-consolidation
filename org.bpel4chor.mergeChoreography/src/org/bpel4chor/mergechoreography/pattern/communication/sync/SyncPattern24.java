@@ -50,6 +50,10 @@ public class SyncPattern24 extends MergePattern {
 		Invoke s = (Invoke) this.env.getS();
 		Pick rec = (Pick) this.env.getR();
 		
+		// Propagate possible correlationSet initializations
+		ChoreoMergeUtil.propagateCorrelInit(s);
+		ChoreoMergeUtil.propagateCorrelInit(rec);
+		
 		// We need the <onMessage> from the pick containing vRec
 		OnMessage rOM = (OnMessage) ChoreoMergeUtil.resolveActivity(this.wsuIDrec);
 		
@@ -138,6 +142,10 @@ public class SyncPattern24 extends MergePattern {
 		// them with the <throw>s in newFlow
 		for (MLEnvironment env : this.envReplys) {
 			Reply reply = (Reply) env.getS();
+			
+			// Propagate possible correlationSet initializations
+			ChoreoMergeUtil.propagateCorrelInit(reply);
+			
 			// Create new <assign> replacing the <reply> reply
 			Assign newAssignRepl = ChoreoMergeUtil.createAssignFromSendAct(reply, vReply);
 			
