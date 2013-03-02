@@ -15,6 +15,7 @@ import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
 import org.bpel4chor.model.topology.impl.Topology;
+import org.bpel4chor.utils.WSUIDGenerator;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.Assign;
 import org.eclipse.bpel.model.BPELExtensibleElement;
@@ -840,14 +841,16 @@ public class ChoreoMergeUtil {
 	 * 
 	 * @param link The {@link Link}
 	 * @param act The {@link Activity} for the new {@link Source}
+	 * @return new {@link Source}
 	 */
-	public static void createSource4LinkInActivity(Link link, Activity act) {
+	public static Source createSource4LinkInActivity(Link link, Activity act) {
 		if (act.getSources() == null) {
 			act.setSources(BPELFactory.eINSTANCE.createSources());
 		}
 		Source newSource = BPELFactory.eINSTANCE.createSource();
 		newSource.setLink(link);
 		act.getSources().getChildren().add(newSource);
+		return newSource;
 	}
 	
 	// TODO: Implement the next section correct !!
@@ -1073,6 +1076,7 @@ public class ChoreoMergeUtil {
 			// Check if there exist some preceding or succeeding linked
 			// activities
 			if ((preActs.size() > 0) || (succActs.size() > 0)) {
+				Set<Link> links2Remove = new HashSet<>();
 				for (Activity succAct : succActs) {
 					Link e2sAct = null;
 					String tc2succAct = null;
@@ -1084,6 +1088,12 @@ public class ChoreoMergeUtil {
 						tc2succAct = e2succAct.getTransitionCondition().getBody().toString();
 					}
 					
+					ChoreoMergeUtil.log.info("Empty : " + empty.getName() + " , succAct : " + succAct.getName());
+					ChoreoMergeUtil.log.info("Link e2succAct : " + e2sAct);
+					ChoreoMergeUtil.log.info("tcE2succAct : " + tc2succAct);
+					ChoreoMergeUtil.log.info("jcSuccAct : " + jcSuccAct);
+					ChoreoMergeUtil.log.info("jcEmpty : " + jcEmpty);
+					
 					for (Activity preAct : preActs) {
 						Link pre2e = null;
 						String tcPreAct = null;
@@ -1094,11 +1104,50 @@ public class ChoreoMergeUtil {
 								tcPreAct = preAct2e.getTransitionCondition().getBody().toString();
 							}
 						}
+						ChoreoMergeUtil.log.info("preAct : " + preAct.getName());
+						ChoreoMergeUtil.log.info("Link pre2e : " + pre2e);
+						ChoreoMergeUtil.log.info("tcPreAct : " + tcPreAct);
+						
+						// Add pre2e link for later removal
+						links2Remove.add(pre2e);
+						
+						Flow ownerPre2E = (Flow) pre2e.eContainer().eContainer();
+						
+						ChoreoMergeUtil.log.info("Link pre2e owner-flow : " + ownerPre2E.getName());
+						
+						// Create newLink for pre2e in owner-flow
+						Link nPre2succAct = BPELFactory.eINSTANCE.createLink();
+						nPre2succAct.setName(pre2e.getName() + WSUIDGenerator.getId());
+						ChoreoMergeUtil.addLinkToFlow(ownerPre2E, nPre2succAct);
+						
+						// Create new source for new link in preAct
+						Source nsPre2SuccAct = ChoreoMergeUtil.createSource4LinkInActivity(nPre2succAct, preAct);
+						if ((tc2succAct != null) || (tcPreAct != null)) {
+							// Combine TCs
+							Condition cmbdTC = BPELFactory.eINSTANCE.createCondition();
+							cmbdTC.setBody((tc2succAct != null ? "(" + tc2succAct + ")" : "") + (tcPreAct != null ? "and (" + tcPreAct + ")" : ""));
+							nsPre2SuccAct.setTransitionCondition(cmbdTC);
+						}
+						
+						// Create new Target for new Link in succAct
+						Target ntPre2SuccAct = ChoreoMergeUtil.createTarget4LinkInActivity(nPre2succAct, succAct);
+						// Remove target for e2SuccAct
+						ChoreoMergeUtil.removeTargetFromActivity(succAct, e2sAct.getName());
 						
 					}
+					// Remove e2sAct from owner-flow
+					Flow ownerE2sAct = (Flow) e2sAct.eContainer().eContainer();
+					ChoreoMergeUtil.removeLinkFromFlow(ownerE2sAct, e2sAct);
+				}
+				for (Link link : links2Remove) {
+					Flow ownerPre2E = (Flow) link.eContainer().eContainer();
+					// Remove link pre2e from owner-flow
+					ChoreoMergeUtil.removeLinkFromFlow(ownerPre2E, link);
+					// Remove source for pre2e from preAct
+					ChoreoMergeUtil.removeSourceFromActivity(link.getSources().get(0).getActivity(), link.getName());
 				}
 			}
-			
+			ChoreoMergeUtil.removeActivityFromContainer(empty);
 		}
 		
 	}
