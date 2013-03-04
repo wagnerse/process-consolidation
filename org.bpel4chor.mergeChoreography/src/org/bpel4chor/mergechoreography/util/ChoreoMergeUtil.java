@@ -1083,9 +1083,11 @@ public class ChoreoMergeUtil {
 					String jcSuccAct = ChoreoMergeUtil.getJoinCondition(succAct);
 					String jcEmpty = ChoreoMergeUtil.getJoinCondition(empty);
 					Source e2succAct = ChoreoMergeUtil.getMatchingSource(empty, succAct);
-					if ((e2succAct != null) && (e2succAct.getTransitionCondition() != null)) {
+					if (e2succAct != null) {
 						e2sAct = e2succAct.getLink();
-						tc2succAct = e2succAct.getTransitionCondition().getBody().toString();
+						if ((e2succAct.getTransitionCondition() != null)) {
+							tc2succAct = e2succAct.getTransitionCondition().getBody().toString();
+						}
 					}
 					
 					ChoreoMergeUtil.log.info("Empty : " + empty.getName() + " , succAct : " + succAct.getName());
@@ -1125,19 +1127,47 @@ public class ChoreoMergeUtil {
 						if ((tc2succAct != null) || (tcPreAct != null)) {
 							// Combine TCs
 							Condition cmbdTC = BPELFactory.eINSTANCE.createCondition();
-							cmbdTC.setBody((tc2succAct != null ? "(" + tc2succAct + ")" : "") + (tcPreAct != null ? "and (" + tcPreAct + ")" : ""));
+							cmbdTC.setBody((tc2succAct != null ? "(" + tc2succAct + ")" : "") + (tcPreAct != null ? " and (" + tcPreAct + ")" : ""));
 							nsPre2SuccAct.setTransitionCondition(cmbdTC);
+						}
+						
+						// Adapt JCs
+						if (jcEmpty == null) {
+							jcSuccAct = XPathUtil.replaceVariableName(jcSuccAct, e2sAct.getName(), nPre2succAct.getName());
+						} else {
+							jcEmpty = XPathUtil.replaceVariableName(jcEmpty, pre2e.getName(), nPre2succAct.getName());
 						}
 						
 						// Create new Target for new Link in succAct
 						Target ntPre2SuccAct = ChoreoMergeUtil.createTarget4LinkInActivity(nPre2succAct, succAct);
-						// Remove target for e2SuccAct
-						ChoreoMergeUtil.removeTargetFromActivity(succAct, e2sAct.getName());
 						
 					}
-					// Remove e2sAct from owner-flow
-					Flow ownerE2sAct = (Flow) e2sAct.eContainer().eContainer();
-					ChoreoMergeUtil.removeLinkFromFlow(ownerE2sAct, e2sAct);
+					
+					// Adapt JCs
+					String jcNew = "";
+					if (e2sAct == null) {
+						// Combine JCs
+						jcNew = (jcEmpty != null ? "(" + jcEmpty + ")" : "") + (jcSuccAct != null ? " and (" + jcSuccAct + ")" : "");
+					} else {
+						jcNew = XPathUtil.replaceVariableByJC(jcSuccAct, e2sAct.getName(), jcEmpty);
+					}
+					
+					// Set jcNew
+					Condition jcSuccActNew = BPELFactory.eINSTANCE.createCondition();
+					jcSuccActNew.setBody(jcNew);
+					succAct.getTargets().setJoinCondition(jcSuccActNew);
+					
+					if (e2sAct != null) {
+						
+						// Remove target for e2SuccAct
+						ChoreoMergeUtil.removeTargetFromActivity(succAct, e2sAct.getName());
+						// Remove e2sAct from owner-flow
+						Flow ownerE2sAct = (Flow) e2sAct.eContainer().eContainer();
+						ChoreoMergeUtil.removeLinkFromFlow(ownerE2sAct, e2sAct);
+						ChoreoMergeUtil.log.info("Removing target from activity for link: " + e2sAct.getName());
+						ChoreoMergeUtil.log.info("Removing target from activity for activity: " + succAct.getName());
+						ChoreoMergeUtil.log.info("Removing link from ownerFlow: " + ownerE2sAct.getName());
+					}
 				}
 				for (Link link : links2Remove) {
 					Flow ownerPre2E = (Flow) link.eContainer().eContainer();

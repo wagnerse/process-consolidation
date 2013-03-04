@@ -1,12 +1,16 @@
 package org.bpel4chor.mergechoreography.test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bpel4chor.mergechoreography.ChoreographyMerger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
 import org.bpel4chor.mergechoreography.test.util.Constants;
+import org.bpel4chor.utils.AbstractBPELWriter;
+import org.bpel4chor.utils.BPEL4ChorReader;
 import org.eclipse.bpel.model.Process;
+import org.eclipse.bpel.model.resource.BPELResource;
 
 public class Runner {
 	
@@ -20,11 +24,13 @@ public class Runner {
 		
 		args2.put("", "");
 		
-		// CorrelationPropagator ASP11
-		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.correlationPropagatorChoreo);
-		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
-		choreographyMerger1.merge(outputPath + "CorrelationPropagator\\");
-		Process process1 = package1.getMergedProcess();
+		// // CorrelationPropagator ASP11
+		// ChoreographyMerger choreographyMerger1 = new
+		// ChoreographyMerger(Constants.correlationPropagatorChoreo);
+		// ChoreographyPackage package1 =
+		// choreographyMerger1.getChoreographyPackage();
+		// choreographyMerger1.merge(outputPath + "CorrelationPropagator\\");
+		// Process process1 = package1.getMergedProcess();
 		// if (process1 != null) {
 		// try {
 		// AbstractBPELWriter writer = new AbstractBPELWriter();
@@ -38,26 +44,21 @@ public class Runner {
 		// }
 		// }
 		
-		//
-		// // ASP11
-		// ChoreographyMerger choreographyMerger1 = new
-		// ChoreographyMerger(Constants.asyncPattern11Choreo);
-		// ChoreographyPackage package1 =
-		// choreographyMerger1.getChoreographyPackage();
-		// choreographyMerger1.merge(outputPath + "ASP11\\");
-		// Process process1 = package1.getMergedProcess();
-		// if (process1 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "ASP11\\" + process1.getName() + ".bpel").eResource(), System.out,
-		// args2);
-		//
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
+		// ASP11
+		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.asyncPattern11Choreo);
+		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
+		choreographyMerger1.merge(outputPath + "ASP11\\");
+		Process process1 = package1.getMergedProcess();
+		if (process1 != null) {
+			try {
+				AbstractBPELWriter writer = new AbstractBPELWriter();
+				
+				writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath + "ASP11\\" + process1.getName() + ".bpel").eResource(), System.out, args2);
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		// Test Demo !!
 		
