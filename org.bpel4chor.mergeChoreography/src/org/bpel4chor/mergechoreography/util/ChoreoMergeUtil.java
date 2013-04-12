@@ -1073,23 +1073,31 @@ public class ChoreoMergeUtil {
 				ChoreoMergeUtil.log.info("=> " + activity.getName());
 			}
 			
-			// Check if there exist some preceding or succeeding linked
+			// Check if there exist any preceding or succeeding linked
 			// activities
 			if ((preActs.size() > 0) || (succActs.size() > 0)) {
 				Set<Link> links2Remove = new HashSet<>();
 				for (Activity succAct : succActs) {
+					// <link> from <empty> -> <succAct>
 					Link e2sAct = null;
+					// <transitionCondition> from <link> -> <succAct>
 					String tc2succAct = null;
+					// <joinCondition> of <succAct>
 					String jcSuccAct = ChoreoMergeUtil.getJoinCondition(succAct);
+					// <joinCondition> of <empty>
 					String jcEmpty = ChoreoMergeUtil.getJoinCondition(empty);
+					// <source> <empty> -> <succAct>
 					Source e2succAct = ChoreoMergeUtil.getMatchingSource(empty, succAct);
 					if (e2succAct != null) {
+						// if there exist any <link> from <empty> -> <succAct>
 						e2sAct = e2succAct.getLink();
 						if ((e2succAct.getTransitionCondition() != null)) {
+							// get possible <transitionCondition>
 							tc2succAct = e2succAct.getTransitionCondition().getBody().toString();
 						}
 					}
 					
+					// log output
 					ChoreoMergeUtil.log.info("Empty : " + empty.getName() + " , succAct : " + succAct.getName());
 					ChoreoMergeUtil.log.info("Link e2succAct : " + e2sAct);
 					ChoreoMergeUtil.log.info("tcE2succAct : " + tc2succAct);
@@ -1097,49 +1105,61 @@ public class ChoreoMergeUtil {
 					ChoreoMergeUtil.log.info("jcEmpty : " + jcEmpty);
 					
 					for (Activity preAct : preActs) {
+						// <link> from <preAct> -> <empty>
 						Link pre2e = null;
+						// <transitionCondition> of <source> from <preAct> ->
+						// <empty>
 						String tcPreAct = null;
+						// <source> <preAct> -> <empty>
 						Source preAct2e = ChoreoMergeUtil.getMatchingSource(preAct, empty);
 						if (preAct2e != null) {
+							// if there exist any <link> from <preAct> ->
+							// <empty>
 							pre2e = preAct2e.getLink();
 							if (preAct2e.getTransitionCondition() != null) {
+								// get possible <transitionCondition>
 								tcPreAct = preAct2e.getTransitionCondition().getBody().toString();
 							}
 						}
+						// log output
 						ChoreoMergeUtil.log.info("preAct : " + preAct.getName());
 						ChoreoMergeUtil.log.info("Link pre2e : " + pre2e);
 						ChoreoMergeUtil.log.info("tcPreAct : " + tcPreAct);
 						
-						// Add pre2e link for later removal
-						links2Remove.add(pre2e);
-						
-						Flow ownerPre2E = (Flow) pre2e.eContainer().eContainer();
-						
-						ChoreoMergeUtil.log.info("Link pre2e owner-flow : " + ownerPre2E.getName());
-						
-						// Create newLink for pre2e in owner-flow
-						Link nPre2succAct = BPELFactory.eINSTANCE.createLink();
-						nPre2succAct.setName(pre2e.getName() + WSUIDGenerator.getId());
-						ChoreoMergeUtil.addLinkToFlow(ownerPre2E, nPre2succAct);
-						
-						// Create new source for new link in preAct
-						Source nsPre2SuccAct = ChoreoMergeUtil.createSource4LinkInActivity(nPre2succAct, preAct);
-						if ((tc2succAct != null) || (tcPreAct != null)) {
-							// Combine TCs
-							Condition cmbdTC = BPELFactory.eINSTANCE.createCondition();
-							cmbdTC.setBody((tc2succAct != null ? "(" + tc2succAct + ")" : "") + (tcPreAct != null ? " and (" + tcPreAct + ")" : ""));
-							nsPre2SuccAct.setTransitionCondition(cmbdTC);
+						if (pre2e != null) {
+							// Add pre2e link for later removal
+							links2Remove.add(pre2e);
+							
+							// Get owner <flow> og <link> <preAct> -> <empty>
+							Flow ownerPre2E = (Flow) pre2e.eContainer().eContainer();
+							
+							ChoreoMergeUtil.log.info("Link pre2e owner-flow : " + ownerPre2E.getName());
+							
+							// Create newLink for pre2e in owner-flow
+							Link nPre2succAct = BPELFactory.eINSTANCE.createLink();
+							nPre2succAct.setName(pre2e.getName() + WSUIDGenerator.getId());
+							ChoreoMergeUtil.addLinkToFlow(ownerPre2E, nPre2succAct);
+							
+							// Create new source for new link in preAct
+							Source nsPre2SuccAct = ChoreoMergeUtil.createSource4LinkInActivity(nPre2succAct, preAct);
+							if ((tc2succAct != null) || (tcPreAct != null)) {
+								// Combine TCs
+								Condition cmbdTC = BPELFactory.eINSTANCE.createCondition();
+								cmbdTC.setBody((tc2succAct != null ? "(" + tc2succAct + ")" : "") + (tcPreAct != null ? " and (" + tcPreAct + ")" : ""));
+								nsPre2SuccAct.setTransitionCondition(cmbdTC);
+							}
+							
+							// Adapt JCs
+							if (jcEmpty == null) {
+								jcSuccAct = XPathUtil.replaceVariableName(jcSuccAct, e2sAct.getName(), nPre2succAct.getName());
+							} else {
+								jcEmpty = XPathUtil.replaceVariableName(jcEmpty, pre2e.getName(), nPre2succAct.getName());
+							}
+							
+							// Create new Target for new Link in succAct
+							Target ntPre2SuccAct = ChoreoMergeUtil.createTarget4LinkInActivity(nPre2succAct, succAct);
+							
 						}
-						
-						// Adapt JCs
-						if (jcEmpty == null) {
-							jcSuccAct = XPathUtil.replaceVariableName(jcSuccAct, e2sAct.getName(), nPre2succAct.getName());
-						} else {
-							jcEmpty = XPathUtil.replaceVariableName(jcEmpty, pre2e.getName(), nPre2succAct.getName());
-						}
-						
-						// Create new Target for new Link in succAct
-						Target ntPre2SuccAct = ChoreoMergeUtil.createTarget4LinkInActivity(nPre2succAct, succAct);
 						
 					}
 					
@@ -1149,7 +1169,9 @@ public class ChoreoMergeUtil {
 						// Combine JCs
 						jcNew = (jcEmpty != null ? "(" + jcEmpty + ")" : "") + (jcSuccAct != null ? " and (" + jcSuccAct + ")" : "");
 					} else {
-						jcNew = XPathUtil.replaceVariableByJC(jcSuccAct, e2sAct.getName(), jcEmpty);
+						if (jcEmpty != null) {
+							jcNew = XPathUtil.replaceVariableByExpr(jcSuccAct, e2sAct.getName(), jcEmpty);
+						}
 					}
 					
 					// Set jcNew

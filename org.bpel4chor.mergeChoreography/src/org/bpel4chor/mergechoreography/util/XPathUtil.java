@@ -50,16 +50,16 @@ public class XPathUtil {
 	 * 
 	 * @param xpathExpr The {@link XPath} expression String
 	 * @param oldVarName The old variable name
-	 * @param jc The new jc
+	 * @param expr The new jc
 	 * @return {@link XPath} expression String with replaced {@link Variable}
 	 *         names
 	 */
-	public static String replaceVariableByJC(String xpathExpr, String oldVarName, String jc) {
+	public static String replaceVariableByExpr(String xpathExpr, String oldVarName, String expr) {
 		// First replace normal Variable occurrence
-		XPathUtil.log.info("replaceVariableByJC xpathExpr : " + xpathExpr);
-		XPathUtil.log.info("replaceVariableByJC oldVarName : " + oldVarName);
-		XPathUtil.log.info("replaceVariableByJC jc : " + jc);
-		String newExpr = xpathExpr.replaceAll(Pattern.quote("$" + oldVarName) + "(?!\\w{1})\\W??", "(" + Matcher.quoteReplacement(jc) + ")");
+		XPathUtil.log.info("replaceVariableByExpr xpathExpr : " + xpathExpr);
+		XPathUtil.log.info("replaceVariableByExpr oldVarName : " + oldVarName);
+		XPathUtil.log.info("replaceVariableByExpr jc : " + expr);
+		String newExpr = xpathExpr.replaceAll(Pattern.quote("$" + oldVarName) + "(?!\\w{1})\\W??", "(" + Matcher.quoteReplacement(expr) + ")");
 		return newExpr;
 	}
 	

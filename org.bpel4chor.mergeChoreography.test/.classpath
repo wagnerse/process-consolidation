@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/org.bpel4chor.model"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.bpel.model"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.bpel4chor.mergeChoreography"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -19,7 +19,7 @@ public class Runner {
 	 */
 	public static void main(String[] args) {
 		
-		String outputPath = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput\\";
+		String outputPath = "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput\\";
 		Map<String, String> args2 = new HashMap<>();
 		
 		args2.put("", "");

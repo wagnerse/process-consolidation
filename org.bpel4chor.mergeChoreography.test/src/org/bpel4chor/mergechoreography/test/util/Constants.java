@@ -14,7 +14,7 @@ import java.io.File;
 public class Constants {
 	
 	// The outputPath for the merged choreographies
-	public static String mergeOutputPath = "D:\\Arbeit\\Diplom\\eclwkspBPEL\\MeineTestChoreos\\bpelContent\\MergeOutput";
+	public static String mergeOutputPath = "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput";
 	
 	private static File baseDir = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorChoreographies");
 	
