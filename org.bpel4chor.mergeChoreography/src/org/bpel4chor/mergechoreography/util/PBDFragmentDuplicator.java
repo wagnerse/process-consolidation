@@ -728,7 +728,7 @@ public class PBDFragmentDuplicator {
 
 		// Todo Added code for renaming scopes when there is participant set in
 		// topology
-		pbdFragmentDuplicatorExtension.updateScopeName(newScope);
+		PBDFragmentDuplicatorExtension.updateScopeName(newScope);
 		// End of added code
 		if (pbd.getExitOnStandardFault() != null) {
 			newScope.setExitOnStandardFault(pbd.getExitOnStandardFault());
