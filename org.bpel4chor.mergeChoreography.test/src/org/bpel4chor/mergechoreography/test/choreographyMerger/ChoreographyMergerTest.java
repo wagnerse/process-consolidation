@@ -61,6 +61,7 @@ public class ChoreographyMergerTest {
 		ChoreographyMergerTest.patterns.put(Constants.syncPattern30SinWhileMultiReplyWSDLChoreo, "SP30SinWhileMultiReplyWSDL");
 		ChoreographyMergerTest.patterns.put(Constants.demoChoreo, "DemoChoreo");
 		ChoreographyMergerTest.patterns.put(Constants.correlationPropagatorChoreo, "CorrelationPropagator");
+		ChoreographyMergerTest.patterns.put(Constants.multiInstanceChoreo, "Multi-Instance-Test");
 	}
 	
 	@AfterClass

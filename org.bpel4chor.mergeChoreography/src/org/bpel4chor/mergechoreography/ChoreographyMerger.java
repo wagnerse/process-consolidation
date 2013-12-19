@@ -1,12 +1,20 @@
 package org.bpel4chor.mergechoreography;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.ZipFile;
 
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.matcher.communication.CommunicationMatcher;
 import org.bpel4chor.mergechoreography.pattern.MergePattern;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
+import org.bpel4chor.mergechoreography.util.PBDFragmentDuplicator;
 import org.bpel4chor.mergechoreography.util.MergePostProcessor;
 import org.bpel4chor.mergechoreography.util.MergePreProcessor;
 import org.bpel4chor.model.topology.impl.MessageLink;
@@ -14,20 +22,36 @@ import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
 import org.bpel4chor.utils.BPEL4ChorUtil;
 import org.eclipse.bpel.model.Activity;
+import org.eclipse.bpel.model.Assign;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
+import org.eclipse.bpel.model.CatchAll;
+import org.eclipse.bpel.model.Empty;
+import org.eclipse.bpel.model.FaultHandler;
+import org.eclipse.bpel.model.Flow;
+import org.eclipse.bpel.model.ForEach;
+import org.eclipse.bpel.model.If;
 import org.eclipse.bpel.model.Invoke;
+import org.eclipse.bpel.model.Link;
 import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.OnMessage;
 import org.eclipse.bpel.model.PartnerActivity;
 import org.eclipse.bpel.model.PartnerLink;
+import org.eclipse.bpel.model.Pick;
 import org.eclipse.bpel.model.Process;
 import org.eclipse.bpel.model.Receive;
 import org.eclipse.bpel.model.Reply;
 import org.eclipse.bpel.model.Scope;
+import org.eclipse.bpel.model.Sequence;
+import org.eclipse.bpel.model.Source;
+import org.eclipse.bpel.model.Sources;
+import org.eclipse.bpel.model.Target;
+import org.eclipse.bpel.model.Targets;
 import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
 import org.eclipse.bpel.model.partnerlinktype.Role;
 import org.eclipse.bpel.model.resource.BPELResourceFactoryImpl;
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.wst.wsdl.Definition;
 import org.eclipse.wst.wsdl.Operation;
@@ -35,6 +59,7 @@ import org.eclipse.wst.wsdl.PortType;
 import org.eclipse.wst.wsdl.internal.util.WSDLResourceFactoryImpl;
 import org.eclipse.xsd.util.XSDResourceFactoryImpl;
 
+import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
 
 /**
@@ -51,6 +76,10 @@ public class ChoreographyMerger implements Serializable {
 	
 	/** The Choreography Package */
 	private ChoreographyPackage choreographyPackage;
+	public ChoreographyMergerExtension choreographyMergerExtension;
+	public ChoreographyPackageExtension choreographyPackageExtension;
+
+
 	
 	protected Logger log = Logger.getLogger(this.getClass().getPackage().getName());
 	
@@ -74,6 +103,18 @@ public class ChoreographyMerger implements Serializable {
 		
 		// Here we go the read in Choreo
 		this.choreographyPackage = new ChoreographyPackage(fileName);
+
+		/**
+		 * TODO Added code here
+		 */
+		choreographyMergerExtension = new ChoreographyMergerExtension(
+				choreographyPackage, log);
+		choreographyPackageExtension = new ChoreographyPackageExtension(
+				choreographyPackage);
+		choreographyPackage
+				.setChoreographyPackageExtension(choreographyPackageExtension);
+		choreographyPackage
+				.setChoreographyMergerExtension(choreographyMergerExtension);
 	}
 	
 	/**
@@ -117,171 +158,31 @@ public class ChoreographyMerger implements Serializable {
 				}
 			}
 		}
-		
-		// After merging configure remaining communication activities from NMML
-		this.configureNMMLActivities();
-	}
-	
-	/**
-	 * Configure remaining communication activities from NMML
-	 */
-	private void configureNMMLActivities() {
-		if (this.choreographyPackage.getNMML().size() > 0) {
-			this.log.info("Following Message Links couldn't be merged : ");
-			for (MessageLink ml : this.choreographyPackage.getNMML()) {
-				
-				// If sendActivity is <reply> skip the link, it will be
-				// configured after the <receive>
-				if (ChoreoMergeUtil.resolveActivity(ml.getSendActivity()) instanceof Reply) {
-					continue;
-				}
-				
-				// Grounding-Topology-WSDL-Informations
-				this.log.info("ML : " + ml);
-				org.bpel4chor.model.grounding.impl.MessageLink grndMl = BPEL4ChorUtil.resolveGroundingMessageLinkByName(this.choreographyPackage.getGrounding(), ml.getName());
-				this.log.info("The corresponding Grounding Message Link is : " + grndMl);
-				Participant sender = BPEL4ChorUtil.resolveParticipant(this.choreographyPackage.getTopology(), ml.getSender());
-				Participant receiver = BPEL4ChorUtil.resolveParticipant(this.choreographyPackage.getTopology(), ml.getReceiver());
-				this.log.info("Sender Participant is : " + sender);
-				this.log.info("Receiver Participant is : " + receiver);
-				ParticipantType sendPT = ChoreoMergeUtil.resolveParticipantType(this.choreographyPackage.getTopology(), sender);
-				ParticipantType recPT = ChoreoMergeUtil.resolveParticipantType(this.choreographyPackage.getTopology(), receiver);
-				this.log.info("Sender ParticipantType is : " + sendPT);
-				this.log.info("Receiver ParticipantType is : " + recPT);
-				Process sendPBD = this.choreographyPackage.getPBDByName(sendPT.getParticipantBehaviorDescription().getLocalPart());
-				Process recPBD = this.choreographyPackage.getPBDByName(recPT.getParticipantBehaviorDescription().getLocalPart());
-				this.log.info("Sender PBD is : " + sendPBD);
-				this.log.info("Receiver PBD is : " + recPBD);
-				Definition sendDef = this.choreographyPackage.getPbd2wsdl().get(sendPBD);
-				Definition recDef = this.choreographyPackage.getPbd2wsdl().get(recPBD);
-				this.log.info("Sender WSDL : " + sendDef);
-				this.log.info("Receiver WSDL : " + recDef);
-				PortType recPortType = MyWSDLUtil.findPortType(recDef, grndMl.getPortType().getLocalPart());
-				// CHECK: again only one wsdl is permitted
-				if (recPortType == null)
-					for (Definition def : this.getChoreographyPackage().getWsdls()) {
-						recPortType = MyWSDLUtil.findPortType(def, grndMl.getPortType().getLocalPart());
-						if (recPortType != null)
-							break;
-					}
-				this.log.info("Receiver PortType is : " + recPortType);
-				Operation recOperation = MyWSDLUtil.resolveOperation(recDef, recPortType.getQName(), grndMl.getOperation());
-				this.log.info("Receiver Operation is : " + recOperation);
-				Role recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(recDef, recPortType);
-				// CHECK: again ...
-				if (recPLRole == null)
-					for (Definition def : this.getChoreographyPackage().getWsdls()) {
-						recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(def, recPortType);
-						if (recPLRole != null)
-							break;
-					}
-				this.log.info("PartnerLinkType-Role which supports PortType above is : " + recPLRole);
-				
-				// Technical Activity configuration
-				BPELExtensibleElement sendAct = ChoreoMergeUtil.resolveActivity(ml.getSendActivity());
-				BPELExtensibleElement recAct = ChoreoMergeUtil.resolveActivity(ml.getReceiveActivity());
-				
-				Invoke s = (Invoke) sendAct;
-				BPELExtensibleElement r = null; // (Receive) recAct;
-				boolean rIsOnEventOfProcess = false;
-				if (recAct instanceof Receive) {
-					r = recAct;
-				} else if (recAct instanceof OnMessage) {
-					r = (Activity) recAct.eContainer();
-				} else if (recAct instanceof OnEvent) {
-					if (recAct.eContainer() instanceof Process) {
-						// If we have an <onEvent> of <process>
-						r = (Process) recAct.eContainer().eContainer();
-					} else {
-						// If we have an <onEvent> of <scope>
-						r = (Scope) recAct.eContainer().eContainer();
-					}
-					
-				}
-				Scope scpS = ChoreoMergeUtil.getHighestScopeOfActivity(s);
-				
-				BPELExtensibleElement scpR = null; // ChoreoMergeUtil.getHighestScopeOfActivity(r);
-				if (r instanceof Process) {
-					scpR = r;
-				} else if (r instanceof Scope) {
-					scpR = r;
-				} else {
-					scpR = ChoreoMergeUtil.getHighestScopeOfActivity((Activity) r);
-				}
-				
-				String recName = (r instanceof Process ? ((Process) r).getName() : ((Activity) r).getName());
-				
-				// Set PartnerLinks, Operation and PortType for s
-				if (scpS.getPartnerLinks() == null) {
-					scpS.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
-				}
-				PartnerLink newPLS = BPELFactory.eINSTANCE.createPartnerLink();
-				newPLS.setName(s.getName() + "TO" + recName + "PLS");
-				newPLS.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
-				newPLS.setPartnerRole(recPLRole);
-				scpS.getPartnerLinks().getChildren().add(newPLS);
-				s.setPartnerLink(newPLS);
-				s.setOperation(recOperation);
-				s.setPortType(recPortType);
-				
-				// Set PartnerLinks, Operation and PortType for r
-				
-				// if (scpR.getPartnerLinks() == null) {
-				// scpR.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
-				// }
-				
-				PartnerLink newPLR = BPELFactory.eINSTANCE.createPartnerLink();
-				newPLR.setName(s.getName() + "TO" + recName + "PLR");
-				newPLR.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
-				newPLR.setMyRole(recPLRole);
-				
-				if (scpR instanceof Process) {
-					Process proc = (Process) scpR;
-					if (proc.getPartnerLinks() == null) {
-						proc.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
-					}
-					proc.getPartnerLinks().getChildren().add(newPLR);
-				} else {
-					Scope scp = (Scope) scpR;
-					if (scp.getPartnerLinks() == null) {
-						scp.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
-					}
-					scp.getPartnerLinks().getChildren().add(newPLR);
-				}
-				
-				// scpR.getPartnerLinks().getChildren().add(newPLR);
-				
-				if (recAct instanceof Receive) {
-					((PartnerActivity) recAct).setPartnerLink(newPLR);
-					((PartnerActivity) recAct).setOperation(recOperation);
-					((PartnerActivity) recAct).setPortType(recPortType);
-				} else if (recAct instanceof OnMessage) {
-					OnMessage om = (OnMessage) recAct;
-					om.setPartnerLink(newPLR);
-					om.setOperation(recOperation);
-					om.setPortType(recPortType);
-				} else if (recAct instanceof OnEvent) {
-					OnEvent oe = (OnEvent) recAct;
-					oe.setPartnerLink(newPLR);
-					oe.setOperation(recOperation);
-					oe.setPortType(recPortType);
-				}
-				
-				if (!ChoreoMergeUtil.isInvokeAsync(s)) {
-					// Find the <reply>ing links for s in NMML
-					for (MessageLink messageLink : this.choreographyPackage.getNMML()) {
-						if (messageLink.getReceiveActivity().equals(s.getName())) {
-							Reply repl = (Reply) ChoreoMergeUtil.resolveActivity(messageLink.getSendActivity());
-							repl.setPartnerLink(newPLR);
-							repl.setOperation(recOperation);
-							repl.setPortType(recPortType);
-						}
-					}
-				}
-				
-			}
+
+		// After merging configure remaining communication activities from
+		// NMML
+
+		choreographyMergerExtension.configureNMMLActivities2();
+		if (choreographyMergerExtension.createdNewPartnerLinksForNMML)
+			choreographyMergerExtension
+					.copyNewPartnerLinksOfNMMLToForEachScope();
+		choreographyMergerExtension.handleSeveralCreateInstanceYesCases();
+		choreographyMergerExtension.updateScopeNames();
+		choreographyMergerExtension.addNewScopesToMap();
+		choreographyMergerExtension.configureNMMLActivities2();
+		if (choreographyMergerExtension.createdNewPartnerLinksForNMML)
+			choreographyMergerExtension
+					.copyNewPartnerLinksOfNMMLToForEachScope();
+
+		try {
+			choreographyMergerExtension.updateScopeNames();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
+		// After merging configure remaining communication activities from NMML
+		choreographyMergerExtension.performLoopFragmentation();
 	}
 	
 	/**
