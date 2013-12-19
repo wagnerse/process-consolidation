@@ -29,6 +29,7 @@ import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.PartnerLink;
 import org.eclipse.bpel.model.Process;
 import org.eclipse.bpel.model.Scope;
+import org.eclipse.bpel.model.Sequence;
 import org.eclipse.bpel.model.Variable;
 import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
 import org.eclipse.emf.common.util.EList;
@@ -47,6 +48,23 @@ public class PBDFragmentDuplicatorExtension {
 
 	public void setPkg(ChoreographyPackage pkg) {
 		this.pkg = pkg;
+	}
+
+	/**
+	 * Copy original sequence activity without its children activities, and
+	 * return ew one.
+	 * 
+	 * @param act
+	 * @return
+	 */
+	public static Sequence copySequenceActivityWOChildren(Sequence act) {
+		if (act == null) {
+			return null;
+		}
+		Sequence newSequence = BPELFactory.eINSTANCE.createSequence();
+		FragmentDuplicator.copyStandardAttributes(act, newSequence);
+		PBDFragmentDuplicator.copyStandardElements(act, newSequence);
+		return newSequence;
 	}
 
 	/**
@@ -412,7 +430,7 @@ public class PBDFragmentDuplicatorExtension {
 	/**
 	 * 
 	 * Set correct/unique scope name to the given scope. Let's say merged
-	 * process already containes, SCope_1, Scope_2, then given newScope will
+	 * process already contains, SCope_1, Scope_2, then given newScope will
 	 * have name Scope_3
 	 * 
 	 * @param newScope

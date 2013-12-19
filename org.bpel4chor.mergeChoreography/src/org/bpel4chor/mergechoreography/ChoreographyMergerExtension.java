@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
 import org.bpel4chor.mergechoreography.util.PBDFragmentDuplicator;
+import org.bpel4chor.mergechoreography.util.PBDFragmentDuplicatorExtension;
 import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
@@ -100,7 +101,7 @@ public class ChoreographyMergerExtension {
 			// Read and store all the links residing in top flow activity of
 			// merged process
 			intializeLinksFromMergedProcess();
-			// Read abd store all scopes/containers created in merged process
+			// Read and store all scopes/containers created in merged process
 			initializeScopeActivities();
 
 			//
@@ -128,7 +129,9 @@ public class ChoreographyMergerExtension {
 				ForEach forEach = findForEachActivityInsideDynamicMIP(scope);
 				
 				//TODO Quick Hack: Avoids FE-Fragmentation in case no FE exists
-				if (forEach == null) continue;
+				if (forEach == null) {
+					continue;
+				}
 				
 				ArrayList<String> prevCommActivityNameList = new ArrayList<String>();
 
@@ -743,9 +746,9 @@ public class ChoreographyMergerExtension {
 		// preceding and communicating FEs also Sequence activity
 		else if (firstAct instanceof Sequence) {
 			EList<Activity> children = ((Sequence) firstAct).getActivities();
-			Sequence newSequencePre = PBDFragmentDuplicator
+			Sequence newSequencePre = PBDFragmentDuplicatorExtension
 					.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
-			Sequence newSequenceComm = PBDFragmentDuplicator
+			Sequence newSequenceComm = PBDFragmentDuplicatorExtension
 					.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
 
 			if (pre instanceof Scope) {

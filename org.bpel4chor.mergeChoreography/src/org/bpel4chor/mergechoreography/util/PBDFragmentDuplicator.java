@@ -1201,24 +1201,6 @@ public class PBDFragmentDuplicator {
 	}
 
 	/**
-	 * Copy original sequence activity without its children activities, and
-	 * return ew one.
-	 * 
-	 * @param act
-	 * @return
-	 */
-	public static Sequence copySequenceActivityWOChildren(Sequence act) {
-		if (act == null) {
-			return null;
-		}
-		Sequence newSequence = BPELFactory.eINSTANCE.createSequence();
-		FragmentDuplicator.copyStandardAttributes(act, newSequence);
-		PBDFragmentDuplicator.copyStandardElements(act, newSequence);
-		return newSequence;
-	}
-
-	
-	/**
 	 * Copy given {@link Sequence}
 	 * 
 	 * @param act {@link Sequence}

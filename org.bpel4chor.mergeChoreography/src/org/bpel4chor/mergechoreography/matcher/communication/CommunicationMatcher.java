@@ -75,8 +75,9 @@ public class CommunicationMatcher implements Serializable {
 					// Check if Matcher is instanceof AsyncMatcher3.0 and just
 					// one forbidden condition is true
 					if ((matcher instanceof AsyncMatcher30) && (this.oneConditionTrue(matcher.evaluateConditions()))) {
-						// skip the link
-						return null;
+						// We now support forEach, just continue searching for other matchers
+						// Do NOT check "evaluateConditions" below.
+						continue;
 					}
 					if (this.allConditionsTrue(matcher.evaluateConditions())) {
 						this.log.info("AsyncMatcher => " + matcher.getClass().getName() + " all conditions true !!");

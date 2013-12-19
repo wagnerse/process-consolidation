@@ -134,6 +134,13 @@ public class FCTEUtil implements Constants {
 		// other PBDs
 		// if a scope was a PBD we have to identify it with name
 		for (Process p : pbds) {
+			// We do NOT need the following if statement as this code is called BEFORE
+			// {@link org.bpel4chor.mergechoreography.util.PBDFragmentDuplicator.copyVarsAndActitivies(Process)}
+			// Otherwise, we would have to do followng:
+			// match all existing PBD scopes, e.g., generated at loop unrolling.
+			// if (scope.getName().startsWith(PBDFragmentDuplicator.getNewPBDNameForScope(p))) {
+
+			// only one scope for each PBD is existing
 			if (PBDFragmentDuplicator.getNewPBDNameForScope(p).equals(scope.getName())) {
 				// overwrite default-FaultHandler, if an error occurs do not
 				// affect the other Scope-Processes

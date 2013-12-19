@@ -352,6 +352,7 @@ public class ChoreographyPackage implements Serializable {
 		// CHECK: imports will be automatically added from BPELWriter (IBM), we
 		// add it manuel, first we have to disable it in BPELWriter
 		setWsdlImport();
+
 		/**
 		 * Handles MIP Instantiation when there exists participatnSet in
 		 * topology artifact
