@@ -16,7 +16,7 @@ public class Constants {
 	// The outputPath for the merged choreographies
 	// public static String mergeOutputPath =
 	// "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput";
-	public static String mergeOutputPath = "E:\\TestResult";
+	public static String mergeOutputPath = "c:\\temp";
 	
 	// path to source Files for bpel4chor Faulthandler Scenario
 	public static String pathToFhSzenarioBpel4chor = "E:\\workspace_bpeldesigner\\BpelToBpel4Chor\\Szenario?\\bpel4chor\\";

@@ -29,10 +29,10 @@ public class ChoreographyMergerFhTest {
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		// ############# Generate all files.
-		// initAllFiles();
-		// ############# Generate single file.
-		initSingleFile(17);
+//		 ############# Generate all files.
+		 initAllFiles();
+//		 ############# Generate single file.
+//		initSingleFile(8);
 	}
 	
 	private static void initSingleFile(int change) {
