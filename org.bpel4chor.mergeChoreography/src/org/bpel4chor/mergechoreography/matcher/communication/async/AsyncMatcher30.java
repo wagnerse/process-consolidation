@@ -78,12 +78,12 @@ public class AsyncMatcher30 implements AsyncMatcher {
 		}
 		
 		// check if r is FCTE-Handler
-		if (ChoreoMergeUtil.isElementInFCTEHandler(r)) {
-			this.log.info("r is in FCTE-Handler !! : " + r);
-			Condition cond = new Condition(true);
-			this.results.add(cond.evaluate());
-			pkg.addNMML(link);
-		}
+		// if (ChoreoMergeUtil.isElementInFCTEHandler(r)) {
+		// this.log.info("r is in FCTE-Handler !! : " + r);
+		// Condition cond = new Condition(true);
+		// this.results.add(cond.evaluate());
+		// pkg.addNMML(link);
+		// }
 		
 		// check if s or r are in a Loop
 		if (ChoreoMergeUtil.isElementInLoop(s) || ChoreoMergeUtil.isElementInLoop(r)) {

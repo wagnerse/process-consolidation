@@ -14,7 +14,16 @@ import java.io.File;
 public class Constants {
 	
 	// The outputPath for the merged choreographies
-	public static String mergeOutputPath = "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput";
+	// public static String mergeOutputPath =
+	// "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput";
+	public static String mergeOutputPath = "E:\\TestResult";
+	
+	// path to source Files for bpel4chor Faulthandler Scenario
+	public static String pathToFhSzenarioBpel4chor = "E:\\workspace_bpeldesigner\\BpelToBpel4Chor\\Szenario?\\bpel4chor\\";
+	public static String pathToFhZipFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorFaulthandler").getAbsolutePath();
+	
+	// path to check files
+	public static String pathToCheckFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "checkFiles" + File.separator).getAbsolutePath();;
 	
 	private static File baseDir = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorChoreographies");
 	

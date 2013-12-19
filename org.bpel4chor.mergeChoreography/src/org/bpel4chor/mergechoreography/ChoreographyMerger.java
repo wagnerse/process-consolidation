@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.matcher.communication.CommunicationMatcher;
 import org.bpel4chor.mergechoreography.pattern.MergePattern;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
+import org.bpel4chor.mergechoreography.util.MergePostProcessor;
+import org.bpel4chor.mergechoreography.util.MergePreProcessor;
 import org.bpel4chor.model.topology.impl.MessageLink;
 import org.bpel4chor.model.topology.impl.Participant;
 import org.bpel4chor.model.topology.impl.ParticipantType;
@@ -82,9 +84,13 @@ public class ChoreographyMerger implements Serializable {
 	 * @return ZipFile containing the new merged BPEL Process incl. WSDLs
 	 */
 	public ZipFile merge(String fileName) {
+		// PreProcessing PBDs (alternative invokes)
+		MergePreProcessor.startPreProcessing(this.choreographyPackage);
 		// Create New initial executable BPEL Process and
 		// copy all vars and activities into it
 		this.mergeChoreography();
+		// PostProcessing of the merged process
+		MergePostProcessor.startPostProcessing(this.choreographyPackage);
 		this.choreographyPackage.saveMergedChoreography(fileName);
 		
 		ZipFile temp = null;
@@ -96,7 +102,6 @@ public class ChoreographyMerger implements Serializable {
 	 * 
 	 */
 	private void mergeChoreography() {
-		
 		// Iinitialize the merged BPEL Process
 		this.choreographyPackage.initMergedProcess();
 		
@@ -152,10 +157,24 @@ public class ChoreographyMerger implements Serializable {
 				this.log.info("Sender WSDL : " + sendDef);
 				this.log.info("Receiver WSDL : " + recDef);
 				PortType recPortType = MyWSDLUtil.findPortType(recDef, grndMl.getPortType().getLocalPart());
+				// CHECK: again only one wsdl is permitted
+				if (recPortType == null)
+					for (Definition def : this.getChoreographyPackage().getWsdls()) {
+						recPortType = MyWSDLUtil.findPortType(def, grndMl.getPortType().getLocalPart());
+						if (recPortType != null)
+							break;
+					}
 				this.log.info("Receiver PortType is : " + recPortType);
 				Operation recOperation = MyWSDLUtil.resolveOperation(recDef, recPortType.getQName(), grndMl.getOperation());
 				this.log.info("Receiver Operation is : " + recOperation);
 				Role recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(recDef, recPortType);
+				// CHECK: again ...
+				if (recPLRole == null)
+					for (Definition def : this.getChoreographyPackage().getWsdls()) {
+						recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(def, recPortType);
+						if (recPLRole != null)
+							break;
+					}
 				this.log.info("PartnerLinkType-Role which supports PortType above is : " + recPLRole);
 				
 				// Technical Activity configuration
