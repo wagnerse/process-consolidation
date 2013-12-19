@@ -1340,6 +1340,35 @@ public class ChoreographyMergerExtension {
 		}
 
 	}
+	
+	/**
+	 * 
+	 * @param curObj
+	 *            - can be scope activity
+	 * @param actName
+	 *            - activity name of searched activity
+	 * @return the activity with given activity name residing in the given scope
+	 */
+	public Invoke findInvokeActivity(EObject curObj, String actName) {
+		Invoke res = null;
+		List<EObject> children = curObj.eContents();
+		for (EObject obj : children) {
+			if (obj instanceof Invoke) {
+				Invoke act = (Invoke) obj;
+				if (act.getElement().getAttribute("wsu:id").equals(actName) || act.getName().equals(actName)) {
+					return act;
+				}
+
+			}
+
+		}
+		for (EObject obj : children) {
+			res = findInvokeActivity(obj, actName);
+			if (res != null)
+				return res;
+		}
+		return res;
+	}
 
 	/**
 	 * 
@@ -1453,6 +1482,13 @@ public class ChoreographyMergerExtension {
 				// Technical Activity configuration
 				BPELExtensibleElement sendAct = ChoreoMergeUtil
 						.resolveActivity(ml.getSendActivity());
+				if (sendAct.eContainer() == null) {
+					// QUICK HACK :)
+					// The parent is null for some reason, we cannot figure out
+					// Search the invoke from the parent, returns an equal object, but not the same
+					sendAct = findInvokeActivity(sendPBD.getActivity(), ((Invoke) sendAct).getName());
+				}
+				//System.out.println();
 				BPELExtensibleElement recAct = ChoreoMergeUtil
 						.resolveActivity(ml.getReceiveActivity());
 
