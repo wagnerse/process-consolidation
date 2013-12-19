@@ -70,22 +70,40 @@ public class CommunicationMatcher implements Serializable {
 				this.log.info("Async Invoke found, now running AsyncMatcher ....");
 				List<Matcher> matches = new ArrayList<>();
 				for (AsyncMatcher matcher : this.asyncMatcher) {
-					this.log.info("Checking asyncMatcher : " + matcher.getClass().getName() + " for MLink : " + link.getName());
+					if (matcher instanceof AsyncMatcher30) {
+						this.log.info("Checking asyncMatcher : "
+								+ matcher.getClass().getName()
+								+ " for MLink : " + link.getName());
+						this.log.info("Skipping asyncMatcher : "
+								+ matcher.getClass().getName()
+								+ " for MLink : " + link.getName());
+						continue;
+					}
+					this.log.info("Checking asyncMatcher : "
+							+ matcher.getClass().getName() + " for MLink : "
+							+ link.getName());
 					matcher.match(link, pkg);
 					// Check if Matcher is instanceof AsyncMatcher3.0 and just
 					// one forbidden condition is true
-					if ((matcher instanceof AsyncMatcher30) && (this.oneConditionTrue(matcher.evaluateConditions()))) {
-						// We now support forEach, just continue searching for other matchers
-						// Do NOT check "evaluateConditions" below.
-						continue;
+					if ((matcher instanceof AsyncMatcher30)
+							&& (this.oneConditionTrue(matcher
+									.evaluateConditions()))) {
+						// skip the link
+						return null;
 					}
 					if (this.allConditionsTrue(matcher.evaluateConditions())) {
-						this.log.info("AsyncMatcher => " + matcher.getClass().getName() + " all conditions true !!");
+						this.log.info("AsyncMatcher => "
+								+ matcher.getClass().getName()
+								+ " all conditions true !!");
 						matches.add(matcher);
 					}
 				}
 				MergePattern bestMatch = this.getBestMatch(matches);
-				this.log.info("AsyncMatcher best match for MLink : " + link.getName() + "  => " + (bestMatch != null ? bestMatch.getClass().getName() : null));
+				this.log.info("AsyncMatcher best match for MLink : "
+						+ link.getName()
+						+ "  => "
+						+ (bestMatch != null ? bestMatch.getClass().getName()
+								: null));
 				return bestMatch;
 			} else {
 				// we must have sync communication
@@ -97,7 +115,10 @@ public class CommunicationMatcher implements Serializable {
 				MessageLink mlReply = ChoreoMergeUtil.findReplyingMessageLink(mlSend);
 				
 				for (SyncMatcher matcher : this.syncMatcher) {
-					this.log.info("Checking syncMatcher : " + matcher.getClass().getName() + " for MLinkSend : " + mlSend.getName() + " and MLinkReply : " + mlReply.getName());
+					this.log.info("Checking syncMatcher : "
+							+ matcher.getClass().getName()
+							+ " for MLinkSend : " + mlSend.getName()
+							+ " and MLinkReply : " + mlReply.getName());
 					matcher.match(mlSend, mlReply, pkg);
 					// Check if Matcher is instanceof SyncMatcher3.0 and just
 					// one forbidden condition is true
@@ -106,12 +127,20 @@ public class CommunicationMatcher implements Serializable {
 						return null;
 					}
 					if (this.allConditionsTrue(matcher.evaluateConditions())) {
-						this.log.info("SyncMatcher => " + matcher.getClass().getName() + " all conditions true !!");
+						this.log.info("SyncMatcher => "
+								+ matcher.getClass().getName()
+								+ " all conditions true !!");
 						matches.add(matcher);
 					}
 				}
 				MergePattern bestMatch = this.getBestMatch(matches);
-				this.log.info("SyncMatcher best match for MLinkSend : " + mlSend.getName() + " and MLinkReply : " + mlReply.getName() + "  => " + (bestMatch != null ? bestMatch.getClass().getName() : null));
+				this.log.info("SyncMatcher best match for MLinkSend : "
+						+ mlSend.getName()
+						+ " and MLinkReply : "
+						+ mlReply.getName()
+						+ "  => "
+						+ (bestMatch != null ? bestMatch.getClass().getName()
+								: null));
 				return bestMatch;
 			}
 		}

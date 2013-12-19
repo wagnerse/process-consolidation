@@ -1170,8 +1170,14 @@ public class ChoreographyMergerExtension {
 		Activity firstActivity = mergedProcess.getActivity();
 		List<EObject> childActivities = firstActivity.eContents();
 		Flow flow = (Flow) firstActivity;
-		for (Link link : flow.getLinks().getChildren()) {
-			ChoreographyMergerExtension.linksList.add(link);
+		if (flow.getLinks() != null) {
+			for (Link link : flow.getLinks().getChildren()) {
+				ChoreographyMergerExtension.linksList.add(link);
+			}
+		} else {
+			for (EObject e: flow.eContents()) {
+				System.out.println(e.getClass());
+			}
 		}
 
 	}

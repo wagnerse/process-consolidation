@@ -154,15 +154,19 @@ public class PBDFragmentDuplicator {
 		}
 		
 		// If origAct is instance of PartnerActivity add it to old2New Map
-		String wsuID = origAct.getElement().getAttribute("wsu:id");
+		String wsuID = null;
+		if (origAct.getElement() != null)
+			if (origAct.getElement().getAttribute("wsu:id") != null)
+				wsuID = origAct.getElement().getAttribute("wsu:id");
 		if (((wsuID) != null) && (!wsuID.equals(""))) {
-			PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement().getAttribute("wsu:id"), newActivity);
-			
+			PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement()
+					.getAttribute("wsu:id"), newActivity);
+
 			// We also set the name if the newActivity to the wsu:id to make it
 			// unique
 			newActivity.setName(origAct.getElement().getAttribute("wsu:id"));
 		}
-		
+
 		return newActivity;
 	}
 	
