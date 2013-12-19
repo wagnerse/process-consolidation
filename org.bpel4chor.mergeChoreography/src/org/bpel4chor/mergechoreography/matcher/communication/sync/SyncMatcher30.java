@@ -79,13 +79,17 @@ public class SyncMatcher30 implements SyncMatcher {
 		}
 		
 		// check if r is FCTE-Handler
-		if (ChoreoMergeUtil.isElementInFCTEHandler(s) || ChoreoMergeUtil.isElementInFCTEHandler(r)) {
-			this.log.info("s and/or r are in FCTE-Handler !! Is s in FCTE-Handler : " + ChoreoMergeUtil.isElementInFCTEHandler(s) + " . Is r in FCTE-Handler : " + ChoreoMergeUtil.isElementInFCTEHandler(r));
-			Condition cond = new Condition(true);
-			this.results.add(cond.evaluate());
-			pkg.addNMML(mlSend);
-			pkg.addNMML(mlReply);
-		}
+		// if (ChoreoMergeUtil.isElementInFCTEHandler(s) ||
+		// ChoreoMergeUtil.isElementInFCTEHandler(r)) {
+		// this.log.info("s and/or r are in FCTE-Handler !! Is s in FCTE-Handler : "
+		// + ChoreoMergeUtil.isElementInFCTEHandler(s) +
+		// " . Is r in FCTE-Handler : " +
+		// ChoreoMergeUtil.isElementInFCTEHandler(r));
+		// Condition cond = new Condition(true);
+		// this.results.add(cond.evaluate());
+		// pkg.addNMML(mlSend);
+		// pkg.addNMML(mlReply);
+		// }
 		
 		// check if s or r are in a Loop
 		if (ChoreoMergeUtil.isElementInLoop(s) || ChoreoMergeUtil.isElementInLoop(r)) {

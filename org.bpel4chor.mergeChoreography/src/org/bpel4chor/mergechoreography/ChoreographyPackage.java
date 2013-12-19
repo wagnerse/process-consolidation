@@ -35,6 +35,7 @@ import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
 import org.eclipse.bpel.model.Flow;
+import org.eclipse.bpel.model.Import;
 import org.eclipse.bpel.model.Link;
 import org.eclipse.bpel.model.PartnerActivity;
 import org.eclipse.bpel.model.Process;
@@ -45,6 +46,8 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.wst.wsdl.Definition;
+
+import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
 
 import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
@@ -185,7 +188,15 @@ public class ChoreographyPackage implements Serializable {
 							// URI uri = URI.createGenericURI("file",
 							// "example.com:8042",
 							// defRead.getQName().getLocalPart() + ".wsdl");
-							defRead.eResource().setURI(URI.createFileURI(defRead.getQName().getLocalPart() + ".wsdl"));
+							/**
+							 * CHECK: WSDL documents can be assigned an optional
+							 * name attribute of type NCNAME that serves as a
+							 * lightweight form of documentation<br>
+							 * http://www.w3.org/TR/wsdl#_wsdl<br>
+							 * getQName could be empty, URI will be filename
+							 */
+							String wsdlName = defRead.getDocumentBaseURI().substring(defRead.getDocumentBaseURI().lastIndexOf("/") + 1);
+							defRead.eResource().setURI(URI.createFileURI(wsdlName));
 							// defRead.eResource().setURI(uri);
 							ChoreographyPackage.this.wsdls.add(defRead);
 						} catch (WSDLException e) {
@@ -222,9 +233,12 @@ public class ChoreographyPackage implements Serializable {
 		this.pbd2wsdl = new HashMap<Process, Definition>();
 		for (Process process : this.pbds) {
 			for (Definition definition : this.wsdls) {
-				if (process.getName().equals(definition.getQName().getLocalPart())) {
-					this.pbd2wsdl.put(process, definition);
-				}
+				// CHECK: nur eine einzige WSDL ist fuer einen Prozess
+				// zugelassen => variablen Typ kann nicht gesetzt werden
+				if (definition.getQName() != null)
+					if (process.getName().equals(definition.getQName().getLocalPart())) {
+						this.pbd2wsdl.put(process, definition);
+					}
 			}
 		}
 	}
@@ -238,16 +252,34 @@ public class ChoreographyPackage implements Serializable {
 		try {
 			// Save wsdl files
 			for (Definition def : this.getWsdls()) {
-				FileOutputStream outputStream = new FileOutputStream(new File(fileName + def.getQName().getLocalPart() + ".wsdl"));
+				String wsdlName = def.getDocumentBaseURI().substring(def.getDocumentBaseURI().lastIndexOf("/") + 1);
+				FileOutputStream outputStream = new FileOutputStream(new File(fileName + wsdlName));
 				BPEL4ChorWriter.writeWSDL(def, outputStream);
+				outputStream.close();
 			}
 			// Save BPEL File of mergedProcess
 			FileOutputStream outputStream = new FileOutputStream(new File(fileName + this.getMergedProcess().getName() + ".bpel"));
-			BPEL4ChorWriter.writeAbstractBPEL(this.getMergedProcess(), outputStream);
+			BPEL4ChorWriter.writeAbstractBPEL(this.getMergedProcess(), outputStream, fileName);
+			outputStream.close();
 		} catch (IOException | WSDLException e1) {
 			e1.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Sets all Imports for wsdl-files.
+	 */
+	private void setWsdlImport() {
+		Import im = null;
 		
+		for (Definition def : this.getWsdls()) {
+			String wsdlName = def.getDocumentBaseURI().substring(def.getDocumentBaseURI().lastIndexOf("/") + 1);
+			im = BPELFactory.eINSTANCE.createImport();
+			im.setLocation(wsdlName);
+			im.setNamespace(def.getTargetNamespace());
+			im.setImportType(WSDLConstants.NS_WSDL);
+			this.getMergedProcess().getImports().add(im);
+		}
 	}
 	
 	/**
@@ -295,6 +327,9 @@ public class ChoreographyPackage implements Serializable {
 			PBDFragmentDuplicator.copyVarsAndActitivies(process);
 		}
 		
+		// CHECK: imports will be automatically added from BPELWriter (IBM), we
+		// add it manuel, first we have to disable it in BPELWriter
+		setWsdlImport();
 	}
 	
 	public List<Process> getPbds() {

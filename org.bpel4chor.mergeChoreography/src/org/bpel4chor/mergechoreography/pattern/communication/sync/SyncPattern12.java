@@ -70,19 +70,22 @@ public class SyncPattern12 extends MergePattern {
 		// TODO: examine <joinCondition>s in succ(r) !!
 		// TODO: examine <transitionCondition>s of r for variables other than vR
 		// Get all <sources> of r
-		List<Source> sourcesOfR = rec.getSources().getChildren();
-		
-		// Remove every link from sourcesOfR from owning <flow>
-		for (Source source : sourcesOfR) {
-			ChoreoMergeUtil.removeLinkFromFlow(ChoreoMergeUtil.findLinkOwnerFlow(rec, source.getLink().getName()), source.getLink());
-		}
-		
-		// Remove every <target> from every activity in succ(rec)
-		for (Activity activity : this.env.getSuccR()) {
+		// CHECK: null
+		if (rec.getSources() != null) {
+			List<Source> sourcesOfR = rec.getSources().getChildren();
+			
+			// Remove every link from sourcesOfR from owning <flow>
 			for (Source source : sourcesOfR) {
-				Target target = ChoreoMergeUtil.findTargetInActivity(activity, source.getLink().getName());
-				if (target != null) {
-					ChoreoMergeUtil.removeTargetFromActivity(activity, target);
+				ChoreoMergeUtil.removeLinkFromFlow(ChoreoMergeUtil.findLinkOwnerFlow(rec, source.getLink().getName()), source.getLink());
+			}
+			
+			// Remove every <target> from every activity in succ(rec)
+			for (Activity activity : this.env.getSuccR()) {
+				for (Source source : sourcesOfR) {
+					Target target = ChoreoMergeUtil.findTargetInActivity(activity, source.getLink().getName());
+					if (target != null) {
+						ChoreoMergeUtil.removeTargetFromActivity(activity, target);
+					}
 				}
 			}
 		}

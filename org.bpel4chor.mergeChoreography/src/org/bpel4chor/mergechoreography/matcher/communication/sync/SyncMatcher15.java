@@ -78,16 +78,21 @@ public class SyncMatcher15 implements SyncMatcher {
 		// TODO: Check if all activities between <receive> and <reply> lie on a
 		// direct path
 		
-		this.results.add(cond1.evaluate());
-		this.log.info("SyncMatcher 1.5 R() instanceof Receive : " + cond1.evaluate());
-		this.results.add(cond2.evaluate());
-		this.log.info("SyncMatcher 1.5 R() <invoke> is contained in FCTE-Handler : " + cond2.evaluate());
-		this.results.add(cond3.evaluate());
-		this.log.info("SyncMatcher 1.5 R() envSend.PreR().size() == 0 : " + cond3.evaluate());
-		this.results.add(cond4.evaluate());
-		this.log.info("SyncMatcher 1.5 R() envReply.getSuccS().size() == 0 : " + cond4.evaluate());
-		this.results.add(cond5.evaluate());
-		this.log.info("SyncMatcher 1.5 R() instanceof Receive && createInstance == true : " + cond5.evaluate());
+		// this.results.add(cond1.evaluate());
+		// this.log.info("SyncMatcher 1.5 R() instanceof Receive : " +
+		// cond1.evaluate());
+		// this.results.add(cond2.evaluate());
+		// this.log.info("SyncMatcher 1.5 R() <invoke> is contained in FCTE-Handler : "
+		// + cond2.evaluate());
+		// this.results.add(cond3.evaluate());
+		// this.log.info("SyncMatcher 1.5 R() envSend.PreR().size() == 0 : " +
+		// cond3.evaluate());
+		// this.results.add(cond4.evaluate());
+		// this.log.info("SyncMatcher 1.5 R() envReply.getSuccS().size() == 0 : "
+		// + cond4.evaluate());
+		// this.results.add(cond5.evaluate());
+		// this.log.info("SyncMatcher 1.5 R() instanceof Receive && createInstance == true : "
+		// + cond5.evaluate());
 		
 		return this.pattern;
 	}

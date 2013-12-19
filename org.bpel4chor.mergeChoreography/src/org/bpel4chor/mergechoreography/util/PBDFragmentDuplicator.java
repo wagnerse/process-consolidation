@@ -543,7 +543,17 @@ public class PBDFragmentDuplicator {
 		// Get the corresponding wsdl-File for automatic import-creation in new
 		// merged process
 		Definition defSearched = PBDFragmentDuplicator.pkg.getPbd2wsdl().get(ChoreoMergeUtil.getProcessOfElement(origPartnerLink));
-		PartnerLinkType plType = MyWSDLUtil.findPartnerLinkType(defSearched, newPL.getPartnerLinkType().getName());
+		PartnerLinkType plType = null;
+		// CHECK need search for wsdl because its not defined in process-wsdl
+		if (defSearched == null) {
+			for (Definition def : PBDFragmentDuplicator.pkg.getWsdls()) {
+				plType = MyWSDLUtil.findPartnerLinkType(def, newPL.getPartnerLinkType().getName());
+				if (plType != null)
+					break;
+			}
+		} else {
+			plType = MyWSDLUtil.findPartnerLinkType(defSearched, newPL.getPartnerLinkType().getName());
+		}
 		newPL.setPartnerLinkType(plType);
 		
 		return newPL;
@@ -566,7 +576,20 @@ public class PBDFragmentDuplicator {
 		if (origMsg != null) {
 			// Now we search for the corresponding MessageType in the wsdl
 			Definition defSearched = PBDFragmentDuplicator.pkg.getPbd2wsdl().get(ChoreoMergeUtil.getProcessOfElement(origVar));
-			Message refMsg = WSDLUtil.resolveMessage(defSearched, origMsg.getQName());
+			// CHECK: pruefen warum die wsdl nicht kopiert wird und ob es daran
+			// liegt, dass hier der wert wieder auf null gesetzt wird obwohl
+			// richtig ausgelesen wurde.
+			Message refMsg = null;
+			// CHECK: try to find another wsdl
+			if (defSearched == null) {
+				for (Definition def : PBDFragmentDuplicator.pkg.getWsdls()) {
+					refMsg = WSDLUtil.resolveMessage(def, origMsg.getQName());
+					if (refMsg != null)
+						break;
+				}
+			} else {
+				refMsg = WSDLUtil.resolveMessage(defSearched, origMsg.getQName());
+			}
 			newVar.setMessageType(refMsg);
 		}
 		
@@ -653,7 +676,7 @@ public class PBDFragmentDuplicator {
 	 *            {@link FaultHandler}s to
 	 */
 	public static void copyFHToScope(Process origProc, Scope newScope) {
-		if ((origProc.getFaultHandlers() != null) && ((origProc.getFaultHandlers().getCatch().size() > 0) || (origProc.getFaultHandlers().getCatch() != null))) {
+		if ((origProc.getFaultHandlers() != null) && ((origProc.getFaultHandlers().getCatch().size() > 0) || (origProc.getFaultHandlers().getCatchAll() != null))) {
 			FaultHandler handler = BPELFactory.eINSTANCE.createFaultHandler();
 			for (Catch cat : origProc.getFaultHandlers().getCatch()) {
 				Catch newCatch = PBDFragmentDuplicator.copyCatch(cat);
@@ -709,7 +732,7 @@ public class PBDFragmentDuplicator {
 		PBDFragmentDuplicator.log.log(Level.INFO, "Copying Variables and Activities from PBD : " + pbd.getName());
 		
 		Scope newScope = BPELFactory.eINSTANCE.createScope();
-		newScope.setName("Scope_" + pbd.getName());
+		newScope.setName(getNewPBDNameForScope(pbd));
 		
 		if (pbd.getExitOnStandardFault() != null) {
 			newScope.setExitOnStandardFault(pbd.getExitOnStandardFault());
@@ -752,6 +775,16 @@ public class PBDFragmentDuplicator {
 	}
 	
 	/**
+	 * Creates a new name for PBD-{@link Scope}
+	 * 
+	 * @param pbd PBD name will be used as postfix
+	 * @return
+	 */
+	public static String getNewPBDNameForScope(Process pbd) {
+		return Constants.PREFIX_NAME_PBD_SCOPE + pbd.getName();
+	}
+	
+	/**
 	 * Set the {@link ChoreographyPackage} for the {@link PBDFragmentDuplicator}
 	 * 
 	 * @param pkg
@@ -771,13 +804,21 @@ public class PBDFragmentDuplicator {
 			return null;
 		}
 		Catch newCatch = BPELFactory.eINSTANCE.createCatch();
+		// CHECK: Variable was missing if variable was define in catch, care if
+		// variable is set with copyVariable all
+		// other parameter must be set after copyVariable, if not
+		// FaultMessageType could be null
+		Variable catchVar = ChoreoMergeUtil.resolveVariableInMergedProcess(oldCatch.getFaultVariable());
+		if (catchVar == null && oldCatch.getFaultVariable() != null) {
+			catchVar = PBDFragmentDuplicator.copyVariable(oldCatch.getFaultVariable());
+		}
+		newCatch.setFaultVariable(catchVar);
 		newCatch.setDocumentation(oldCatch.getDocumentation());
 		newCatch.setElement(oldCatch.getElement());
 		newCatch.setEnclosingDefinition(oldCatch.getEnclosingDefinition());
 		newCatch.setFaultElement(oldCatch.getFaultElement());
 		newCatch.setFaultMessageType(oldCatch.getFaultMessageType());
 		newCatch.setFaultName(oldCatch.getFaultName());
-		newCatch.setFaultVariable(ChoreoMergeUtil.resolveVariableInMergedProcess(oldCatch.getFaultVariable()));
 		newCatch.setActivity(PBDFragmentDuplicator.copyActivity(oldCatch.getActivity()));
 		return newCatch;
 	}
@@ -1213,7 +1254,13 @@ public class PBDFragmentDuplicator {
 			newFrom.setType(from.getType());
 		}
 		if (from.getVariable() != null) {
-			newFrom.setVariable(ChoreoMergeUtil.resolveVariableInMergedProcess(from.getVariable()));
+			// CHECK Variable could be defined as catch attribute so we have to
+			// copy this variable if it is not found by resolve Methode
+			Variable var = ChoreoMergeUtil.resolveVariableInMergedProcess(from.getVariable());
+			if (var == null && from.getVariable() != null) {
+				var = FragmentDuplicator.copyVariable(from.getVariable());
+			}
+			newFrom.setVariable(var);
 		}
 		if (from.getPart() != null) {
 			newFrom.setPart(FragmentDuplicator.copyPart(from.getPart()));
@@ -1251,7 +1298,13 @@ public class PBDFragmentDuplicator {
 		To newTo = BPELFactory.eINSTANCE.createTo();
 		
 		if (to.getVariable() != null) {
-			newTo.setVariable(ChoreoMergeUtil.resolveVariableInMergedProcess(to.getVariable()));
+			// CHECK Variable could be defined as catch attribute so we have to
+			// copy this variable if it is not found by resolve Methode
+			Variable var = ChoreoMergeUtil.resolveVariableInMergedProcess(to.getVariable());
+			if (var == null && to.getVariable() != null) {
+				var = FragmentDuplicator.copyVariable(to.getVariable());
+			}
+			newTo.setVariable(var);
 		}
 		if (to.getPart() != null) {
 			newTo.setPart(FragmentDuplicator.copyPart(to.getPart()));
