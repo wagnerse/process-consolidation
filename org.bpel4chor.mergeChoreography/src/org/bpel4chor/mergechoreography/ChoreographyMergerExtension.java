@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
@@ -46,7 +47,6 @@ import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
 import org.eclipse.bpel.model.partnerlinktype.Role;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.wst.wsdl.Definition;
 import org.eclipse.wst.wsdl.Operation;
 import org.eclipse.wst.wsdl.PortType;
@@ -55,15 +55,17 @@ import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
 
 public class ChoreographyMergerExtension {
+	
 	private ChoreographyPackage choreographyPackage;
 	protected Logger log;
-
-	public ChoreographyMergerExtension(ChoreographyPackage choreographyPackage,
-			Logger log) {
+	
+	
+	public ChoreographyMergerExtension(ChoreographyPackage choreographyPackage, Logger log) {
 		this.choreographyPackage = choreographyPackage;
 		this.log = log;
 	}
-
+	
+	
 	/**
 	 * countInvokesNOTInForeach - Variable for holding number of invokes NOT
 	 * inside forEach activities
@@ -83,15 +85,18 @@ public class ChoreographyMergerExtension {
 	 * List containing all links residing in merged process's flow activity
 	 */
 	public static ArrayList<Link> linksList = new ArrayList<Link>();
-
+	
 	/**
 	 * Contains all the containers/scopes generated in merged process
 	 */
 	public static ArrayList<Scope> scopeList = new ArrayList<Scope>();
-
+	
 	// wsuIDs of inokve activities not iside forEach
 	public ArrayList<String> wsuIdOfInvokesnotInsideForEach = new ArrayList<String>();
-
+	
+	protected Map<Activity, Activity> copyActOrgActsPairs = new HashMap<>();
+	
+	
 	/**
 	 * This function performs loop fragmentation on created containers in merged
 	 * process
@@ -100,10 +105,10 @@ public class ChoreographyMergerExtension {
 		try {
 			// Read and store all the links residing in top flow activity of
 			// merged process
-			intializeLinksFromMergedProcess();
+			this.intializeLinksFromMergedProcess();
 			// Read and store all scopes/containers created in merged process
-			initializeScopeActivities();
-
+			this.initializeScopeActivities();
+			
 			//
 			/**
 			 * This hash map of forEach loops contains all the forEach
@@ -112,29 +117,29 @@ public class ChoreographyMergerExtension {
 			 * HashMap<scopeName,HasMap<containerId,forEachContainer>
 			 */
 			HashMap<String, HashMap<Integer, ForEach>> hmFEs = new HashMap<String, HashMap<Integer, ForEach>>();
-
+			
 			boolean flagLastFE = false;
 			// for (int i = scopeList.size() - 1; i > 0; i--) {
 			for (int i = 0; i < ChoreographyMergerExtension.scopeList.size(); i++) {
 				flagLastFE = false;
 				Scope scope = ChoreographyMergerExtension.scopeList.get(i);
-
+				
 				// This linkedList keeps the list of all activities till the
 				// first communication activity inside FE fragment. lstObjs's
 				// last element will be the communication element
 				LinkedList<EObject> lstObjs = new LinkedList<EObject>();
-
+				
 				// Initially, before loop fragmentation, scope will contain only
 				// one forEach fragment (as we don't support nested forEach)
-				ForEach forEach = findForEachActivityInsideDynamicMIP(scope);
+				ForEach forEach = this.findForEachActivityInsideDynamicMIP(scope);
 				
-				//TODO Quick Hack: Avoids FE-Fragmentation in case no FE exists
+				// TODO Quick Hack: Avoids FE-Fragmentation in case no FE exists
 				if (forEach == null) {
 					continue;
 				}
 				
 				ArrayList<String> prevCommActivityNameList = new ArrayList<String>();
-
+				
 				// this variable keeps track of the last processed/found
 				// communication activity inside FE
 				// with the help of this variable FE is searched for next
@@ -145,122 +150,115 @@ public class ChoreographyMergerExtension {
 					// if lstObjs contains some activities - the container is
 					// not empty container, then its last element will be
 					// communication activity
-					if (lstObjs != null && lstObjs.size() > 0) {
-						prevCommActName = ((Activity) lstObjs.getLast())
-								.getName();
+					if ((lstObjs != null) && (lstObjs.size() > 0)) {
+						prevCommActName = ((Activity) lstObjs.getLast()).getName();
 					}
 					lstObjs.clear();
-
+					
 					// In the last iteration lstObjs will contain all the
 					// activities comming after the last communicating activity
 					// in FE
-					if (lstObjs != null && lstObjs.size() > 0
-							&& !isCommActivity(lstObjs.getLast())) {
-
+					if ((lstObjs != null) && (lstObjs.size() > 0) && !this.isCommActivity(lstObjs.getLast())) {
+						
 						flagLastFE = true;
 					}
-
+					
 					// After finding the delimeter - the communicating activity,
 					// divide the FE into 2 FE:
 					// 1) FE containing all the activities before communicating
 					// activities
 					// 2) FE containign communicating activity
-					newGetActivitiesTillFirstCommActFromForEach(lstObjs,
-							forEach, prevCommActivityNameList);
-
+					this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, forEach, prevCommActivityNameList);
+					
 					// add processed communicating activity name to the
 					// processed communicating activity names list
 					if (lstObjs.getLast() instanceof Assign) {
-						prevCommActivityNameList.add(((Assign) lstObjs
-								.getLast()).getName());
+						prevCommActivityNameList.add(((Assign) lstObjs.getLast()).getName());
 					} else if (lstObjs.getLast() instanceof Empty) {
-						prevCommActivityNameList
-								.add(((Empty) lstObjs.getLast()).getName());
+						prevCommActivityNameList.add(((Empty) lstObjs.getLast()).getName());
 					}
-
+					
 					// First element of FE is scope activity
 					Scope scopeOrigFE = (Scope) forEach.getActivity();
-
+					
 					// Initialize new FE which will contain all the activities
 					// preceding
 					// communicating activity in original FE-in the FE before
 					// loop fragmentation
-					ForEach newPreForEach = BPELFactory.eINSTANCE
-							.createForEach();
+					ForEach newPreForEach = BPELFactory.eINSTANCE.createForEach();
 					newPreForEach.setName(forEach.getName());
-					Scope newPreScope = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-							.copyScopeActivityWOChildren(scopeOrigFE,
-									flagLastFE);
+					Scope newPreScope = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyScopeActivityWOChildren(scopeOrigFE, flagLastFE);
 					newPreForEach.setActivity(newPreScope);
-
+					
 					// Initialize new FE for holding communicating activity from
 					// original FE
-					ForEach newCommForEach = BPELFactory.eINSTANCE
-							.createForEach();
+					ForEach newCommForEach = BPELFactory.eINSTANCE.createForEach();
 					newCommForEach.setName(forEach.getName());
-					Scope newCommScope = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-							.copyScopeActivityWOChildren(scopeOrigFE,
-									flagLastFE);
+					Scope newCommScope = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyScopeActivityWOChildren(scopeOrigFE, flagLastFE);
 					newCommForEach.setActivity(newCommScope);
-
+					
 					// Temporary object which helps for knowing when pre FE
 					// exists, when to finish fragmenting FE in each iteration
 					TerminateFlag terminate = new TerminateFlag();
 					terminate.finished = false;
 					terminate.preExists = false;
-
+					
 					// Create new preceding and communicating FE fragments
-					createNewPreAndCommFEFragments(scopeOrigFE.getActivity(),
-							newPreScope, newCommScope, lstObjs.getLast(),
-							prevCommActName, terminate);
-
+					this.createNewPreAndCommFEFragments(scopeOrigFE.getActivity(), newPreScope, newCommScope, lstObjs.getLast(), prevCommActName, terminate);
+					
+					// Iterator<Activity> actCopiesIter =
+					// this.copyActOrgActsPairs.keySet().iterator();
+					//
+					// while (actCopiesIter.hasNext()) {
+					// Activity activityCopy = actCopiesIter.next();
+					// Activity orgActivity =
+					// this.copyActOrgActsPairs.get(activityCopy);
+					//
+					// activityCopy.setSources(orgActivity.getSources());
+					// activityCopy.setTargets(orgActivity.getTargets());
+					// }
+					
 					// If the last element of lstObjs is communicating activity,
-					if (isCommActivity(lstObjs.getLast())) {
+					if (this.isCommActivity(lstObjs.getLast())) {
 						// If preceding FE exists
 						if (terminate.preExists) {
 							HashMap<Integer, ForEach> hm = null;
 							if (hmFEs.containsKey(scope.getName())) {
 								hm = hmFEs.get(scope.getName());
-
+								
 								// Set the name of pre FE to the original FE
 								// name+"_"+ next integer for creating FE name
 								// unique
-								newPreForEach.setName(newPreForEach.getName()
-										+ "_" + (hm.size() + 1));
+								newPreForEach.setName(newPreForEach.getName() + "_" + (hm.size() + 1));
 								hm.put(hm.size() + 1, newPreForEach);
-								newCommForEach.setName(newCommForEach.getName()
-										+ "_" + (hm.size() + 1));
+								newCommForEach.setName(newCommForEach.getName() + "_" + (hm.size() + 1));
 								hm.put(hm.size() + 1, newCommForEach);
 							} else {
 								// Set the name of pre FE to the original FE
 								// name+"_1"
 								hm = new HashMap<Integer, ForEach>();
 								hm.put(1, newPreForEach);
-								newPreForEach.setName(newPreForEach.getName()
-										+ "_1");
+								newPreForEach.setName(newPreForEach.getName() + "_1");
 								hm.put(2, newCommForEach);
 								hmFEs.put(scope.getName(), hm);
-								newCommForEach.setName(newCommForEach.getName()
-										+ "_2");
+								newCommForEach.setName(newCommForEach.getName() + "_2");
 							}
-
+							
 						} else {
 							// Pre FE does not exist, so only create
 							// communicating FE
 							HashMap<Integer, ForEach> hm = null;
 							if (hmFEs.containsKey(scope.getName())) {
 								hm = hmFEs.get(scope.getName());
-								newCommForEach.setName(newCommForEach.getName()
-										+ "_" + (hm.size() + 1));
+								newCommForEach.setName(newCommForEach.getName() + "_" + (hm.size() + 1));
 								hm.put(hm.size() + 1, newCommForEach);
 							} else {
 								hm = new HashMap<Integer, ForEach>();
-								newCommForEach.setName(newCommForEach.getName()
-										+ "_1");
+								newCommForEach.setName(newCommForEach.getName() + "_1");
 								hm.put(1, newCommForEach);
 								hmFEs.put(scope.getName(), hm);
 							}
-
+							
 						}
 					} else {
 						// The last element of listObjs is not communicating
@@ -271,45 +269,41 @@ public class ChoreographyMergerExtension {
 						HashMap<Integer, ForEach> hm = null;
 						if (hmFEs.containsKey(scope.getName())) {
 							hm = hmFEs.get(scope.getName());
-							newCommForEach.setName(newCommForEach.getName()
-									+ "_" + (hm.size() + 1));
+							newCommForEach.setName(newCommForEach.getName() + "_" + (hm.size() + 1));
 							hm.put(hm.size() + 1, newCommForEach);
 						} else {
 							hm = new HashMap<Integer, ForEach>();
-							newCommForEach.setName(newCommForEach.getName()
-									+ "_2");
+							newCommForEach.setName(newCommForEach.getName() + "_2");
 							hm.put(2, newCommForEach);
 							hmFEs.put(scope.getName(), hm);
 						}
 					}
-				} while (isCommActivity(lstObjs.getLast()));
-
+				} while (this.isCommActivity(lstObjs.getLast()));
+				
 				// Delete Links from FE fragment if FE does contain neither the
 				// source nor the target of link
-				deleteExtraLinksAfterFragmentation(scope.getName(), hmFEs);
-
+				this.deleteExtraLinksAfterFragmentation(scope.getName(), hmFEs);
+				
 				// Update the changes in the scope container
-				scope = modifyScopeWithNewFEs(scope, hmFEs);
+				scope = this.modifyScopeWithNewFEs(scope, hmFEs);
 				ChoreographyMergerExtension.scopeList.set(i, scope);
 				scope = ChoreographyMergerExtension.scopeList.get(i);
-
+				
 				// Link status propagation - find broken links, and apply link
 				// status propagation technique
-				handleBrokenLinks(scope, hmFEs);
+				this.handleBrokenLinks(scope, hmFEs);
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param scope
-	 *            - scope/container in the merged process
-	 * @param hmFEs
-	 *            - hash map of all the FEs after fragmentation in the merged
+	 * @param scope - scope/container in the merged process
+	 * @param hmFEs - hash map of all the FEs after fragmentation in the merged
 	 *            process {scopeName:{1:<forEach>}}
 	 * 
 	 *            This function finds the links which are broken, and then
@@ -325,43 +319,36 @@ public class ChoreographyMergerExtension {
 	 *            activity and Control link from (Empty) to (Target) activity of
 	 *            broken link.
 	 */
-	public void handleBrokenLinks(Scope scope,
-			HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
-
+	public void handleBrokenLinks(Scope scope, HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
+		
 		// Get and store all the links which are broken
-		HashMap<String, HashMap<String, HashMap<String, Activity>>> mapOfLinks = initializeLinkDetailsMap(
-				scope.getName(), hmFEs);
-
+		HashMap<String, HashMap<String, HashMap<String, Activity>>> mapOfLinks = this.initializeLinkDetailsMap(scope.getName(), hmFEs);
+		
 		Iterator<String> scopeIt = mapOfLinks.keySet().iterator();
 		while (scopeIt.hasNext()) {
-			HashMap<String, HashMap<String, Activity>> linkDetailsMap = mapOfLinks
-					.get(scopeIt.next());
+			HashMap<String, HashMap<String, Activity>> linkDetailsMap = mapOfLinks.get(scopeIt.next());
 			Iterator<String> linkIt = linkDetailsMap.keySet().iterator();
 			while (linkIt.hasNext()) {
 				String linkName = linkIt.next();
-				HashMap<String, Activity> linkDet = linkDetailsMap
-						.get(linkName);
-				Activity source = findActivityByName(scope,
-						linkDet.get("Source").getName());
-				Activity target = findActivityByName(scope,
-						linkDet.get("Target").getName());
-
+				HashMap<String, Activity> linkDet = linkDetailsMap.get(linkName);
+				Activity source = this.findActivityByName(scope, linkDet.get("Source").getName());
+				Activity target = this.findActivityByName(scope, linkDet.get("Target").getName());
+				
 				// Apply Loop Status Propagation echnique to source FE
-				createSrcPartOfBrokenLink(source);
-
+				this.createSrcPartOfBrokenLink(source);
+				
 				// Apply Loop Status Propagation echnique to target FE
-				createTrgPartOfBrokenLink(target);
-
+				this.createTrgPartOfBrokenLink(target);
+				
 			}
-
+			
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param source
-	 *            - this is the soruce activity of broken link
+	 * @param source - this is the soruce activity of broken link
 	 * 
 	 *            This function applies Link status propagation to the source FE
 	 *            fragment. Source fragment is the FE fragment which contains
@@ -411,11 +398,10 @@ public class ChoreographyMergerExtension {
 		flow.getLinks().getChildren().add(linkFromSourcetoNewScope);
 		flow.getActivities().add(scope);
 	}
-
+	
 	/**
 	 * 
-	 * @param target
-	 *            - is the target activity of the broken link
+	 * @param target - is the target activity of the broken link
 	 * 
 	 *            This function applies link status propagation to the target FE
 	 *            fragment. New Empty activity is created. New Control link is
@@ -435,21 +421,18 @@ public class ChoreographyMergerExtension {
 		targetOfLink.setActivity(target);
 		linkFromEmptytoTrg.getTargets().add(targetOfLink);
 		((Flow) target.eContainer()).getActivities().add(empty);
-		((Flow) target.eContainer()).getLinks().getChildren()
-				.add(linkFromEmptytoTrg);
+		((Flow) target.eContainer()).getLinks().getChildren().add(linkFromEmptytoTrg);
 		/**
 		 * TODO Implement function for reading link status value from map
 		 * variable
 		 */
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param scopeName
-	 *            - the scope/container in merged process
-	 * @param hmFEs
-	 *            - hash map which contains FE fragments of each scope
+	 * @param scopeName - the scope/container in merged process
+	 * @param hmFEs - hash map which contains FE fragments of each scope
 	 * @return the hash map which is hash map storing data scopeName -> linkName
 	 *         -> linkDetails.
 	 * 
@@ -459,10 +442,9 @@ public class ChoreographyMergerExtension {
 	 *         LinkSourceFE which is the source FE, LinkTargetFE which is the
 	 *         target FE
 	 */
-	public HashMap<String, HashMap<String, HashMap<String, Activity>>> initializeLinkDetailsMap(
-			String scopeName, HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
+	public HashMap<String, HashMap<String, HashMap<String, Activity>>> initializeLinkDetailsMap(String scopeName, HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
 		HashMap<Integer, ForEach> newFEFragments = hmFEs.get(scopeName);
-
+		
 		Iterator<ForEach> it = newFEFragments.values().iterator();
 		// scopeName -> linkName -> linkDetails
 		HashMap<String, HashMap<String, HashMap<String, Activity>>> mapOfLinks = new HashMap<String, HashMap<String, HashMap<String, Activity>>>();
@@ -470,19 +452,18 @@ public class ChoreographyMergerExtension {
 		boolean flagBrokenLink = false;
 		while (it.hasNext()) {
 			ForEach fe = it.next();
-			Flow flow = findFlowActivityInsideFE(fe);
+			Flow flow = this.findFlowActivityInsideFE(fe);
 			EList<Link> flowLinks = flow.getLinks().getChildren();
 			for (Link l : flowLinks) {
-				Activity src = getSourceActNameFromFlow(flow, l.getName());
-				Activity trg = getTargetActNameFromFlow(flow, l.getName());
+				Activity src = this.getSourceActNameFromFlow(flow, l.getName());
+				Activity trg = this.getTargetActNameFromFlow(flow, l.getName());
 				HashMap<String, Activity> hm = null;
-				if (mapOfLinks.get(scopeName) != null
-						&& mapOfLinks.get(scopeName).get(l.getName()) != null) {
+				if ((mapOfLinks.get(scopeName) != null) && (mapOfLinks.get(scopeName).get(l.getName()) != null)) {
 					hm = mapOfLinks.get(scopeName).get(l.getName());
 				} else {
 					hm = new HashMap<String, Activity>();
 				}
-
+				
 				if (src != null) {
 					hm.put("Source", src);
 					hm.put("LinkSourceFE", fe);
@@ -491,7 +472,7 @@ public class ChoreographyMergerExtension {
 					hm.put("Target", trg);
 					hm.put("LinkTargetFE", fe);
 				}
-				if (src == null || trg == null) {
+				if ((src == null) || (trg == null)) {
 					flagBrokenLink = true;
 				}
 				if (flagBrokenLink) {
@@ -499,12 +480,12 @@ public class ChoreographyMergerExtension {
 					mapOfLinks.put(scopeName, linkDet);
 					flagBrokenLink = false;
 				}
-
+				
 			}
 		}
 		return mapOfLinks;
 	}
-
+	
 	/**
 	 * 
 	 * @param flow
@@ -515,16 +496,16 @@ public class ChoreographyMergerExtension {
 	public Activity getSourceActNameFromFlow(Flow flow, String linkName) {
 		for (Activity act : flow.getActivities()) {
 			if (act.getSources() != null) {
-				if (act.getSources().getChildren().get(0).getLink().getName()
-						.equals(linkName))
+				if (act.getSources().getChildren().get(0).getLink().getName().equals(linkName)) {
 					return act.getSources().getChildren().get(0).getActivity();
+				}
 			}
-
+			
 		}
 		return null;
-
+		
 	}
-
+	
 	/**
 	 * 
 	 * @param flow
@@ -535,34 +516,31 @@ public class ChoreographyMergerExtension {
 	public Activity getTargetActNameFromFlow(Flow flow, String linkName) {
 		for (Activity act : flow.getActivities()) {
 			if (act.getTargets() != null) {
-				if (act.getTargets().getChildren().get(0).getLink().getName()
-						.equals(linkName))
+				if (act.getTargets().getChildren().get(0).getLink().getName().equals(linkName)) {
 					return act.getTargets().getChildren().get(0).getActivity();
+				}
 			}
-
+			
 		}
 		return null;
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param scopeName
-	 *            - scope/container in merged process
-	 * @param hmFEs
-	 *            - hash map containing FE fragments per scope
+	 * @param scopeName - scope/container in merged process
+	 * @param hmFEs - hash map containing FE fragments per scope
 	 * 
 	 *            This function deletes the links from the FE fragments, if FE
 	 *            fragment contains neither the source nor the target of the
 	 *            link
 	 */
-	public void deleteExtraLinksAfterFragmentation(String scopeName,
-			HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
+	public void deleteExtraLinksAfterFragmentation(String scopeName, HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
 		HashMap<Integer, ForEach> newFEFragments = hmFEs.get(scopeName);
 		Iterator<ForEach> it = newFEFragments.values().iterator();
 		while (it.hasNext()) {
 			ForEach fe = it.next();
-			Flow flow = findFlowActivityInsideFE(fe);
+			Flow flow = this.findFlowActivityInsideFE(fe);
 			EList<Link> flowLinks = flow.getLinks().getChildren();
 			ArrayList<String> allLinkNamesInFlow = new ArrayList<String>();
 			for (Link l : flowLinks) {
@@ -572,17 +550,17 @@ public class ChoreographyMergerExtension {
 			for (EObject obj : flow.eContents()) {
 				if (obj instanceof Activity) {
 					Activity act = (Activity) obj;
-
-					if (act.getSources() != null
-							&& act.getSources().getChildren() != null)
+					
+					if ((act.getSources() != null) && (act.getSources().getChildren() != null)) {
 						for (Source s : act.getSources().getChildren()) {
 							linksofFlowActivities.add(s.getLink().getName());
 						}
-					if (act.getTargets() != null
-							&& act.getTargets().getChildren() != null)
+					}
+					if ((act.getTargets() != null) && (act.getTargets().getChildren() != null)) {
 						for (Target t : act.getTargets().getChildren()) {
 							linksofFlowActivities.add(t.getLink().getName());
 						}
+					}
 				}
 			}
 			for (int i = 0; i < allLinkNamesInFlow.size(); i++) {
@@ -593,55 +571,52 @@ public class ChoreographyMergerExtension {
 				}
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param oldScope
-	 *            - scope/container in merged process before loop fragmentation
-	 * @param hmFEs
-	 *            - hash map of FE fragments per scope
+	 * @param oldScope - scope/container in merged process before loop
+	 *            fragmentation
+	 * @param hmFEs - hash map of FE fragments per scope
 	 * @return the updated Scope which contains FE fragmetns after loop
 	 *         fragmentation technique is applied
 	 * 
 	 *         This function updates the scope with the new FE fragments after
 	 *         loop fragmentation has been applied.
 	 */
-	public Scope modifyScopeWithNewFEs(Scope oldScope,
-			HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
-		Scope newScope = oldScope; //oldscope.clone(), or use the EMF copy method;
-		ForEach fe = findForEachActivityInsideDynamicMIP(newScope);
-
+	public Scope modifyScopeWithNewFEs(Scope oldScope, HashMap<String, HashMap<Integer, ForEach>> hmFEs) {
+		Scope newScope = oldScope.clone(); // oldscope.clone(), or use the EMF
+											// copy
+		// method;
+		ForEach fe = this.findForEachActivityInsideDynamicMIP(newScope);
+		
 		if (fe.eContainer() instanceof Sequence) {
 			Sequence parent = (Sequence) fe.eContainer();
 			parent.getActivities().remove(fe);
-			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope
-					.getName());
+			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope.getName());
 			Iterator<ForEach> it = newFEFragments.values().iterator();
 			while (it.hasNext()) {
 				ForEach f = it.next();
 				parent.getActivities().add(f);
 			}
-
+			
 		} else if (fe.eContainer() instanceof Flow) {
 			Flow parent = (Flow) fe.eContainer();
 			parent.getActivities().remove(fe);
-			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope
-					.getName());
+			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope.getName());
 			Iterator<ForEach> it = newFEFragments.values().iterator();
 			while (it.hasNext()) {
 				ForEach f = it.next();
 				parent.getActivities().add(f);
 			}
 		} else if (fe.eContainer() instanceof Scope) {
-
+			
 			Scope parent = (Scope) fe.eContainer();
 			parent.setActivity(null);
 			Flow newFlow = BPELFactory.eINSTANCE.createFlow();
 			newFlow.setName("DynamicMIPFlow");
-			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope
-					.getName());
+			HashMap<Integer, ForEach> newFEFragments = hmFEs.get(newScope.getName());
 			Iterator<ForEach> it = newFEFragments.values().iterator();
 			while (it.hasNext()) {
 				ForEach f = it.next();
@@ -651,11 +626,12 @@ public class ChoreographyMergerExtension {
 		}
 		return newScope;
 	}
-
+	
+	
 	// commActName : linkName-Src/Trg
 	// ArrayList<HashMap<String, String>> commActivitiesList = new
 	// ArrayList<HashMap<String, String>>();
-
+	
 	/**
 	 * 
 	 * Temporary class which helps for processing, does not contain any
@@ -663,29 +639,25 @@ public class ChoreographyMergerExtension {
 	 * 
 	 */
 	class TerminateFlag {
+		
 		public boolean finished = false;
 		public boolean preExists = false;
 		public boolean startAddingActivities = false;
 	}
-
+	
+	
 	/**
 	 * 
-	 * @param firstActOfOrigFE
-	 *            first activity of original ForEach loop
-	 * @param pre
-	 *            - main activity (can be Flow, Sequence, Flow) of FE which is
+	 * @param firstActOfOrigFE first activity of original ForEach loop
+	 * @param pre - main activity (can be Flow, Sequence, Flow) of FE which is
 	 *            preceding communicating FE
-	 * @param comm
-	 *            - main activity (can be Flow, Sequence, Flow) of communicating
-	 *            FE
-	 * @param currCommActObj
-	 *            - current communication activity used to fragment original
-	 *            ForEach
-	 * @param prevCommActName
-	 *            - the list of processed/used communication activities for
-	 *            fragmentation
-	 * @param terminate
-	 *            - the boolean flag which let's to know when to stop
+	 * @param comm - main activity (can be Flow, Sequence, Flow) of
+	 *            communicating FE
+	 * @param currCommActObj - current communication activity used to fragment
+	 *            original ForEach
+	 * @param prevCommActName - the list of processed/used communication
+	 *            activities for fragmentation
+	 * @param terminate - the boolean flag which let's to know when to stop
 	 *            fragmentation for each communication activity
 	 * 
 	 * 
@@ -695,11 +667,20 @@ public class ChoreographyMergerExtension {
 	 *            This function keeps parent structure when applying loop
 	 *            fragmentation.
 	 */
-	public void createNewPreAndCommFEFragments(EObject firstActOfOrigFE,
-			EObject pre, EObject comm, EObject currCommActObj,
-			String prevCommActName, TerminateFlag terminate) {
-		if (terminate.finished)
+	public void createNewPreAndCommFEFragments(EObject firstActOfOrigFE, EObject pre, EObject comm, EObject currCommActObj, String prevCommActName, TerminateFlag terminate) {
+		
+		/*
+		 * Atomic ativities do just reside within one FE-Fragment hence they do
+		 * not have to be duplicated as they do only reside within one
+		 * FE-Fragment. Structured activities may have to be placed into several
+		 * FE-Fragments, if their body contains a link violating activity, e.g.
+		 * If has to be split in If1 and If2 where If2 is in FE1 and If2 is in
+		 * FE2
+		 */
+		
+		if (terminate.finished) {
 			return;
+		}
 		Activity firstAct = (Activity) firstActOfOrigFE;
 		// Check the first activity of original FE, and create corresponding
 		// activity in preceding and communicating FEs.
@@ -707,11 +688,9 @@ public class ChoreographyMergerExtension {
 		// preceding and communicating FEs also Flow activity
 		if (firstAct instanceof Flow) {
 			EList<Activity> children = ((Flow) firstAct).getActivities();
-			Flow newFlowPre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyFlowActivityWOChildren((Flow) firstAct);
-			Flow newFlowComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyFlowActivityWOChildren((Flow) firstAct);
-
+			Flow newFlowPre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyFlowActivityWOChildren((Flow) firstAct);
+			Flow newFlowComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyFlowActivityWOChildren((Flow) firstAct);
+			
 			if (pre instanceof Scope) {
 				Scope preScope = (Scope) pre;
 				preScope.setActivity(newFlowPre);
@@ -722,7 +701,7 @@ public class ChoreographyMergerExtension {
 				preFlow.getActivities().add(newFlowPre);
 				Flow commFlow = (Flow) comm;
 				commFlow.getActivities().add(newFlowComm);
-
+				
 			} else if (pre instanceof Sequence) {
 				Sequence preSequence = (Sequence) pre;
 				preSequence.getActivities().add(newFlowPre);
@@ -734,35 +713,36 @@ public class ChoreographyMergerExtension {
 				If commIf = (If) comm;
 				commIf.setActivity(newFlowComm);
 			}
-			for (EObject obj : children) {
+			
+			List<Activity> childrenList = new CopyOnWriteArrayList<Activity>(children);
+			
+			Iterator<Activity> childreIter = childrenList.iterator();
+			while (childreIter.hasNext()) {
+				// for (EObject obj : children) {
 				// if (!finished)
-				createNewPreAndCommFEFragments(obj, newFlowPre, newFlowComm,
-						currCommActObj, prevCommActName, terminate);
+				EObject obj = childreIter.next();
+				this.createNewPreAndCommFEFragments(obj, newFlowPre, newFlowComm, currCommActObj, prevCommActName, terminate);
 			}
-
+			
 		}
 		// If 1st activity of original FE is Sequence, then make first activity
 		// of
 		// preceding and communicating FEs also Sequence activity
 		else if (firstAct instanceof Sequence) {
 			EList<Activity> children = ((Sequence) firstAct).getActivities();
-			Sequence newSequencePre = PBDFragmentDuplicatorExtension
-					.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
-			Sequence newSequenceComm = PBDFragmentDuplicatorExtension
-					.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
-
+			Sequence newSequencePre = PBDFragmentDuplicatorExtension.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
+			Sequence newSequenceComm = PBDFragmentDuplicatorExtension.copySequenceActivityWOChildren((Sequence) firstAct);// BPELFactory.eINSTANCE.createSequence();
+			
 			if (pre instanceof Scope) {
 				Scope preScope = (Scope) pre;
 				preScope.setActivity(newSequencePre);
 				Scope commScope = (Scope) comm;
 				commScope.setActivity(newSequenceComm);
 				for (EObject obj : children) {
-					createNewPreAndCommFEFragments(obj, newSequencePre,
-							newSequenceComm, currCommActObj, prevCommActName,
-							terminate);
+					this.createNewPreAndCommFEFragments(obj, newSequencePre, newSequenceComm, currCommActObj, prevCommActName, terminate);
 				}
 			}
-
+			
 			if (pre instanceof Flow) {
 				Flow preFlow = (Flow) pre;
 				preFlow.getActivities().add(newSequencePre);
@@ -780,19 +760,15 @@ public class ChoreographyMergerExtension {
 				commIf.setActivity(newSequenceComm);
 			}
 			for (EObject obj : children) {
-				createNewPreAndCommFEFragments(obj, newSequencePre,
-						newSequenceComm, currCommActObj, prevCommActName,
-						terminate);
+				this.createNewPreAndCommFEFragments(obj, newSequencePre, newSequenceComm, currCommActObj, prevCommActName, terminate);
 			}
 		}
 		// If 1st activity of original FE is Scope, then make first activity of
 		// preceding and communicating FEs also Scope activity
 		else if (firstAct instanceof Scope) {
-
-			Scope newScopePre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyScopeActivityWOChildren((Scope) firstAct, true);// BPELFactory.eINSTANCE.createScope();
-			Scope newScopeComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyScopeActivityWOChildren((Scope) firstAct, true);// BPELFactory.eINSTANCE.createScope();
+			
+			Scope newScopePre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyScopeActivityWOChildren((Scope) firstAct, true);// BPELFactory.eINSTANCE.createScope();
+			Scope newScopeComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyScopeActivityWOChildren((Scope) firstAct, true);// BPELFactory.eINSTANCE.createScope();
 			if (pre instanceof Flow) {
 				Flow preFlow = (Flow) pre;
 				preFlow.getActivities().add(newScopePre);
@@ -810,17 +786,14 @@ public class ChoreographyMergerExtension {
 				commIf.setActivity(newScopeComm);
 			}
 			Activity child = ((Scope) firstAct).getActivity();
-			createNewPreAndCommFEFragments(child, newScopePre, newScopeComm,
-					currCommActObj, prevCommActName, terminate);
-
+			this.createNewPreAndCommFEFragments(child, newScopePre, newScopeComm, currCommActObj, prevCommActName, terminate);
+			
 		}
 		// If 1st activity of original FE is If, then make first activity of
 		// preceding and communicating FEs also If activity
 		else if (firstAct instanceof If) {
-			If newIfPre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyIfActivityWOChildren((If) firstAct);
-			If newIfComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-					.copyIfActivityWOChildren((If) firstAct);
+			If newIfPre = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyIfActivityWOChildren((If) firstAct);
+			If newIfComm = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyIfActivityWOChildren((If) firstAct);
 			if (pre instanceof Flow) {
 				Flow preFlow = (Flow) pre;
 				preFlow.getActivities().add(newIfPre);
@@ -838,8 +811,7 @@ public class ChoreographyMergerExtension {
 				commIf.setActivity(newIfComm);
 			}
 			Activity child = ((If) firstAct).getActivity();
-			createNewPreAndCommFEFragments(child, newIfPre, newIfComm,
-					currCommActObj, prevCommActName, terminate);
+			this.createNewPreAndCommFEFragments(child, newIfPre, newIfComm, currCommActObj, prevCommActName, terminate);
 		} else {
 			// This condition helps to skip all the activities previously added
 			// to previously created pre and comm FE fragments.
@@ -850,17 +822,17 @@ public class ChoreographyMergerExtension {
 				terminate.startAddingActivities = true;
 				return;
 			}
-
-			if (terminate.startAddingActivities
-					|| prevCommActName.length() == 0) {
+			
+			if (terminate.startAddingActivities || (prevCommActName.length() == 0)) {
 				Activity commAct = (Activity) currCommActObj;
 				// If the activity to be added is communicating activity (Assign
 				// containing Sources or Empty activity containing Targets )
 				if (firstAct.getName().equals(commAct.getName())) {
 					// Add this communicating activity only to communicating FE
+					
 					if (currCommActObj instanceof Assign) {
-						Assign newCommAssign = EcoreUtil.copy(((Assign) currCommActObj));
-								//.clone();
+						Assign newCommAssign = ((Assign) currCommActObj).clone();
+						// Assign newCommAssign = (Assign) currCommActObj;
 						if (comm instanceof Flow) {
 							Flow commFlow = (Flow) comm;
 							commFlow.getActivities().add(newCommAssign);
@@ -872,7 +844,8 @@ public class ChoreographyMergerExtension {
 							commIf.setActivity(newCommAssign);
 						}
 					} else if (currCommActObj instanceof Empty) {
-						Empty newCommEmpty = EcoreUtil.copy((Empty) currCommActObj);//.clone();
+						Empty newCommEmpty = ((Empty) currCommActObj).clone();
+						// Empty newCommEmpty = (Empty) currCommActObj;
 						if (comm instanceof Flow) {
 							Flow commFlow = (Flow) comm;
 							commFlow.getActivities().add(newCommEmpty);
@@ -892,137 +865,143 @@ public class ChoreographyMergerExtension {
 					// communicating activities can be Invoke, Sequence, If,
 					// Receive, Empty (without Targets), Assign (without
 					// Sources).
-
 					if (firstAct instanceof Invoke) {
-						if (!terminate.preExists)
+						if (!terminate.preExists) {
 							terminate.preExists = true;
-						Invoke newPreInvoke = EcoreUtil.copy((Invoke) firstAct); //.clone();
+						}
+						Invoke newPreInvoke = ((Invoke) firstAct).clone();
+						// .clone();
+						// Invoke newPreInvoke = (Invoke) firstAct;
 						if (pre instanceof Flow) {
 							Flow preFlow = (Flow) pre;
 							preFlow.getActivities().add(newPreInvoke);
-
+							
 						} else if (pre instanceof Sequence) {
 							Sequence preSequence = (Sequence) pre;
 							preSequence.getActivities().add(newPreInvoke);
-
+							
 						} else if (pre instanceof If) {
 							If preIf = (If) pre;
 							preIf.setActivity(newPreInvoke);
-
+							
 						}
-
+						
 					} else if (firstAct instanceof Receive) {
-						if (!terminate.preExists)
+						if (!terminate.preExists) {
 							terminate.preExists = true;
-						Receive newPreReceive = EcoreUtil.copy((Receive) firstAct);// .clone();
+						}
+						Receive newPreReceive = ((Receive) firstAct).clone();
+						// Receive newPreReceive = (Receive) firstAct;
 						if (pre instanceof Flow) {
 							Flow preFlow = (Flow) pre;
 							preFlow.getActivities().add(newPreReceive);
-
+							
 						} else if (pre instanceof Sequence) {
 							Sequence preSequence = (Sequence) pre;
 							preSequence.getActivities().add(newPreReceive);
-
+							
 						} else if (pre instanceof If) {
 							If preIf = (If) pre;
 							preIf.setActivity(newPreReceive);
-
+							
 						}
 					} else if (firstAct instanceof Empty) {
-						if (!terminate.preExists)
+						if (!terminate.preExists) {
 							terminate.preExists = true;
-						Empty newPreEmpty = EcoreUtil.copy((Empty) firstAct); //.clone();
+						}
+						Empty newPreEmpty = ((Empty) firstAct).clone();
+						// Empty newPreEmpty = (Empty) firstAct;
 						if (pre instanceof Flow) {
 							Flow preFlow = (Flow) pre;
 							preFlow.getActivities().add(newPreEmpty);
-
+							
 						} else if (pre instanceof Sequence) {
 							Sequence preSequence = (Sequence) pre;
 							preSequence.getActivities().add(newPreEmpty);
-
+							
 						} else if (pre instanceof If) {
 							If preIf = (If) pre;
 							preIf.setActivity(newPreEmpty);
-
+							
 						}
-
+						
 					} else if (firstAct instanceof Assign) {
-						if (!terminate.preExists)
+						if (!terminate.preExists) {
 							terminate.preExists = true;
-						Assign newPreAssign = EcoreUtil.copy((Assign) firstAct); //.clone();
+						}
+						Assign newPreAssign = ((Assign) firstAct).clone();
+						// Assign newPreAssign = (Assign) firstAct;
 						if (pre instanceof Flow) {
 							Flow preFlow = (Flow) pre;
 							preFlow.getActivities().add(newPreAssign);
-
+							
 						} else if (pre instanceof Sequence) {
 							Sequence preSequence = (Sequence) pre;
 							preSequence.getActivities().add(newPreAssign);
-
+							
 						} else if (pre instanceof If) {
 							If preIf = (If) pre;
 							preIf.setActivity(newPreAssign);
-
+							
 						}
-
+						
 					}
 				}
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param obj
-	 *            - the activity to be checked
+	 * @param obj - the activity to be checked
 	 * @return return if the given activity is communicating activity or not
 	 * 
 	 *         The communicating activity is either Assign activity containign
 	 *         Sources , or Empty activity containing Targets.
 	 */
 	public boolean isCommActivity(EObject obj) {
-
+		// TODO FIXME I should not return true just because I have source
+		// elements
 		if (obj instanceof Assign) {
 			// && obj instanceof Sources
 			List<EObject> children = obj.eContents();
 			for (EObject o : children) {
-				if (o instanceof Sources)
+				if (o instanceof Sources) {
 					return true;
+				}
 			}
 		} else if (obj instanceof Empty) {
 			// && obj instanceof Targets
 			List<EObject> children = obj.eContents();
 			for (EObject o : children) {
-				if (o instanceof Targets)
+				if (o instanceof Targets) {
 					return true;
+				}
 			}
 		}
 		return false;
 	}
-
+	
 	/**
 	 * 
-	 * @param lstObjs
-	 *            - the linked list which will contain all the activities till
-	 *            the communicating activity
-	 * @param startObj
-	 *            - is the 1st activity of FE fragment
-	 * @param prevCommActNameList
-	 *            - the list of already processed communicating activities
+	 * @param lstObjs - the linked list which will contain all the activities
+	 *            till the communicating activity
+	 * @param startObj - is the 1st activity of FE fragment
+	 * @param prevCommActNameList - the list of already processed communicating
+	 *            activities
 	 * @return the list of all activities inside FE till the first communicating
 	 *         activity which is not processed
 	 */
-	public LinkedList<EObject> newGetActivitiesTillFirstCommActFromForEach(
-			LinkedList<EObject> lstObjs, EObject startObj,
-			ArrayList<String> prevCommActNameList) {
+	public LinkedList<EObject> newGetActivitiesTillFirstCommActFromForEach(LinkedList<EObject> lstObjs, EObject startObj, ArrayList<String> prevCommActNameList) {
 		// This function traverses all the activities and their children insde
 		// FE fragment (in other words which are children of startObj) till it
 		// finds the non-processed communicating activity, and then returns the
 		// list contating all the activities till the first non-processed
 		// communicating activity
-
+		
 		List<EObject> childActivities = startObj.eContents();
-
+		
 		if (startObj instanceof ForEach) {
 			Activity act = ((ForEach) startObj).getActivity();
 			lstObjs.addLast(act);
@@ -1031,88 +1010,79 @@ public class ChoreographyMergerExtension {
 			lstObjs.addLast(startObj);
 			List<Activity> childActs = ((Sequence) startObj).getActivities();
 			for (Activity child : childActs) {
-				return newGetActivitiesTillFirstCommActFromForEach(lstObjs,
-						child, prevCommActNameList);
+				return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, child, prevCommActNameList);
 			}
-
+			
 		} else if (startObj instanceof Flow) {
 			lstObjs.addLast(startObj);
 			List<Activity> childActs = ((Flow) startObj).getActivities();
 			for (Activity child : childActs) {
-				return newGetActivitiesTillFirstCommActFromForEach(lstObjs,
-						child, prevCommActNameList);
+				return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, child, prevCommActNameList);
 			}
-
+			
 		} else {
 			lstObjs.addLast(startObj);
 		}
-		if (childActivities.size() == 0 || !(startObj instanceof Activity)) {
+		if ((childActivities.size() == 0) || !(startObj instanceof Activity)) {
 			EObject parent = startObj.eContainer();
 			childActivities = parent.eContents();
 			for (int i = 0; i < childActivities.size(); i++) {
 				EObject o = childActivities.get(i);
 				if (o.equals(startObj)) {
-					if ((i + 1) < childActivities.size())
-						return newGetActivitiesTillFirstCommActFromForEach(
-								lstObjs, childActivities.get(i + 1),
-								prevCommActNameList);
+					if ((i + 1) < childActivities.size()) {
+						return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, childActivities.get(i + 1), prevCommActNameList);
+					}
 				}
 			}
 		}
 		for (EObject obj : childActivities) {
-
-			if (startObj instanceof Assign && obj instanceof Sources) {
-				if (lstObjs.getLast() instanceof Sources)
+			
+			if ((startObj instanceof Assign) && (obj instanceof Sources)) {
+				if (lstObjs.getLast() instanceof Sources) {
 					lstObjs.removeLast();
-
+				}
+				
 				Assign assignAct = (Assign) startObj;
-
+				
 				if (!prevCommActNameList.contains(assignAct.getName())) {
-
+					
 					return lstObjs;
 				} else {
-					List<EObject> childActivities2 = startObj.eContainer()
-							.eContents();
+					List<EObject> childActivities2 = startObj.eContainer().eContents();
 					for (int i = 0; i < childActivities2.size(); i++) {
 						EObject o = childActivities2.get(i);
 						if (o instanceof Activity) {
-							if (((Activity) o).getName().equals(
-									((Activity) startObj).getName())) {
-
-								return newGetActivitiesTillFirstCommActFromForEach(
-										lstObjs, childActivities2.get(i + 1),
-										prevCommActNameList);
+							if (((Activity) o).getName().equals(((Activity) startObj).getName())) {
+								
+								return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, childActivities2.get(i + 1), prevCommActNameList);
 							}
 						}
 					}
 				}
 			}
-			if (startObj instanceof Empty && obj instanceof Targets) {
-
-				if (lstObjs.getLast() instanceof Targets)
+			if ((startObj instanceof Empty) && (obj instanceof Targets)) {
+				
+				if (lstObjs.getLast() instanceof Targets) {
 					lstObjs.removeLast();
+				}
 				Empty emptyAct = (Empty) startObj;
-
+				
 				if (!prevCommActNameList.contains(emptyAct.getName())) {
-
+					
 					return lstObjs;
 				} else {
-
-					List<EObject> childActivities2 = startObj.eContainer()
-							.eContents();
+					
+					List<EObject> childActivities2 = startObj.eContainer().eContents();
 					for (int i = 0; i < childActivities2.size(); i++) {
 						EObject o = childActivities2.get(i);
 						if (o instanceof Activity) {
-							if (((Activity) o).getName().equals(
-									((Activity) startObj).getName())) {
-
-								return newGetActivitiesTillFirstCommActFromForEach(
-										lstObjs, childActivities2.get(i + 1),
-										prevCommActNameList);
+							if (((Activity) o).getName().equals(((Activity) startObj).getName())) {
+								
+								return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, childActivities2.get(i + 1), prevCommActNameList);
 							}
 						}
 					}
-
+					
 				}
 			}
 			if (obj instanceof Activity) {
@@ -1120,9 +1090,9 @@ public class ChoreographyMergerExtension {
 				if (obj.eContents() != null) {
 					List<EObject> children = obj.eContents();
 					for (EObject obj1 : children) {
-						if (obj1 instanceof Activity)
-							return newGetActivitiesTillFirstCommActFromForEach(
-									lstObjs, obj1, prevCommActNameList);//
+						if (obj1 instanceof Activity) {
+							return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, obj1, prevCommActNameList);//
+						}
 					}
 				}
 			} else {
@@ -1131,24 +1101,23 @@ public class ChoreographyMergerExtension {
 				for (int i = 0; i < childActivities3.size(); i++) {
 					EObject o = childActivities3.get(i);
 					if (o.equals(startObj)) {
-						if ((i + 1) < childActivities3.size())
-							return newGetActivitiesTillFirstCommActFromForEach(
-									lstObjs, childActivities3.get(i + 1),
-									prevCommActNameList);
+						if ((i + 1) < childActivities3.size()) {
+							return this.newGetActivitiesTillFirstCommActFromForEach(lstObjs, childActivities3.get(i + 1), prevCommActNameList);
+						}
 					}
 				}
 			}
-
+			
 		}
-
+		
 		return null;
 	}
-
+	
 	/**
 	 * This function gets and stores all the containers/scopes in merged process
 	 */
 	public void initializeScopeActivities() {
-		Process mergedProcess = choreographyPackage.getMergedProcess();
+		Process mergedProcess = this.choreographyPackage.getMergedProcess();
 		Activity firstActivity = mergedProcess.getActivity();
 		List<EObject> childActivities = firstActivity.eContents();
 		for (EObject obj : childActivities) {
@@ -1157,16 +1126,16 @@ public class ChoreographyMergerExtension {
 				ChoreographyMergerExtension.scopeList.add(scope);
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * This function gets and stores all the links which are children of top
 	 * flow activity of FE fragment.
 	 */
 	public void intializeLinksFromMergedProcess() {
-
-		Process mergedProcess = choreographyPackage.getMergedProcess();
+		
+		Process mergedProcess = this.choreographyPackage.getMergedProcess();
 		Activity firstActivity = mergedProcess.getActivity();
 		List<EObject> childActivities = firstActivity.eContents();
 		Flow flow = (Flow) firstActivity;
@@ -1175,46 +1144,45 @@ public class ChoreographyMergerExtension {
 				ChoreographyMergerExtension.linksList.add(link);
 			}
 		} else {
-			for (EObject e: flow.eContents()) {
+			for (EObject e : flow.eContents()) {
 				System.out.println(e.getClass());
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * Helper method. Storing newly created scopes in map for further
 	 * processing.
 	 */
 	public void addNewScopesToMap() {
-		Process mergedProcess = choreographyPackage.getMergedProcess();
-
+		Process mergedProcess = this.choreographyPackage.getMergedProcess();
+		
 		Activity firstActivity = mergedProcess.getActivity();
-		EObject parentOfScopes = getAllContainerScopesParent(firstActivity);
+		EObject parentOfScopes = this.getAllContainerScopesParent(firstActivity);
 		List<EObject> scopeObjects = parentOfScopes.eContents();
 		for (EObject scopeObj : scopeObjects) {
-
+			
 			if (scopeObj instanceof Scope) {
 				Scope scope = (Scope) scopeObj;
-				PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.mergedProcessScopeMap
-						.put(scope.getName(), scope);
+				PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.mergedProcessScopeMap.put(scope.getName(), scope);
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * This function updates scope/container names in merged process. Basically
 	 * this function handles correct number indexing attached to the name of
 	 * container scopes. Scope_1, Scope_2, ..., Scope_N
 	 */
 	public void updateScopeNames() {
-		Process mergedProcess = choreographyPackage.getMergedProcess();
+		Process mergedProcess = this.choreographyPackage.getMergedProcess();
 		ArrayList<Scope> listOfScopes = new ArrayList<Scope>();
-
+		
 		Activity firstActivity = mergedProcess.getActivity();
-		EObject obj = getAllContainerScopesParent(firstActivity);
-
+		EObject obj = this.getAllContainerScopesParent(firstActivity);
+		
 		for (EObject o : obj.eContents()) {
 			if (o instanceof Scope) {
 				Scope scope = (Scope) o;
@@ -1222,47 +1190,45 @@ public class ChoreographyMergerExtension {
 				listOfScopes.add(scope);
 			}
 		}
-
+		
 		for (int i = 0; i < listOfScopes.size(); i++) {
 			for (int j = i + 1; j < listOfScopes.size(); j++) {
-				if (listOfScopes.get(i).getName()
-						.equals(listOfScopes.get(j).getName())) {
+				if (listOfScopes.get(i).getName().equals(listOfScopes.get(j).getName())) {
 					Scope scopeToBeChanged = listOfScopes.get(j);
 					String scopeName = scopeToBeChanged.getName();
-					String newScopeName = scopeName.substring(0,
-							scopeName.lastIndexOf("_") + 1)
-							+ (1 + Integer.parseInt(scopeName
-									.substring(scopeName.lastIndexOf("_") + 1)));
+					String newScopeName = scopeName.substring(0, scopeName.lastIndexOf("_") + 1) + (1 + Integer.parseInt(scopeName.substring(scopeName.lastIndexOf("_") + 1)));
 					scopeToBeChanged.setName(newScopeName);
 					i = 0;
 					j = i + 1;
-
+					
 				}
 			}
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param obj
-	 *            - merged process's first activity
+	 * @param obj - merged process's first activity
 	 * @return return the parent of all container scoeps in merged process
 	 */
 	public EObject getAllContainerScopesParent(EObject obj) {
-		if (obj instanceof Scope)
+		if (obj instanceof Scope) {
 			return obj.eContainer();
-
-		for (EObject o : obj.eContents()) {
-			if (o instanceof Scope)
-				return obj;
-
 		}
-		for (int i = 0; i < obj.eContents().size(); i++)
-			return getAllContainerScopesParent(obj.eContents().get(i));
+		
+		for (EObject o : obj.eContents()) {
+			if (o instanceof Scope) {
+				return obj;
+			}
+			
+		}
+		for (int i = 0; i < obj.eContents().size(); i++) {
+			return this.getAllContainerScopesParent(obj.eContents().get(i));
+		}
 		return null;
 	}
-
+	
 	/**
 	 * In order supporint g MIP instantiation, each partner link needs to be
 	 * copied into each corresponding FE fragment.Because multiple instances of
@@ -1284,69 +1250,62 @@ public class ChoreographyMergerExtension {
 		 * 
 		 */
 		try {
-			if (choreographyPackage.getTopology().getParticipantSets().size() > 0) {
-				Process mergedProcess = choreographyPackage.getMergedProcess();
+			if (this.choreographyPackage.getTopology().getParticipantSets().size() > 0) {
+				Process mergedProcess = this.choreographyPackage.getMergedProcess();
 				Activity firstActivity = mergedProcess.getActivity();
 				EObject containerSub = firstActivity;
-				ArrayList<String> participatnSetPBDNames = choreographyPackage.choreographyPackageExtension
-						.getParticipantSetPBDNames();
-
+				ArrayList<String> participatnSetPBDNames = this.choreographyPackage.choreographyPackageExtension.getParticipantSetPBDNames();
+				
 				EList<EObject> objs = containerSub.eContents();
 				boolean continueFlag = true;
 				for (EObject objOfFLow : objs) {
 					continueFlag = true;
 					if (objOfFLow instanceof Scope) {
-
+						
 						Scope scopeOfPS_PBD = (Scope) objOfFLow;
-
-						int index = checkScopeActivityNameVSParticipantSetPBDNames(
-								scopeOfPS_PBD.getName(), participatnSetPBDNames);
+						
+						int index = this.checkScopeActivityNameVSParticipantSetPBDNames(scopeOfPS_PBD.getName(), participatnSetPBDNames);
 						if (index != -1) {
 							containerSub = scopeOfPS_PBD;
 							objs = containerSub.eContents();
 							for (EObject objOfScope : objs) {
 								{
-									if (!continueFlag)
+									if (!continueFlag) {
 										break;
+									}
 									if (objOfScope instanceof ForEach) {
 										containerSub = objOfScope;
 										objs = containerSub.eContents();
 										for (EObject objOfForEach : objs) {
-											if (!continueFlag)
+											if (!continueFlag) {
 												break;
+											}
 											if (objOfForEach instanceof Scope) {
 												Scope scopeOfForEach = (Scope) objOfForEach;
-												scopeOfForEach
-														.getPartnerLinks()
-														.getChildren()
-														.addAll(scopeOfPS_PBD
-																.getPartnerLinks()
-																.getChildren());
+												scopeOfForEach.getPartnerLinks().getChildren().addAll(scopeOfPS_PBD.getPartnerLinks().getChildren());
 												continueFlag = false;
 											}
 										}
-
+										
 									}
 								}
 							}
 						}
 					}
-
+					
 				}
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-
+		
 	}
 	
 	/**
 	 * 
-	 * @param curObj
-	 *            - can be scope activity
-	 * @param actName
-	 *            - activity name of searched activity
+	 * @param curObj - can be scope activity
+	 * @param actName - activity name of searched activity
 	 * @return the activity with given activity name residing in the given scope
 	 */
 	public Invoke findInvokeActivity(EObject curObj, String actName) {
@@ -1358,24 +1317,23 @@ public class ChoreographyMergerExtension {
 				if (act.getElement().getAttribute("wsu:id").equals(actName) || act.getName().equals(actName)) {
 					return act;
 				}
-
+				
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			res = findInvokeActivity(obj, actName);
-			if (res != null)
+			res = this.findInvokeActivity(obj, actName);
+			if (res != null) {
 				return res;
+			}
 		}
 		return res;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObj
-	 *            - can be scope activity
-	 * @param actName
-	 *            - activity name of searched activity
+	 * @param curObj - can be scope activity
+	 * @param actName - activity name of searched activity
 	 * @return the activity with given activity name residing in the given scope
 	 */
 	public Pick findPickActivity(EObject curObj, String actName) {
@@ -1387,18 +1345,19 @@ public class ChoreographyMergerExtension {
 				if (act.getElement().getAttribute("wsu:id").equals(actName)) {
 					return act;
 				}
-
+				
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			res = findPickActivity(obj, actName);
-			if (res != null)
+			res = this.findPickActivity(obj, actName);
+			if (res != null) {
 				return res;
+			}
 		}
 		return res;
 	}
-
+	
 	/**
 	 * Configure remaining communication activities from NMML
 	 */
@@ -1406,92 +1365,74 @@ public class ChoreographyMergerExtension {
 		if (this.choreographyPackage.getNMML().size() > 0) {
 			this.log.info("Following Message Links couldn't be merged : ");
 			for (MessageLink ml : this.choreographyPackage.getNMML()) {
-
+				
 				// If sendActivity is <reply> skip the link, it will be
 				// configured after the <receive>
 				if (ChoreoMergeUtil.resolveActivity(ml.getSendActivity()) instanceof Reply) {
 					continue;
 				}
-
+				
 				// Grounding-Topology-WSDL-Informations
 				this.log.info("ML : " + ml);
-				org.bpel4chor.model.grounding.impl.MessageLink grndMl = BPEL4ChorUtil
-						.resolveGroundingMessageLinkByName(
-								this.choreographyPackage.getGrounding(),
-								ml.getName());
-				this.log.info("The corresponding Grounding Message Link is : "
-						+ grndMl);
-				Participant sender = BPEL4ChorUtil.resolveParticipant(
-						this.choreographyPackage.getTopology(), ml.getSender());
-				Participant receiver = BPEL4ChorUtil.resolveParticipant(
-						this.choreographyPackage.getTopology(),
-						ml.getReceiver());
-
+				org.bpel4chor.model.grounding.impl.MessageLink grndMl = BPEL4ChorUtil.resolveGroundingMessageLinkByName(this.choreographyPackage.getGrounding(), ml.getName());
+				this.log.info("The corresponding Grounding Message Link is : " + grndMl);
+				Participant sender = BPEL4ChorUtil.resolveParticipant(this.choreographyPackage.getTopology(), ml.getSender());
+				Participant receiver = BPEL4ChorUtil.resolveParticipant(this.choreographyPackage.getTopology(), ml.getReceiver());
+				
 				this.log.info("Sender Participant is : " + sender);
 				this.log.info("Receiver Participant is : " + receiver);
-				ParticipantType sendPT = ChoreoMergeUtil
-						.resolveParticipantType(
-								this.choreographyPackage.getTopology(), sender);
-				ParticipantType recPT = ChoreoMergeUtil.resolveParticipantType(
-						this.choreographyPackage.getTopology(), receiver);
+				ParticipantType sendPT = ChoreoMergeUtil.resolveParticipantType(this.choreographyPackage.getTopology(), sender);
+				ParticipantType recPT = ChoreoMergeUtil.resolveParticipantType(this.choreographyPackage.getTopology(), receiver);
 				this.log.info("Sender ParticipantType is : " + sendPT);
 				this.log.info("Receiver ParticipantType is : " + recPT);
-				Process sendPBD = this.choreographyPackage.choreographyPackageExtension
-						.getPBDByName(sendPT
-								.getParticipantBehaviorDescription()
-								.getLocalPart());
-				Process recPBD = this.choreographyPackage.choreographyPackageExtension
-						.getPBDByName(recPT.getParticipantBehaviorDescription()
-								.getLocalPart());
+				Process sendPBD = this.choreographyPackage.choreographyPackageExtension.getPBDByName(sendPT.getParticipantBehaviorDescription().getLocalPart());
+				Process recPBD = this.choreographyPackage.choreographyPackageExtension.getPBDByName(recPT.getParticipantBehaviorDescription().getLocalPart());
 				this.log.info("Sender PBD is : " + sendPBD);
 				this.log.info("Receiver PBD is : " + recPBD);
-				Definition sendDef = this.choreographyPackage.getPbd2wsdl()
-						.get(sendPBD);
-				Definition recDef = this.choreographyPackage.getPbd2wsdl().get(
-						recPBD);
-
+				Definition sendDef = this.choreographyPackage.getPbd2wsdl().get(sendPBD);
+				Definition recDef = this.choreographyPackage.getPbd2wsdl().get(recPBD);
+				
 				this.log.info("Sender WSDL : " + sendDef);
 				this.log.info("Receiver WSDL : " + recDef);
-
-				PortType recPortType = MyWSDLUtil.findPortType(recDef, grndMl
-						.getPortType().getLocalPart());
+				
+				PortType recPortType = MyWSDLUtil.findPortType(recDef, grndMl.getPortType().getLocalPart());
 				// CHECK: again only one wsdl is permitted
-				if (recPortType == null)
+				if (recPortType == null) {
 					for (Definition def : this.choreographyPackage.getWsdls()) {
 						recPortType = MyWSDLUtil.findPortType(def, grndMl.getPortType().getLocalPart());
-						if (recPortType != null)
+						if (recPortType != null) {
 							break;
+						}
 					}
+				}
 				this.log.info("Receiver PortType is : " + recPortType);
-
-				Operation recOperation = MyWSDLUtil.resolveOperation(recDef,
-						recPortType.getQName(), grndMl.getOperation());
+				
+				Operation recOperation = MyWSDLUtil.resolveOperation(recDef, recPortType.getQName(), grndMl.getOperation());
 				this.log.info("Receiver Operation is : " + recOperation);
-				Role recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(recDef,
-						recPortType);
+				Role recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(recDef, recPortType);
 				// CHECK: again ...
-				if (recPLRole == null)
+				if (recPLRole == null) {
 					for (Definition def : this.choreographyPackage.getWsdls()) {
 						recPLRole = MyWSDLUtil.findPartnerLinkTypeRole(def, recPortType);
-						if (recPLRole != null)
+						if (recPLRole != null) {
 							break;
+						}
 					}
-				this.log.info("PartnerLinkType-Role which supports PortType above is : "
-						+ recPLRole);
-
+				}
+				this.log.info("PartnerLinkType-Role which supports PortType above is : " + recPLRole);
+				
 				// Technical Activity configuration
-				BPELExtensibleElement sendAct = ChoreoMergeUtil
-						.resolveActivity(ml.getSendActivity());
+				BPELExtensibleElement sendAct = ChoreoMergeUtil.resolveActivity(ml.getSendActivity());
 				if (sendAct.eContainer() == null) {
 					// QUICK HACK :)
 					// The parent is null for some reason, we cannot figure out
-					// Search the invoke from the parent, returns an equal object, but not the same
-					sendAct = findInvokeActivity(sendPBD.getActivity(), ((Invoke) sendAct).getName());
+					// Search the invoke from the parent, returns an equal
+					// object, but not the same
+					sendAct = this.findInvokeActivity(sendPBD.getActivity(), ((Invoke) sendAct).getName());
 				}
-				//System.out.println();
-				BPELExtensibleElement recAct = ChoreoMergeUtil
-						.resolveActivity(ml.getReceiveActivity());
-
+				// System.out.println();
+				BPELExtensibleElement recAct = ChoreoMergeUtil.resolveActivity(ml.getReceiveActivity());
+				
 				Invoke s = (Invoke) sendAct;
 				BPELExtensibleElement r = null;
 				if (recAct instanceof Receive) {
@@ -1506,68 +1447,59 @@ public class ChoreographyMergerExtension {
 						// If we have an <onEvent> of <scope>
 						r = (Scope) recAct.eContainer().eContainer();
 					}
-
+					
 				}
-
+				
 				Scope scpS = ChoreoMergeUtil.getHighestScopeOfActivity(s);
-
-				ArrayList<Scope> similarScopes = haveSimilarScopeContainers(
-						scpS,
-						PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.mergedProcessScopeMap);
-
+				
+				ArrayList<Scope> similarScopes = this.haveSimilarScopeContainers(scpS, PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.mergedProcessScopeMap);
+				
 				BPELExtensibleElement scpR = null; // ChoreoMergeUtil.getHighestScopeOfActivity(r);
 				if (r instanceof Process) {
 					scpR = r;
 				} else if (r instanceof Scope) {
 					scpR = r;
 				} else {
-
-					scpR = ChoreoMergeUtil
-							.getHighestScopeOfActivity((Activity) r);
-
+					
+					scpR = ChoreoMergeUtil.getHighestScopeOfActivity((Activity) r);
+					
 				}
-
-				String recName = (r instanceof Process ? ((Process) r)
-						.getName() : ((Activity) r).getName());
-
+				
+				String recName = (r instanceof Process ? ((Process) r).getName() : ((Activity) r).getName());
+				
 				// Set PartnerLinks, Operation and PortType for s
 				if (scpS.getPartnerLinks() == null) {
-					scpS.setPartnerLinks(BPELFactory.eINSTANCE
-							.createPartnerLinks());
+					scpS.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 				}
 				PartnerLink newPLS = BPELFactory.eINSTANCE.createPartnerLink();
 				newPLS.setName(s.getName() + "TO" + recName + "PLS");
-				newPLS.setPartnerLinkType((PartnerLinkType) recPLRole
-						.eContainer());
+				newPLS.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
 				newPLS.setPartnerRole(recPLRole);
 				scpS.getPartnerLinks().getChildren().add(newPLS);
 				s.setPartnerLink(newPLS);
 				s.setOperation(recOperation);
 				s.setPortType(recPortType);
-
+				
 				PartnerLink newPLR = BPELFactory.eINSTANCE.createPartnerLink();
 				newPLR.setName(s.getName() + "TO" + recName + "PLR");
-				newPLR.setPartnerLinkType((PartnerLinkType) recPLRole
-						.eContainer());
+				newPLR.setPartnerLinkType((PartnerLinkType) recPLRole.eContainer());
 				newPLR.setMyRole(recPLRole);
-
+				
 				if (scpR instanceof Process) {
 					Process proc = (Process) scpR;
 					if (proc.getPartnerLinks() == null) {
-						proc.setPartnerLinks(BPELFactory.eINSTANCE
-								.createPartnerLinks());
+						proc.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 					}
 					proc.getPartnerLinks().getChildren().add(newPLR);
 				} else {
 					Scope scp = (Scope) scpR;
 					if (scp.getPartnerLinks() == null) {
-						scp.setPartnerLinks(BPELFactory.eINSTANCE
-								.createPartnerLinks());
+						scp.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 					}
 					scp.getPartnerLinks().getChildren().add(newPLR);
-
+					
 				}
-
+				
 				if (recAct instanceof Receive) {
 					((PartnerActivity) recAct).setPartnerLink(newPLR);
 					((PartnerActivity) recAct).setOperation(recOperation);
@@ -1583,50 +1515,41 @@ public class ChoreographyMergerExtension {
 					oe.setOperation(recOperation);
 					oe.setPortType(recPortType);
 				}
-
+				
 				if (!ChoreoMergeUtil.isInvokeAsync(s)) {
 					// Find the <reply>ing links for s in NMML
-					for (MessageLink messageLink : this.choreographyPackage
-							.getNMML()) {
-						if (messageLink.getReceiveActivity()
-								.equals(s.getName())) {
-							Reply repl = (Reply) ChoreoMergeUtil
-									.resolveActivity(messageLink
-											.getSendActivity());
+					for (MessageLink messageLink : this.choreographyPackage.getNMML()) {
+						if (messageLink.getReceiveActivity().equals(s.getName())) {
+							Reply repl = (Reply) ChoreoMergeUtil.resolveActivity(messageLink.getSendActivity());
 							repl.setPartnerLink(newPLR);
 							repl.setOperation(recOperation);
 							repl.setPortType(recPortType);
 						}
 					}
 				}
-
+				
 				for (int i = 0; i < similarScopes.size(); i++) {
 					Scope invokeSimilarScope = similarScopes.get(i);
 					if (invokeSimilarScope.getPartnerLinks() == null) {
-						invokeSimilarScope
-								.setPartnerLinks(BPELFactory.eINSTANCE
-										.createPartnerLinks());
-
+						invokeSimilarScope.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
+						
 					}
-
+					
 					// Copy PartnerLinks
-					for (PartnerLink pLink : scpS.getPartnerLinks()
-							.getChildren()) {
-						PartnerLink newLink = FragmentDuplicator
-								.copyPartnerLink(pLink);
-						if (!containsPartnerLink(pLink, invokeSimilarScope
-								.getPartnerLinks().getChildren()))
-							invokeSimilarScope.getPartnerLinks().getChildren()
-									.add(newLink);
+					for (PartnerLink pLink : scpS.getPartnerLinks().getChildren()) {
+						PartnerLink newLink = FragmentDuplicator.copyPartnerLink(pLink);
+						if (!ChoreographyMergerExtension.containsPartnerLink(pLink, invokeSimilarScope.getPartnerLinks().getChildren())) {
+							invokeSimilarScope.getPartnerLinks().getChildren().add(newLink);
+						}
 					}
-
+					
 				}
 			}
 			ChoreographyMergerExtension.createdNewPartnerLinksForNMML = true;
 		}
-
+		
 	}
-
+	
 	/**
 	 * 
 	 * @param pLink
@@ -1634,20 +1557,19 @@ public class ChoreographyMergerExtension {
 	 * @return true if the list contains given partner link, otherwise return
 	 *         false
 	 */
-	public static boolean containsPartnerLink(PartnerLink pLink,
-			EList<PartnerLink> listOfPLinks) {
+	public static boolean containsPartnerLink(PartnerLink pLink, EList<PartnerLink> listOfPLinks) {
 		for (PartnerLink pl : listOfPLinks) {
-			if (pl.getName().equals(pLink.getName()))
+			if (pl.getName().equals(pLink.getName())) {
 				return true;
+			}
 		}
 		return false;
-
+		
 	}
-
+	
 	/**
 	 * 
-	 * @param str
-	 *            - scope name
+	 * @param str - scope name
 	 * @return - cechk whteher scope name contains number or not
 	 */
 	public static boolean scopeNameHasNumber(String str) {
@@ -1658,7 +1580,7 @@ public class ChoreographyMergerExtension {
 		}
 		return false;
 	}
-
+	
 	/**
 	 * 
 	 * @param currentScope
@@ -1671,91 +1593,62 @@ public class ChoreographyMergerExtension {
 	 *         and Scope_2 are similar Scopes. but ScopeA_1 and ScopeB_2 are not
 	 *         similar scopes.
 	 */
-	public ArrayList<Scope> haveSimilarScopeContainers(Scope currentScope,
-			Map<String, Scope> mergedProcessAllScopes) {
+	public ArrayList<Scope> haveSimilarScopeContainers(Scope currentScope, Map<String, Scope> mergedProcessAllScopes) {
 		String processed_scope_name = currentScope.getName();
 		ArrayList<Scope> listOfSimilarScopes = new ArrayList<Scope>();
-		Iterator<Entry<String, Scope>> itMergedProcessAllScopes = mergedProcessAllScopes
-				.entrySet().iterator();
+		Iterator<Entry<String, Scope>> itMergedProcessAllScopes = mergedProcessAllScopes.entrySet().iterator();
 		while (itMergedProcessAllScopes.hasNext()) {
-			Entry<String, Scope> mergedProcess_scope = itMergedProcessAllScopes
-					.next();
+			Entry<String, Scope> mergedProcess_scope = itMergedProcessAllScopes.next();
 			String mergedProcess_scope_name = mergedProcess_scope.getKey();
-			if (scopeNameHasNumber(processed_scope_name)) {
-				if (scopeNameHasNumber(mergedProcess_scope_name)) {
-					if ((processed_scope_name
-							.contains(mergedProcess_scope_name
-									.substring(0, mergedProcess_scope_name
-											.lastIndexOf("_") + 1)) && !processed_scope_name
-							.equals(mergedProcess_scope_name))
-							|| (mergedProcess_scope_name
-									.contains(processed_scope_name.substring(0,
-											processed_scope_name
-													.lastIndexOf("_") + 1)) && !processed_scope_name
-									.equals(mergedProcess_scope_name))) {
+			if (ChoreographyMergerExtension.scopeNameHasNumber(processed_scope_name)) {
+				if (ChoreographyMergerExtension.scopeNameHasNumber(mergedProcess_scope_name)) {
+					if ((processed_scope_name.contains(mergedProcess_scope_name.substring(0, mergedProcess_scope_name.lastIndexOf("_") + 1)) && !processed_scope_name.equals(mergedProcess_scope_name)) || (mergedProcess_scope_name.contains(processed_scope_name.substring(0, processed_scope_name.lastIndexOf("_") + 1)) && !processed_scope_name.equals(mergedProcess_scope_name))) {
 						listOfSimilarScopes.add(mergedProcess_scope.getValue());
 					}
 				} else {
-					if ((processed_scope_name
-							.contains(mergedProcess_scope_name) && !processed_scope_name
-							.equals(mergedProcess_scope_name))
-							|| (mergedProcess_scope_name
-									.contains(processed_scope_name.substring(0,
-											processed_scope_name
-													.lastIndexOf("_") + 1)) && !processed_scope_name
-									.equals(mergedProcess_scope_name))) {
+					if ((processed_scope_name.contains(mergedProcess_scope_name) && !processed_scope_name.equals(mergedProcess_scope_name)) || (mergedProcess_scope_name.contains(processed_scope_name.substring(0, processed_scope_name.lastIndexOf("_") + 1)) && !processed_scope_name.equals(mergedProcess_scope_name))) {
 						listOfSimilarScopes.add(mergedProcess_scope.getValue());
 					}
 				}
 			} else {
-				if (scopeNameHasNumber(mergedProcess_scope_name))
-					if ((processed_scope_name
-							.contains(mergedProcess_scope_name
-									.substring(0, mergedProcess_scope_name
-											.lastIndexOf("_") + 1)) && !processed_scope_name
-							.equals(mergedProcess_scope_name))
-							|| (mergedProcess_scope_name
-									.contains(processed_scope_name) && !processed_scope_name
-									.equals(mergedProcess_scope_name))) {
+				if (ChoreographyMergerExtension.scopeNameHasNumber(mergedProcess_scope_name)) {
+					if ((processed_scope_name.contains(mergedProcess_scope_name.substring(0, mergedProcess_scope_name.lastIndexOf("_") + 1)) && !processed_scope_name.equals(mergedProcess_scope_name)) || (mergedProcess_scope_name.contains(processed_scope_name) && !processed_scope_name.equals(mergedProcess_scope_name))) {
 						listOfSimilarScopes.add(mergedProcess_scope.getValue());
 					}
+				}
 			}
-
+			
 		}
-
+		
 		return listOfSimilarScopes;
-
+		
 	}
-
+	
 	public void handleSeveralCreateInstanceYesCases() {
 		/**
 		 * All receiving activities including receive, onMessage of Pick
 		 */
 		//
-		List<MessageLink> messageLinks = choreographyPackage.getTopology()
-				.getMessageLinks();
+		List<MessageLink> messageLinks = this.choreographyPackage.getTopology().getMessageLinks();
 		Map<String, ArrayList<String>> receiveActivitiesMap = new HashMap<String, ArrayList<String>>();
 		for (MessageLink msgLink : messageLinks) {
-			String pbdName = choreographyPackage.choreographyPackageExtension
-					.getPBDDescriptionNameFromParticipantName(msgLink
-							.getReceiver());
+			String pbdName = this.choreographyPackage.choreographyPackageExtension.getPBDDescriptionNameFromParticipantName(msgLink.getReceiver());
 			if (receiveActivitiesMap.containsKey(pbdName)) {
-				receiveActivitiesMap.get(pbdName).add(
-						msgLink.getReceiveActivity());
-
+				receiveActivitiesMap.get(pbdName).add(msgLink.getReceiveActivity());
+				
 			} else {
 				ArrayList<String> recActList = new ArrayList<String>();
 				recActList.add(msgLink.getReceiveActivity());
 				receiveActivitiesMap.put(pbdName, recActList);
-
+				
 			}
 		}
 		try {
 			List<Process> pbds = new ArrayList<Process>();
 			List<Process> processedPbds = new ArrayList<Process>();
-			pbds.addAll(choreographyPackage.getPbds());
+			pbds.addAll(this.choreographyPackage.getPbds());
 			Map<String, ArrayList<String>> newInstanceCreatingRecActMap = new HashMap<String, ArrayList<String>>();
-
+			
 			/**
 			 * Get all receive/Pick activities where createInstance="yes"
 			 * 
@@ -1763,41 +1656,36 @@ public class ChoreographyMergerExtension {
 			 * activity name
 			 * 
 			 */
-
+			
 			for (Process pbd : pbds) {
-
+				
 				System.out.println("Pbd: " + pbd.getName());
 				if (receiveActivitiesMap.containsKey(pbd.getName())) {
-					ArrayList<String> recActivites = receiveActivitiesMap
-							.get(pbd.getName());
-
+					ArrayList<String> recActivites = receiveActivitiesMap.get(pbd.getName());
+					
 					for (int j = 0; j < recActivites.size(); j++) {
 						String curRecAct = recActivites.get(j);
-
-						boolean createInstance = checkReceiveActivityCreateInstanceYes(
-								pbd, curRecAct);
-
+						
+						boolean createInstance = this.checkReceiveActivityCreateInstanceYes(pbd, curRecAct);
+						
 						if (createInstance) {
-
-							if (newInstanceCreatingRecActMap.containsKey(pbd
-									.getName())) {
-								newInstanceCreatingRecActMap.get(pbd.getName())
-										.add(curRecAct);
-
+							
+							if (newInstanceCreatingRecActMap.containsKey(pbd.getName())) {
+								newInstanceCreatingRecActMap.get(pbd.getName()).add(curRecAct);
+								
 							} else {
-
+								
 								ArrayList<String> recActList = new ArrayList<String>();
 								recActList.add(curRecAct);
-								newInstanceCreatingRecActMap.put(pbd.getName(),
-										recActList);
+								newInstanceCreatingRecActMap.put(pbd.getName(), recActList);
 							}
 						}
-
+						
 					}
 				}
-
+				
 			}
-
+			
 			/**
 			 * TODO
 			 * 
@@ -1805,45 +1693,39 @@ public class ChoreographyMergerExtension {
 			 * receive/pick activities (with attribute createInstance="yes")
 			 * 
 			 */
-
+			
 			Map<String, ArrayList<String>> newInstanceCreatingInvokeActMap = new HashMap<String, ArrayList<String>>();
-
-			for (MessageLink mL : choreographyPackage.getTopology()
-					.getMessageLinks()) {
-
+			
+			for (MessageLink mL : this.choreographyPackage.getTopology().getMessageLinks()) {
+				
 				for (int i = 0; i < pbds.size(); i++) {
 					Process pbd = pbds.get(i);
-					if (newInstanceCreatingRecActMap.get(pbd.getName()) == null)
+					if (newInstanceCreatingRecActMap.get(pbd.getName()) == null) {
 						continue;
-
-					for (String recActivity : newInstanceCreatingRecActMap
-							.get(pbd.getName()))
+					}
+					
+					for (String recActivity : newInstanceCreatingRecActMap.get(pbd.getName())) {
 						if (mL.getReceiveActivity().equals(recActivity)) {
-
-							if (newInstanceCreatingInvokeActMap.get(pbd
-									.getName()) != null) {
-								if (!newInstanceCreatingInvokeActMap.get(
-										pbd.getName()).contains(
-										mL.getSendActivity())) {
-									newInstanceCreatingInvokeActMap.get(
-											pbd.getName()).add(
-											mL.getSendActivity());
-
+							
+							if (newInstanceCreatingInvokeActMap.get(pbd.getName()) != null) {
+								if (!newInstanceCreatingInvokeActMap.get(pbd.getName()).contains(mL.getSendActivity())) {
+									newInstanceCreatingInvokeActMap.get(pbd.getName()).add(mL.getSendActivity());
+									
 								}
 							} else {
 								ArrayList<String> invokeNames = new ArrayList<String>();
 								invokeNames.add(mL.getSendActivity());
-								newInstanceCreatingInvokeActMap.put(
-										pbd.getName(), invokeNames);
-
+								newInstanceCreatingInvokeActMap.put(pbd.getName(), invokeNames);
+								
 							}
-
+							
 						}
-
+					}
+					
 				}
-
+				
 			}
-
+			
 			/**
 			 * Get activity from choreographyPackage.mergedProcess getOld2New()
 			 * 
@@ -1853,80 +1735,57 @@ public class ChoreographyMergerExtension {
 			 * 
 			 */
 			pbds.clear();
-			pbds.addAll(choreographyPackage.getPbds());
+			pbds.addAll(this.choreographyPackage.getPbds());
 			// invokeCounts will keep for each forEach number of invokes inside
 			boolean firstTime = true;
 			for (Process pbd : pbds) {
-				if (newInstanceCreatingInvokeActMap.get(pbd.getName()) == null)
+				if (newInstanceCreatingInvokeActMap.get(pbd.getName()) == null) {
 					continue;
-				for (String invokeWsuId : newInstanceCreatingInvokeActMap
-						.get(pbd.getName())) {
-					Activity invokeActivity = (Activity) choreographyPackage
-							.getOld2New().get(invokeWsuId);
-					if (choreographyPackage.choreographyPackageExtension
-							.checkParentIsForEach(invokeActivity)) {
+				}
+				for (String invokeWsuId : newInstanceCreatingInvokeActMap.get(pbd.getName())) {
+					Activity invokeActivity = (Activity) this.choreographyPackage.getOld2New().get(invokeWsuId);
+					if (this.choreographyPackage.choreographyPackageExtension.checkParentIsForEach(invokeActivity)) {
 						// countInvokesInForeach += 1;
-						ForEach parentForEach = choreographyPackage.choreographyPackageExtension
-								.getFirstForEachParent(invokeActivity);
-
+						ForEach parentForEach = this.choreographyPackage.choreographyPackageExtension.getFirstForEachParent(invokeActivity);
+						
 						/**
 						 * Check if forEach's parent is also forEach then add
 						 * number of invokes inside it to parents numOfInvokes
 						 * value
 						 * 
 						 */
-
-						if (choreographyPackage.choreographyPackageExtension
-								.checkParentIsForEach(parentForEach)) {
-							ForEach parentParentForEach = choreographyPackage.choreographyPackageExtension
-									.getFirstForEachParent(parentForEach);
-							if (ChoreographyMergerExtension.invokeCountsInsideForEachs
-									.containsKey(parentParentForEach.getName())) {
+						
+						if (this.choreographyPackage.choreographyPackageExtension.checkParentIsForEach(parentForEach)) {
+							ForEach parentParentForEach = this.choreographyPackage.choreographyPackageExtension.getFirstForEachParent(parentForEach);
+							if (ChoreographyMergerExtension.invokeCountsInsideForEachs.containsKey(parentParentForEach.getName())) {
 								if (firstTime) {
 									firstTime = false;
 								} else {
-									ChoreographyMergerExtension.invokeCountsInsideForEachs
-											.put(parentParentForEach.getName(),
-													ChoreographyMergerExtension.invokeCountsInsideForEachs
-															.get(parentParentForEach
-																	.getName())
-															.intValue() + 1);
+									ChoreographyMergerExtension.invokeCountsInsideForEachs.put(parentParentForEach.getName(), ChoreographyMergerExtension.invokeCountsInsideForEachs.get(parentParentForEach.getName()).intValue() + 1);
 								}
 							} else {
-								ChoreographyMergerExtension.invokeCountsInsideForEachs
-										.put(parentParentForEach.getName(), 1);
+								ChoreographyMergerExtension.invokeCountsInsideForEachs.put(parentParentForEach.getName(), 1);
 							}
-
+							
 						} else {
-
-							if (ChoreographyMergerExtension.invokeCountsInsideForEachs
-									.containsKey(parentForEach.getName())) {
-
-								ChoreographyMergerExtension.invokeCountsInsideForEachs
-										.put(parentForEach.getName(),
-												ChoreographyMergerExtension.invokeCountsInsideForEachs
-														.get(parentForEach
-																.getName())
-														.intValue() + 1);
-
+							
+							if (ChoreographyMergerExtension.invokeCountsInsideForEachs.containsKey(parentForEach.getName())) {
+								
+								ChoreographyMergerExtension.invokeCountsInsideForEachs.put(parentForEach.getName(), ChoreographyMergerExtension.invokeCountsInsideForEachs.get(parentForEach.getName()).intValue() + 1);
+								
 							} else {
-								ChoreographyMergerExtension.invokeCountsInsideForEachs
-										.put(parentForEach.getName(), 1);
+								ChoreographyMergerExtension.invokeCountsInsideForEachs.put(parentForEach.getName(), 1);
 							}
 						}
-
+						
 					} else {
-						wsuIdOfInvokesnotInsideForEach.add(invokeWsuId);
+						this.wsuIdOfInvokesnotInsideForEach.add(invokeWsuId);
 						ChoreographyMergerExtension.countInvokesNOTInForeach += 1;
-						System.out
-								.println("Invoke Activity: "
-										+ invokeActivity.getName()
-										+ "\tCount: "
-										+ ChoreographyMergerExtension.countInvokesNOTInForeach);
+						System.out.println("Invoke Activity: " + invokeActivity.getName() + "\tCount: " + ChoreographyMergerExtension.countInvokesNOTInForeach);
 					}
-
+					
 				}
-
+				
 			}
 			// This function below is not part of this thesis, even though it is
 			// implemented.
@@ -1935,50 +1794,42 @@ public class ChoreographyMergerExtension {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-
+		
 	}
-
+	
 	/**
 	 * This function creates extra MIP containers for each extra invoke
 	 * activity, which is not inside FE fragment.
 	 */
 	public void createExtraContinaersForExtraInvokes() {
-
-		Process mergedProcess = choreographyPackage.getMergedProcess();
+		
+		Process mergedProcess = this.choreographyPackage.getMergedProcess();
 		Activity firstActivity = mergedProcess.getActivity();
 		EObject obj = firstActivity;
 		List<EObject> scopes = obj.eContents();
-
+		
 		boolean hasExecuted = false;
 		for (EObject scopeObj : scopes) {
 			Scope scope = (Scope) scopeObj;
 			List<EObject> scopeChildrenForEach = scope.eContents();
 			String scopeName = "";
-			if (scope.getName().indexOf("_") == scope.getName()
-					.lastIndexOf("_")) {
-				scopeName = scope.getName().substring(
-						scope.getName().indexOf("_") + 1);
+			if (scope.getName().indexOf("_") == scope.getName().lastIndexOf("_")) {
+				scopeName = scope.getName().substring(scope.getName().indexOf("_") + 1);
 			} else {
-				scopeName = scope.getName().substring(
-						scope.getName().indexOf("_") + 1,
-						scope.getName().indexOf("_",
-								scope.getName().indexOf("_") + 1));
+				scopeName = scope.getName().substring(scope.getName().indexOf("_") + 1, scope.getName().indexOf("_", scope.getName().indexOf("_") + 1));
 			}
 			if (scopeChildrenForEach.size() == 2) {
 				ForEach curForEach = (ForEach) scopeChildrenForEach.get(0);
-				int count = ChoreographyMergerExtension.invokeCountsInsideForEachs
-						.get(curForEach.getName()) - 1;
-				Process pbd = getPbdFromPbdName(scopeName);
+				int count = ChoreographyMergerExtension.invokeCountsInsideForEachs.get(curForEach.getName()) - 1;
+				Process pbd = this.getPbdFromPbdName(scopeName);
 				for (int i = 0; i < count; i++) {
 					ForEach currentForEach = (ForEach) scope.getActivity();
-					PBDFragmentDuplicator.pbdFragmentDuplicatorExtension
-							.copyVarsAndActitiviesDynamicMIP(pbd,
-									currentForEach);
+					PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyVarsAndActitiviesDynamicMIP(pbd, currentForEach);
 				}
 			} else {
 				if (!hasExecuted) {
-					for (String wsuId : wsuIdOfInvokesnotInsideForEach) {
-						Process pbd = getPBDFromWsuIdOfInvoke(wsuId);
+					for (String wsuId : this.wsuIdOfInvokesnotInsideForEach) {
+						Process pbd = this.getPBDFromWsuIdOfInvoke(wsuId);
 						for (int i = 0; i < ChoreographyMergerExtension.countInvokesNOTInForeach; i++) {
 							PBDFragmentDuplicator.copyVarsAndActitivies(pbd);
 						}
@@ -1986,10 +1837,10 @@ public class ChoreographyMergerExtension {
 					}
 				}
 			}
-
+			
 		}
 	}
-
+	
 	/**
 	 * 
 	 * @param wsuIdOfInvoke
@@ -1997,34 +1848,33 @@ public class ChoreographyMergerExtension {
 	 */
 	public Process getPBDFromWsuIdOfInvoke(String wsuIdOfInvoke) {
 		MessageLink requiredMsgLink = null;
-		for (MessageLink mL : choreographyPackage.getTopology()
-				.getMessageLinks()) {
+		for (MessageLink mL : this.choreographyPackage.getTopology().getMessageLinks()) {
 			if (mL.getSendActivity().equals(wsuIdOfInvoke)) {
 				requiredMsgLink = mL;
 				break;
 			}
 		}
-		String requiredPbdName = choreographyPackage.choreographyPackageExtension
-				.getPBDDescriptionNameFromParticipantName(requiredMsgLink
-						.getReceiver());
-		return getPbdFromPbdName(requiredPbdName);
-
+		String requiredPbdName = this.choreographyPackage.choreographyPackageExtension.getPBDDescriptionNameFromParticipantName(requiredMsgLink.getReceiver());
+		return this.getPbdFromPbdName(requiredPbdName);
+		
 	}
-
+	
 	/**
 	 * 
 	 * @param pbdName
 	 * @return - the process with the given pbd name
 	 */
 	public Process getPbdFromPbdName(String pbdName) {
-		List<Process> pbds = choreographyPackage.getPbds();
-		for (Process pbd : pbds)
-			if (pbd.getName().equals(pbdName))
+		List<Process> pbds = this.choreographyPackage.getPbds();
+		for (Process pbd : pbds) {
+			if (pbd.getName().equals(pbdName)) {
 				return pbd;
-
+			}
+		}
+		
 		return null;
 	}
-
+	
 	/**
 	 * 
 	 * @param forEachActivity
@@ -2032,63 +1882,62 @@ public class ChoreographyMergerExtension {
 	 *         activity, then return it , otherwise return null.
 	 */
 	public ForEach checkHasForEachChild(EObject forEachActivity) {
-
-		if (forEachActivity == null)
+		
+		if (forEachActivity == null) {
 			return null;
-
+		}
+		
 		List<EObject> children = forEachActivity.eContents();
 		for (EObject child : children) {
-			if (child instanceof ForEach)
+			if (child instanceof ForEach) {
 				return (ForEach) child;
+			}
 		}
-
+		
 		for (EObject child : children) {
-			return checkHasForEachChild(child);
+			return this.checkHasForEachChild(child);
 		}
 		return null;
 	}
-
+	
 	/**
 	 * 
-	 * @param pbd
-	 *            - process which is participating in choreography
-	 * @param recActname
-	 *            - recevie activity name
+	 * @param pbd - process which is participating in choreography
+	 * @param recActname - recevie activity name
 	 * @return check whether the receive activity with given name, residing in
 	 *         the given pbd, has createInstance attribtue value yes or no.
 	 */
-	public boolean checkReceiveActivityCreateInstanceYes(Process pbd,
-			String recActname) {
+	public boolean checkReceiveActivityCreateInstanceYes(Process pbd, String recActname) {
 		Activity firstActivity = pbd.getActivity();
 		EObject container = firstActivity.eContainer();
 		container = firstActivity;
-
-		Receive recAct = findReceiveActivity(container, recActname);
+		
+		Receive recAct = this.findReceiveActivity(container, recActname);
 		if (recAct != null) {
 			if (recAct.getCreateInstance()) {
 				return true;
 			}
 		}
-
-		Pick pickAct = findPickActivity(container, recActname);
+		
+		Pick pickAct = this.findPickActivity(container, recActname);
 		if (pickAct != null) {
 			if (pickAct.getCreateInstance()) {
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObj
-	 *            - is the scope activity representing MIP instantiation
+	 * @param curObj - is the scope activity representing MIP instantiation
 	 * @return the forEach activity insde MIP container
 	 */
 	public ForEach findForEachActivityInsideDynamicMIP(EObject curObj) {
-		if (curObj == null)
+		if (curObj == null) {
 			return null;
+		}
 		ForEach forEach = null;
 		List<EObject> children = curObj.eContents();
 		for (EObject obj : children) {
@@ -2096,51 +1945,51 @@ public class ChoreographyMergerExtension {
 				ForEach act = (ForEach) obj;
 				return act;
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			forEach = findForEachActivityInsideDynamicMIP(obj);
-			if (forEach != null)
+			forEach = this.findForEachActivityInsideDynamicMIP(obj);
+			if (forEach != null) {
 				return forEach;
+			}
 		}
 		return forEach;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObj
-	 *            - is the scope activity representing MIP instantiation
-	 * @param foundForEachs
-	 *            - already foudn forEach activities
+	 * @param curObj - is the scope activity representing MIP instantiation
+	 * @param foundForEachs - already foudn forEach activities
 	 * @return the forEach activity inside give scope, which is not found (which
 	 *         name is not in foundForEachs list)
 	 */
-	public ForEach findForEachActivityInsideMIPScope(EObject curObj,
-			ArrayList<String> foundForEachs) {
-		if (curObj == null)
+	public ForEach findForEachActivityInsideMIPScope(EObject curObj, ArrayList<String> foundForEachs) {
+		if (curObj == null) {
 			return null;
+		}
 		ForEach forEach = null;
 		List<EObject> children = curObj.eContents();
 		for (EObject obj : children) {
 			if (obj instanceof ForEach) {
 				ForEach act = (ForEach) obj;
-				if (!foundForEachs.contains(act.getName()))
+				if (!foundForEachs.contains(act.getName())) {
 					return act;
+				}
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			forEach = findForEachActivityInsideMIPScope(obj, foundForEachs);
-			if (forEach != null)
+			forEach = this.findForEachActivityInsideMIPScope(obj, foundForEachs);
+			if (forEach != null) {
 				return forEach;
+			}
 		}
 		return forEach;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObjFE
-	 *            - is forEach activity
+	 * @param curObjFE - is forEach activity
 	 * @return return the flow activitiy residing in the given FE
 	 */
 	public Flow findFlowActivityInsideFE(EObject curObjFE) {
@@ -2149,26 +1998,25 @@ public class ChoreographyMergerExtension {
 		for (EObject obj : children) {
 			if (obj instanceof Flow) {
 				Flow act = (Flow) obj;
-
+				
 				return act;
-
+				
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			res = findFlowActivityInsideFE(obj);
-			if (res != null)
+			res = this.findFlowActivityInsideFE(obj);
+			if (res != null) {
 				return res;
+			}
 		}
 		return res;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObj
-	 *            - scope activity
-	 * @param actName
-	 *            - the searched activity name
+	 * @param curObj - scope activity
+	 * @param actName - the searched activity name
 	 * @return the activity with given activity name residing in the given scope
 	 */
 	public Activity findActivityByName(EObject curObj, String actName) {
@@ -2177,27 +2025,26 @@ public class ChoreographyMergerExtension {
 		for (EObject obj : children) {
 			if (obj instanceof Activity) {
 				Activity act = (Activity) obj;
-				if (act.getName() != null && act.getName().equals(actName)) {
+				if ((act.getName() != null) && act.getName().equals(actName)) {
 					return act;
 				}
-
+				
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			res = findActivityByName(obj, actName);
-			if (res != null)
+			res = this.findActivityByName(obj, actName);
+			if (res != null) {
 				return res;
+			}
 		}
 		return res;
 	}
-
+	
 	/**
 	 * 
-	 * @param curObj
-	 *            - can be scope activity
-	 * @param actName
-	 *            - activity name of searched activity
+	 * @param curObj - can be scope activity
+	 * @param actName - activity name of searched activity
 	 * @return the activity with given activity name residing in the given scope
 	 */
 	public Receive findReceiveActivity(EObject curObj, String actName) {
@@ -2209,18 +2056,19 @@ public class ChoreographyMergerExtension {
 				if (act.getElement().getAttribute("wsu:id").equals(actName)) {
 					return act;
 				}
-
+				
 			}
-
+			
 		}
 		for (EObject obj : children) {
-			res = findReceiveActivity(obj, actName);
-			if (res != null)
+			res = this.findReceiveActivity(obj, actName);
+			if (res != null) {
 				return res;
+			}
 		}
 		return res;
 	}
-
+	
 	/**
 	 * 
 	 * @param scopeName
@@ -2229,11 +2077,9 @@ public class ChoreographyMergerExtension {
 	 *         the nreturns 1. If Scope name does not contain any of PBD names,
 	 *         then return -1.
 	 */
-	public int checkScopeActivityNameVSParticipantSetPBDNames(String scopeName,
-			ArrayList<String> participantSetPBDNames) {
+	public int checkScopeActivityNameVSParticipantSetPBDNames(String scopeName, ArrayList<String> participantSetPBDNames) {
 		for (int i = 0; i < participantSetPBDNames.size(); i++) {
-			String pbdName = participantSetPBDNames.get(i).substring(0,
-					participantSetPBDNames.get(i).indexOf(","));
+			String pbdName = participantSetPBDNames.get(i).substring(0, participantSetPBDNames.get(i).indexOf(","));
 			if (scopeName.contains(pbdName)) {
 				return i;
 			}

@@ -62,7 +62,7 @@ import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
  * 
  */
 public class ChoreographyPackage implements Serializable {
-
+	
 	public ChoreographyPackageExtension choreographyPackageExtension;
 	
 	private static final long serialVersionUID = 3949692671093811360L;
@@ -117,15 +117,13 @@ public class ChoreographyPackage implements Serializable {
 			e.printStackTrace();
 		}
 	}
-
-	public void setChoreographyPackageExtension(
-			ChoreographyPackageExtension choreographyPackageExtension) {
+	
+	public void setChoreographyPackageExtension(ChoreographyPackageExtension choreographyPackageExtension) {
 		this.choreographyPackageExtension = choreographyPackageExtension;
-
+		
 	}
-
-	public void setChoreographyMergerExtension(
-			ChoreographyMergerExtension choreographyMergerExtension) {
+	
+	public void setChoreographyMergerExtension(ChoreographyMergerExtension choreographyMergerExtension) {
 		this.choreographyPackageExtension.choreographyMergerExtension = choreographyMergerExtension;
 	}
 	
@@ -248,10 +246,11 @@ public class ChoreographyPackage implements Serializable {
 			for (Definition definition : this.wsdls) {
 				// CHECK: nur eine einzige WSDL ist fuer einen Prozess
 				// zugelassen => variablen Typ kann nicht gesetzt werden
-				if (definition.getQName() != null)
+				if (definition.getQName() != null) {
 					if (process.getName().equals(definition.getQName().getLocalPart())) {
 						this.pbd2wsdl.put(process, definition);
 					}
+				}
 			}
 		}
 	}
@@ -345,20 +344,20 @@ public class ChoreographyPackage implements Serializable {
 		
 		// Iterate over all PBDs and copy all Process Fragments in separate
 		// scopes into the new merged Process Flow
-		for (Process process : this.pbds) {
-			PBDFragmentDuplicator.copyVarsAndActitivies(process);
-		}
+		// for (Process process : this.pbds) {
+		// PBDFragmentDuplicator.copyVarsAndActitivies(process);
+		// }
 		
 		// CHECK: imports will be automatically added from BPELWriter (IBM), we
 		// add it manuel, first we have to disable it in BPELWriter
-		setWsdlImport();
-
+		this.setWsdlImport();
+		
 		/**
 		 * Handles MIP Instantiation when there exists participatnSet in
 		 * topology artifact
 		 * 
 		 */
-		choreographyPackageExtension.handleParticipantSetMerge();
+		this.choreographyPackageExtension.handleParticipantSetMerge();
 	}
 	
 	public List<Definition> getWsdls() {
@@ -442,7 +441,6 @@ public class ChoreographyPackage implements Serializable {
 		return this.pbd2MergedVars;
 	}
 	
-
 	public List<Process> getPbds() {
 		return this.pbds;
 	}

@@ -1,66 +1,18 @@
 package org.bpel4chor.mergechoreography;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.ZipFile;
 
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.matcher.communication.CommunicationMatcher;
 import org.bpel4chor.mergechoreography.pattern.MergePattern;
-import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
-import org.bpel4chor.mergechoreography.util.PBDFragmentDuplicator;
 import org.bpel4chor.mergechoreography.util.MergePostProcessor;
 import org.bpel4chor.mergechoreography.util.MergePreProcessor;
 import org.bpel4chor.model.topology.impl.MessageLink;
-import org.bpel4chor.model.topology.impl.Participant;
-import org.bpel4chor.model.topology.impl.ParticipantType;
-import org.bpel4chor.utils.BPEL4ChorUtil;
-import org.eclipse.bpel.model.Activity;
-import org.eclipse.bpel.model.Assign;
-import org.eclipse.bpel.model.BPELExtensibleElement;
-import org.eclipse.bpel.model.BPELFactory;
-import org.eclipse.bpel.model.CatchAll;
-import org.eclipse.bpel.model.Empty;
-import org.eclipse.bpel.model.FaultHandler;
-import org.eclipse.bpel.model.Flow;
-import org.eclipse.bpel.model.ForEach;
-import org.eclipse.bpel.model.If;
-import org.eclipse.bpel.model.Invoke;
-import org.eclipse.bpel.model.Link;
-import org.eclipse.bpel.model.OnEvent;
-import org.eclipse.bpel.model.OnMessage;
-import org.eclipse.bpel.model.PartnerActivity;
-import org.eclipse.bpel.model.PartnerLink;
-import org.eclipse.bpel.model.Pick;
-import org.eclipse.bpel.model.Process;
-import org.eclipse.bpel.model.Receive;
-import org.eclipse.bpel.model.Reply;
-import org.eclipse.bpel.model.Scope;
-import org.eclipse.bpel.model.Sequence;
-import org.eclipse.bpel.model.Source;
-import org.eclipse.bpel.model.Sources;
-import org.eclipse.bpel.model.Target;
-import org.eclipse.bpel.model.Targets;
-import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
-import org.eclipse.bpel.model.partnerlinktype.Role;
 import org.eclipse.bpel.model.resource.BPELResourceFactoryImpl;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.wst.wsdl.Definition;
-import org.eclipse.wst.wsdl.Operation;
-import org.eclipse.wst.wsdl.PortType;
 import org.eclipse.wst.wsdl.internal.util.WSDLResourceFactoryImpl;
 import org.eclipse.xsd.util.XSDResourceFactoryImpl;
-
-import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
-import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
 
 /**
  * The BPEL Choreography Merger read in a BPEL4Chor Choreography, merges the
@@ -78,8 +30,6 @@ public class ChoreographyMerger implements Serializable {
 	private ChoreographyPackage choreographyPackage;
 	public ChoreographyMergerExtension choreographyMergerExtension;
 	public ChoreographyPackageExtension choreographyPackageExtension;
-
-
 	
 	protected Logger log = Logger.getLogger(this.getClass().getPackage().getName());
 	
@@ -103,18 +53,14 @@ public class ChoreographyMerger implements Serializable {
 		
 		// Here we go the read in Choreo
 		this.choreographyPackage = new ChoreographyPackage(fileName);
-
+		
 		/**
 		 * TODO Added code here
 		 */
-		choreographyMergerExtension = new ChoreographyMergerExtension(
-				choreographyPackage, log);
-		choreographyPackageExtension = new ChoreographyPackageExtension(
-				choreographyPackage);
-		choreographyPackage
-				.setChoreographyPackageExtension(choreographyPackageExtension);
-		choreographyPackage
-				.setChoreographyMergerExtension(choreographyMergerExtension);
+		this.choreographyMergerExtension = new ChoreographyMergerExtension(this.choreographyPackage, this.log);
+		this.choreographyPackageExtension = new ChoreographyPackageExtension(this.choreographyPackage);
+		this.choreographyPackage.setChoreographyPackageExtension(this.choreographyPackageExtension);
+		this.choreographyPackage.setChoreographyMergerExtension(this.choreographyMergerExtension);
 	}
 	
 	/**
@@ -158,31 +104,31 @@ public class ChoreographyMerger implements Serializable {
 				}
 			}
 		}
-
+		
 		// After merging configure remaining communication activities from
 		// NMML
-
-		choreographyMergerExtension.configureNMMLActivities2();
-		if (choreographyMergerExtension.createdNewPartnerLinksForNMML)
-			choreographyMergerExtension
-					.copyNewPartnerLinksOfNMMLToForEachScope();
-		choreographyMergerExtension.handleSeveralCreateInstanceYesCases();
-		choreographyMergerExtension.updateScopeNames();
-		choreographyMergerExtension.addNewScopesToMap();
-		choreographyMergerExtension.configureNMMLActivities2();
-		if (choreographyMergerExtension.createdNewPartnerLinksForNMML)
-			choreographyMergerExtension
-					.copyNewPartnerLinksOfNMMLToForEachScope();
-
+		
+		this.choreographyMergerExtension.configureNMMLActivities2();
+		if (this.choreographyMergerExtension.createdNewPartnerLinksForNMML) {
+			this.choreographyMergerExtension.copyNewPartnerLinksOfNMMLToForEachScope();
+		}
+		this.choreographyMergerExtension.handleSeveralCreateInstanceYesCases();
+		this.choreographyMergerExtension.updateScopeNames();
+		this.choreographyMergerExtension.addNewScopesToMap();
+		this.choreographyMergerExtension.configureNMMLActivities2();
+		if (this.choreographyMergerExtension.createdNewPartnerLinksForNMML) {
+			this.choreographyMergerExtension.copyNewPartnerLinksOfNMMLToForEachScope();
+		}
+		
 		try {
-			choreographyMergerExtension.updateScopeNames();
+			this.choreographyMergerExtension.updateScopeNames();
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
 		
 		// After merging configure remaining communication activities from NMML
-		choreographyMergerExtension.performLoopFragmentation();
+		this.choreographyMergerExtension.performLoopFragmentation();
 	}
 	
 	/**
