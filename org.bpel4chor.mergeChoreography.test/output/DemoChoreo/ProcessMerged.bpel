@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://www.iaas.uni-stuttgart.de"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract"
+    xmlns:ns="http://www.iaas.uni-stuttgart.de" xmlns:ns0="http://www.w3.org/2001/XMLSchema">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P5Demo.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P4Demo.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P3Demo.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P2Demo.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P1Demo.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <variables>
+        <variable messageType="ns:P12P2DemoRequestMessage" name="inputP2"/>
+        <variable messageType="ns:P12P3DemoRequestMessage" name="inputP3"/>
+        <variable messageType="ns:P22P4DemoRequestMessage" name="inputP4"/>
+        <variable messageType="ns:P42P2DemoResponseMessage" name="varReply1P2"/>
+        <variable messageType="ns:P32P5DemoRequestMessage" name="inputP5"/>
+        <variable messageType="ns:P52P3DemoResponseMessage" name="varReply1P3"/>
+        <variable messageType="ns:P1DemoChoreoResponseMessage" name="varRec1P1"/>
+        <variable name="varRec1P1_written" type="ns0:boolean">
+            <from><![CDATA[false()]]></from>
+        </variable>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="Invoke1P1DemoTOreceiveInputP2Demo"/>
+            <link name="Invoke2P1DemoTOreceiveInputP3Demo"/>
+            <link name="Invoke1P2DemoTOEmpty1"/>
+            <link name="Reply1P4DemoTOEmpty2cUL"/>
+            <link name="Invoke1P3DemoTOEmpty1"/>
+            <link name="Reply1P5DemoTOEmptybzc8"/>
+            <link name="callbackClientP2DemoTOReceive1P1Demo"/>
+            <link name="callbackClientP3DemoTOReceive1P1Demo"/>
+        </links>
+        <scope exitOnStandardFault="yes" name="Scope_P5Demo" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P52P3DemoResponseMessage" name="outputP5"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P5DemoProvider" name="client"
+                    partnerLinkType="ns:P5Demo" partnerRole="P5DemoRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link2"/>
+                </links>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="Invoke1P3DemoTOEmpty1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <assign name="Reply1P5Demo" validate="no">
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Reply1P5DemoTOEmptybzc8"/>
+                    </sources>
+                    <copy>
+                        <from variable="outputP5"/>
+                        <to variable="varReply1P3"/>
+                    </copy>
+                </assign>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P4Demo" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P42P2DemoResponseMessage" name="outputP4"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P4DemoProvider" name="client"
+                    partnerLinkType="ns:P4Demo" partnerRole="P4DemoRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link2"/>
+                </links>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="Invoke1P2DemoTOEmpty1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <assign name="Reply1P4Demo" validate="no">
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Reply1P4DemoTOEmpty2cUL"/>
+                    </sources>
+                    <copy>
+                        <from variable="outputP4"/>
+                        <to variable="varReply1P2"/>
+                    </copy>
+                </assign>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P3Demo" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P1DemoChoreoResponseMessage" name="outputP3"/>
+                <variable messageType="ns:P32P5DemoRequestMessage" name="varInv1P3"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P3DemoProvider" name="client"
+                    partnerLinkType="ns:P3Demo" partnerRole="P3DemoRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link4"/>
+                    <link name="link2"/>
+                    <link name="link3"/>
+                </links>
+                <empty name="receiveInputP3Demo">
+                    <targets>
+                        <target linkName="Invoke2P1DemoTOreceiveInputP3Demo"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </empty>
+                <if name="callbackClientP3Demo">
+                    <targets>
+                        <target linkName="link4"/>
+                    </targets>
+                    <condition><![CDATA[varRec1P1_written!=true()]]></condition>
+                    <assign validate="no">
+                        <sources>
+                            <source linkName="callbackClientP3DemoTOReceive1P1Demo"/>
+                        </sources>
+                        <copy>
+                            <from><![CDATA[true()]]></from>
+                            <to variable="varRec1P1_written"/>
+                        </copy>
+                        <copy>
+                            <from variable="outputP3"/>
+                            <to variable="varRec1P1"/>
+                        </copy>
+                    </assign>
+                </if>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <empty name="Empty2">
+                    <targets>
+                        <target linkName="link3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link4"/>
+                    </sources>
+                </empty>
+                <sequence>
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link3"/>
+                    </sources>
+                    <assign name="Invoke1P3Demo" validate="no">
+                        <sources>
+                            <source linkName="Invoke1P3DemoTOEmpty1"/>
+                        </sources>
+                        <copy>
+                            <from variable="varInv1P3"/>
+                            <to variable="inputP5"/>
+                        </copy>
+                    </assign>
+                    <empty>
+                        <targets>
+                            <target linkName="Reply1P5DemoTOEmptybzc8"/>
+                        </targets>
+                    </empty>
+                </sequence>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P2Demo" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P1DemoChoreoResponseMessage" name="outputP2"/>
+                <variable messageType="ns:P22P4DemoRequestMessage" name="varInv1P2"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P2DemoProvider" name="client"
+                    partnerLinkType="ns:P2Demo" partnerRole="P2DemoRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link4"/>
+                    <link name="link2"/>
+                    <link name="link3"/>
+                </links>
+                <empty name="receiveInputP2Demo">
+                    <targets>
+                        <target linkName="Invoke1P1DemoTOreceiveInputP2Demo"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </empty>
+                <if name="callbackClientP2Demo">
+                    <targets>
+                        <target linkName="link4"/>
+                    </targets>
+                    <condition><![CDATA[varRec1P1_written!=true()]]></condition>
+                    <assign validate="no">
+                        <sources>
+                            <source linkName="callbackClientP2DemoTOReceive1P1Demo"/>
+                        </sources>
+                        <copy>
+                            <from><![CDATA[true()]]></from>
+                            <to variable="varRec1P1_written"/>
+                        </copy>
+                        <copy>
+                            <from variable="outputP2"/>
+                            <to variable="varRec1P1"/>
+                        </copy>
+                    </assign>
+                </if>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <empty name="Empty2">
+                    <targets>
+                        <target linkName="link3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link4"/>
+                    </sources>
+                </empty>
+                <sequence>
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link3"/>
+                    </sources>
+                    <assign name="Invoke1P2Demo" validate="no">
+                        <sources>
+                            <source linkName="Invoke1P2DemoTOEmpty1"/>
+                        </sources>
+                        <copy>
+                            <from variable="varInv1P2"/>
+                            <to variable="inputP4"/>
+                        </copy>
+                    </assign>
+                    <empty>
+                        <targets>
+                            <target linkName="Reply1P4DemoTOEmpty2cUL"/>
+                        </targets>
+                    </empty>
+                </sequence>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P1Demo" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P1DemoRequestMessage" name="inputP1"/>
+                <variable messageType="ns:P1DemoResponseMessage" name="outputP1"/>
+                <variable messageType="ns:P12P2DemoRequestMessage" name="varInv1P1"/>
+                <variable messageType="ns:P12P3DemoRequestMessage" name="varInv2P1"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P1DemoProvider" name="client"
+                    partnerLinkType="ns:P1Demo" partnerRole="P1DemoRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link2"/>
+                    <link name="link5"/>
+                    <link name="link4"/>
+                    <link name="link6"/>
+                </links>
+                <receive createInstance="yes" name="receiveInputP1Demo" variable="inputP1">
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </receive>
+                <invoke inputVariable="outputP1" name="callbackClientP1Demo">
+                    <targets>
+                        <target linkName="link6"/>
+                    </targets>
+                </invoke>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <empty name="Empty2">
+                    <targets>
+                        <target linkName="link5"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link4"/>
+                    </sources>
+                </empty>
+                <assign name="Invoke2P1Demo" validate="no">
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Invoke1P1DemoTOreceiveInputP2Demo"/>
+                        <source linkName="link5"/>
+                        <source linkName="Invoke2P1DemoTOreceiveInputP3Demo"/>
+                    </sources>
+                    <copy>
+                        <from variable="varInv1P1"/>
+                        <to variable="inputP2"/>
+                    </copy>
+                    <copy>
+                        <from variable="varInv2P1"/>
+                        <to variable="inputP3"/>
+                    </copy>
+                </assign>
+                <scope name="Receive1P1Demo">
+                    <targets>
+                        <target linkName="link4"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link6"/>
+                    </sources>
+                    <faultHandlers>
+                        <catchAll>
+                            <empty/>
+                        </catchAll>
+                    </faultHandlers>
+                    <flow>
+                        <throw faultName="joinFailure">
+                            <targets>
+                                <target linkName="callbackClientP2DemoTOReceive1P1Demo"/>
+                            </targets>
+                        </throw>
+                        <throw faultName="joinFailure">
+                            <targets>
+                                <target linkName="callbackClientP3DemoTOReceive1P1Demo"/>
+                            </targets>
+                        </throw>
+                    </flow>
+                </scope>
+            </flow>
+        </scope>
+    </flow>
+</process>

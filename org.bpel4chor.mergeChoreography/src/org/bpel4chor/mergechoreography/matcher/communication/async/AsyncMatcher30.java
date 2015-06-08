@@ -12,7 +12,9 @@ import org.bpel4chor.mergechoreography.pattern.conditions.Condition;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
 import org.bpel4chor.mergechoreography.util.MLEnvironment;
 import org.bpel4chor.model.topology.impl.MessageLink;
+import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
+import org.eclipse.bpel.model.OnAlarm;
 import org.eclipse.bpel.model.OnEvent;
 
 /**
@@ -60,18 +62,50 @@ public class AsyncMatcher30 implements AsyncMatcher {
 		BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
 		
 		// s is an <invoke>, check if it is inside an EH or FH
-		
 		// check if r is an EH
-		if (r instanceof OnEvent) {
-			this.log.info("r is <onEvent> !! : " + r);
+		//		if (r instanceof OnEvent) {
+		//			this.log.info("r is <onEvent> !! : " + r);
+		//			Condition cond = new Condition(true);
+		//			//this.results.add(cond.evaluate());
+		//			//pkg.addNMML(link);
+		//		}
+		
+		// check if s or r are in an external-activated EH or have <repeatEvery>-Tag
+		// since in MergePreprocessingForEH all OnEvents and OnAlarms with MessageLinks
+		// are modified there should not be any OnEvent with MessageLinks left
+		if ((ChoreoMergeUtil.isElementInEHandler(r)) || (ChoreoMergeUtil.isElementInEHandler(s))) {			
+			// check for repeatEvery-Tag
+			// we can't merge OnAlarms with repeatEvery-Tag because it would generate multiple instances
+			// lifetime issues of the scope and timing issues are the reason for limitation		
+			if (((ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) r)) instanceof OnAlarm) 
+					|| ((ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) s)) instanceof OnAlarm))  {
+				if ((ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) r)))
+						|| (ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) s)))) {
+					log.info("OnAlarm has <repeatEvery>-Tag. Can't merge this MessageLink");	
+					Condition cond = new Condition(true);
+					this.results.add(cond.evaluate());
+					pkg.addNMML(link);
+				} 
+			} else {
+			// every other case in EventHandler
+			this.log.info("s and/or r are in OnEvent/OnAlarm Scope with external activation !! s : " 
+					+ ChoreoMergeUtil.isElementInEHandler(s) + " . r : " + ChoreoMergeUtil.isElementInEHandler(r));
 			Condition cond = new Condition(true);
 			this.results.add(cond.evaluate());
+			// Case is NMML because the time at which EH is activated is not determinable
+			// because of that the lifetime of the EH-Scope containing s and/or r is unknown
 			pkg.addNMML(link);
+			}
 		}
+				
 		
-		// check if s is in an EH or CH
-		if (ChoreoMergeUtil.isElementInCEHandler(s)) {
-			this.log.info("s is in EventHandler or CompensationHandler !! : " + s);
+		//TODO repeatEvery Tag in OnAlarm prüfen und ->NMML (TESTFALL BAUEN)
+
+		
+		
+		// check if s is in a CH
+		if (ChoreoMergeUtil.isElementInCHandler(s)) {
+			this.log.info("s is in CompensationHandler !! : " + s);
 			Condition cond = new Condition(true);
 			this.results.add(cond.evaluate());
 			pkg.addNMML(link);
@@ -87,7 +121,8 @@ public class AsyncMatcher30 implements AsyncMatcher {
 		
 		// check if s or r are in a Loop
 		if (ChoreoMergeUtil.isElementInLoop(s) || ChoreoMergeUtil.isElementInLoop(r)) {
-			this.log.info("s and/or r are in a Loop !! Is s in Loop : " + ChoreoMergeUtil.isElementInLoop(s) + " . Is r in Loop : " + ChoreoMergeUtil.isElementInLoop(r));
+			this.log.info("s and/or r are in a Loop !! Is s in Loop : "
+					+ ChoreoMergeUtil.isElementInLoop(s) + " . Is r in Loop : " + ChoreoMergeUtil.isElementInLoop(r));
 			Condition cond = new Condition(true);
 			this.results.add(cond.evaluate());
 			pkg.addNMML(link);

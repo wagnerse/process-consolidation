@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
+import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
 import org.bpel4chor.model.topology.impl.MessageLink;
@@ -66,6 +67,7 @@ import org.eclipse.bpel.model.While;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xsd.XSDFactory;
 import org.eclipse.xsd.XSDTypeDefinition;
+import org.w3c.dom.Element;
 
 import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyBPELUtils;
@@ -127,10 +129,10 @@ public class ChoreoMergeUtil {
 	 * {@link Target} links
 	 * 
 	 * @param activity The {@link Activity} to check
-	 * @return {@link List} of {@link Activity}s if there are some, null else
+	 * @return {@link List} of {@link Activity}s if there are some, else an empty {@link List}
 	 */
 	public static Set<Activity> findSourcesOfActivity(Activity activity) {
-		Set<Activity> foundActs = null;
+		Set<Activity> foundActs = new HashSet<>();
 		if (activity.getTargets() != null) {
 			for (Target target : activity.getTargets().getChildren()) {
 				Activity source = target.getLink().getSources().get(0).getActivity();
@@ -622,6 +624,37 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
+	 * Get the parent {@link Scope} of given {@link Activity} in the merged
+	 * {@link Process}. It's the next {@link Scope} containing act {@link Activity}.
+	 * 
+	 * @param act {@link Activity} to get the Parent {@link Scope} of
+	 * @return Parent {@link Scope} or null
+	 */
+	public static Scope getParentScopeOfActivity(Activity act) {
+		if (act == null) {
+			throw new NullPointerException("argument is null. act == null:" + (act == null));
+		}
+		EObject containerSub = act;
+		EObject container = act.eContainer();
+		while (!(container instanceof Process)) {
+			if (container instanceof Scope) {
+				// We found the containing <scope>
+				ChoreoMergeUtil.log.info("Found <scope> " + ((Scope) container).getName() + " for activity " + act.getName());
+				return (Scope) container;
+			}
+			while (!(container instanceof Flow) && !(container instanceof Process)) {
+				containerSub = container;
+				container = container.eContainer();
+			}
+
+			container = container.eContainer();
+		}
+		return null;
+	}
+	
+	
+	
+	/**
 	 * Check if given {@link Activity} is contained in a {@link Sequence}. If so
 	 * get succeeding {@link Activity}, if present.
 	 * 
@@ -816,6 +849,24 @@ public class ChoreoMergeUtil {
 		}
 		flow.getLinks().getChildren().add(newLink);
 	}
+	
+	/**
+	 * Add the newLink to given {@link Throw}
+	 * 
+	 * @param throw The {@link Throw} in emulated EH-Scope
+	 * @param actsource The {@link Activity} in EH-instantiating-Scope
+	 */
+	public static void addLinkToThrowEH(Throw ehThrow, Activity actsource) {
+		Link newLink = BPELFactory.eINSTANCE.createLink();
+		newLink.setName(actsource.getName() + "TO" + ehThrow.getName());
+			// add new target, by default multiple targets are joined by OR
+			createTarget4LinkInActivity(newLink, ehThrow);
+			createSource4LinkInActivity(newLink, actsource);
+
+		}
+		
+
+	
 	
 	/**
 	 * Create a new {@link Target} with given {@link Link} in given
@@ -1684,6 +1735,18 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
+	 * Create new {@link Throw} for user defined Fault within simulated EventHandler
+	 * 
+	 * @return new {@link Throw}
+	 */
+	public static Throw createThrowForEHFault() {
+		Throw newThrow = BPELFactory.eINSTANCE.createThrow();
+		QName newQName = new QName("", "lifetimeEHFailure", "");
+		newThrow.setFaultName(newQName);
+		return newThrow;
+	}
+	
+	/**
 	 * Create new {@link Catch}-Fault Handler for given Fault
 	 * 
 	 * @param faultName {@link QName} of the Fault
@@ -1753,6 +1816,19 @@ public class ChoreoMergeUtil {
 	}
 	
 	/**
+	 * Check whether given {@link BPELExtensibleElement} is in an
+	 * {@link CompensationHandler} 
+	 * 
+	 * @param elem {@link BPELExtensibleElement} to check
+	 * @return true or false
+	 */
+	public static boolean isElementInCHandler(BPELExtensibleElement elem) {
+		List<Class<? extends BPELExtensibleElement>> typesToCheck = new ArrayList<>();
+		typesToCheck.add(CompensationHandler.class);
+		return ChoreoMergeUtil.isElementContainedIn(elem, typesToCheck);
+	}
+	
+	/**
 	 * Check whether given {@link BPELExtensibleElement} is in an FCTE-Handler
 	 * 
 	 * @param elem {@link BPELExtensibleElement} to check
@@ -1762,6 +1838,20 @@ public class ChoreoMergeUtil {
 		List<Class<? extends BPELExtensibleElement>> typesToCheck = Arrays.asList(FaultHandler.class, CompensationHandler.class, TerminationHandler.class, EventHandler.class);
 		return ChoreoMergeUtil.isElementContainedIn(elem, typesToCheck);
 	}
+	
+	/**
+	 * Check whether given {@link BPELExtensibleElement} is in an @{link EventHandler}
+	 * 
+	 * @param elem {@link BPELExtensibleElement} to check
+	 * @return true or false
+	 */
+	public static boolean isElementInEHandler(BPELExtensibleElement elem) {
+		List<Class<? extends BPELExtensibleElement>> typesToCheck = new ArrayList<>();
+		typesToCheck.add(EventHandler.class);
+		return ChoreoMergeUtil.isElementContainedIn(elem, typesToCheck);
+	}
+	
+	
 	
 	/**
 	 * Check whether given {@link BPELExtensibleElement} is in a Loop
@@ -1787,6 +1877,8 @@ public class ChoreoMergeUtil {
 	 */
 	public static boolean isElementContainedIn(BPELExtensibleElement elem, List<Class<? extends BPELExtensibleElement>> list) {
 		EObject container = elem.eContainer();
+		
+		
 		while (!(container instanceof Process)) {
 			for (Class<?> class1 : list) {
 				if (class1.isInstance(container)) {
@@ -1811,6 +1903,25 @@ public class ChoreoMergeUtil {
 		EObject container = act.eContainer();
 		while (!(container instanceof Process)) {
 			if ((container instanceof Catch) || (container instanceof CatchAll) || (container instanceof CompensationHandler) || (container instanceof TerminationHandler) || (container instanceof OnEvent) || (container instanceof OnAlarm)) {
+				return (BPELExtensibleElement) container;
+			}
+			// Climb up
+			container = container.eContainer();
+		}
+		return null;
+	}
+	
+	/**
+	 * Get the {@link EventHandler} which contains the
+	 * given {@link BPELExtensibleElement}
+	 * 
+	 * @param act {@link BPELExtensibleElement} to get {@link EventHandler} of
+	 * @return {@link BPELExtensibleElement} is OnEvent or OnAlarm
+	 */
+	public static BPELExtensibleElement getEHandlerOfActivity(BPELExtensibleElement act) {
+		EObject container = act.eContainer();
+		while (!(container instanceof Process)) {
+			if ( (container instanceof OnEvent) || (container instanceof OnAlarm)) {
 				return (BPELExtensibleElement) container;
 			}
 			// Climb up
@@ -1873,8 +1984,11 @@ public class ChoreoMergeUtil {
 	 * @param process {@link Process} for new declaration
 	 */
 	public static void upliftVariableToProcessScope(Variable v, Process process) {
+		if (v.eContainer().eContainer() instanceof Process) {
+			// If v is already in process then it is not possible to uplift
+			ChoreoMergeUtil.log.info("Variable already in process " + process.getName() + " no need to uplift variable " + v.getName());
+		} else {
 		ChoreoMergeUtil.log.info("Uplifting variable " + v.getName());
-		// Get the <scope> declaring v
 		Scope scopeOfv = (Scope) v.eContainer().eContainer();
 		ChoreoMergeUtil.log.info("From scope v-<scope> " + scopeOfv);
 		ChoreoMergeUtil.log.info("To process-<scope> of " + process.getName());
@@ -1895,6 +2009,7 @@ public class ChoreoMergeUtil {
 		}
 		
 		process.getVariables().getChildren().add(v);
+	}
 	}
 	
 	/**
@@ -1921,6 +2036,130 @@ public class ChoreoMergeUtil {
 		}
 		
 	}
+	
+	/**
+	 * Check whether given {@link MessageLink} is in List of NMML
+	 * 
+	 * 
+	 * @param mLink
+	 * @return true or false
+	 */
+	public static boolean isMLinNMML(MessageLink mLink) {
+		boolean found = false;
+		for (MessageLink NMMLlink : pkg.getNMML()) {
+			BPELExtensibleElement sN = ChoreoMergeUtil.resolveActivity(NMMLlink.getSendActivity());
+			BPELExtensibleElement rN = ChoreoMergeUtil.resolveActivity(NMMLlink.getReceiveActivity());
+			BPELExtensibleElement sL = ChoreoMergeUtil.resolveActivity(mLink.getSendActivity());
+			BPELExtensibleElement rL = ChoreoMergeUtil.resolveActivity(mLink.getReceiveActivity());
+			if (sN == sL && rN == rL) {
+				found = true;
+				break;
+			}
+		}
+		return found;
+	}
+	
+	/**
+	 * Check whether given {@link OnAlarm} has {@link repeatEvery} Tag
+	 * 
+	 * 
+	 * @param OnAlarm
+	 * @return true or false
+	 */
+	public static boolean hasRepeatEveryTag(OnAlarm onalarm) {
+		boolean found = false;
+		if (onalarm.getRepeatEvery() != null) {
+			found = true;
+		}
+		return found;
+	}
+	
+	/**
+	 * Create new {@link Receive} from given {@link OnEvent} 
+	 * 
+	 * @param {@link OnEvent} as Receive Activity
+	 * @return new {@link Receive}
+	 */
+	public static Receive createReceiveFromOnEvent(OnEvent onEvent) {
+		if (onEvent == null) {
+			return null;
+		}
+		// create new Receive
+		Receive newReceive = BPELFactory.eINSTANCE.createReceive();
+		
+		// variable
+		if (onEvent.getVariable() != null) {
+			newReceive.setVariable(PBDFragmentDuplicator.copyVariable(onEvent.getVariable()));
+		}
+		
+		// correlations
+		if ((onEvent.getCorrelations() != null) && (onEvent.getCorrelations().getChildren().size() > 0)) {
+			newReceive.setCorrelations(BPELFactory.eINSTANCE.createCorrelations());
+			for (Correlation correlation : onEvent.getCorrelations().getChildren()) {
+				Correlation newCorrelation = PBDFragmentDuplicator.copyCorrelation(correlation);
+				newReceive.getCorrelations().getChildren().add(newCorrelation);
+			}
+		}
+		
+		// message exchange
+		if (onEvent.getMessageExchange() != null) {
+			newReceive.setMessageExchange(onEvent.getMessageExchange());
+		}
+		
+		// fromParts
+		if ((onEvent.getFromParts() != null) && (onEvent.getFromParts().getChildren().size() > 0)) {
+			newReceive.setFromParts(BPELFactory.eINSTANCE.createFromParts());
+			for (FromPart fromPart : onEvent.getFromParts().getChildren()) {
+				FromPart newFromPart = PBDFragmentDuplicator.copyFromPart(fromPart);
+				newReceive.getFromParts().getChildren().add(newFromPart);
+			}
+		}
+		
+		// from Copy OnEvent in PBDFragmentDuplicator
+		newReceive.setDocumentation(onEvent.getDocumentation());
+		newReceive.setDocumentationElement(onEvent.getDocumentationElement());
+		newReceive.setElement(onEvent.getElement());
+		newReceive.setEnclosingDefinition(onEvent.getEnclosingDefinition());
+		newReceive.setOperation(onEvent.getOperation());
+		newReceive.setPartnerLink(onEvent.getPartnerLink());
+		newReceive.setPortType(onEvent.getPortType());
+		
+		// If onEvent has wsu:id copy it to receive 
+		String wsuID = onEvent.getElement().getAttribute("wsu:id");
+		if (((wsuID) != null) && (!wsuID.equals(""))) {
+			newReceive.getElement().setAttribute("wsu:id", wsuID);			
+		}
+		
+		return newReceive;
+	}
+	
+	/**
+	 * Get the merged {@link Flow} containing given {@link Activity}
+	 * 
+	 * @param act {@link Activity} to get the 
+	 * @return MergedFlow {@link Flow} from Process
+	 */
+	public static Flow getMergedFlow(Activity act) {
+		if (act == null) {
+			throw new NullPointerException("argument is null. act == null:" + (act == null));
+		}
+		// first activity of merged Process should be the merged Flow
+		return (Flow) pkg.getMergedProcess().getActivity();
+		
+//		EObject container = act.eContainer();
+//			while (!(container instanceof Process)) {
+//				// TODO: Nested Flows and Scopes would cause a casting error here. since first act of process 
+//				// is the MergedFlow, we can get it directly from PKG
+//			if (((Flow) container).getName().equals("MergedFlow")) {
+//				return (Flow) container;
+//			}
+//			// climb up
+//			container = container.eContainer();
+//		}
+//		return null;
+	}
+	
+	
 	
 	public static void setPkg(ChoreographyPackage pkg) {
 		ChoreoMergeUtil.pkg = pkg;

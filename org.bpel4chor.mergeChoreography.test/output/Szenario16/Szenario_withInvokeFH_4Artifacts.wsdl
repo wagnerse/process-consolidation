@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4" xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop" xmlns:wsdl="http://webservice.iaas.uni_stuttgart.de" name="Szenario_withInvokeFH_4" targetNamespace="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4">
+
+	<plnk:partnerLinkType name="printerPLTN">
+		<plnk:role name="providerRole" portType="wsdl:BPELPrinter"/>
+	</plnk:partnerLinkType>
+	<import location="BPELPrinter.wsdl" namespace="http://webservice.iaas.uni_stuttgart.de"/>
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4">
+
+			<element name="Szenario_withInvokeFH_4Request">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="Szenario_withInvokeFH_4Response">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+		</schema>
+	</types>
+
+	<message name="Szenario_withInvokeFH_4RequestMessage">
+		<part element="tns:Szenario_withInvokeFH_4Request" name="payload"/>
+	</message>
+	<message name="Szenario_withInvokeFH_4ResponseMessage">
+		<part element="tns:Szenario_withInvokeFH_4Response" name="payload"/>
+	</message>
+
+	<portType name="Szenario_withInvokeFH_4">
+		<operation name="process">
+			<input message="tns:Szenario_withInvokeFH_4RequestMessage"/>
+			<output message="tns:Szenario_withInvokeFH_4ResponseMessage"/>
+		</operation>
+	</portType>
+
+	<plnk:partnerLinkType name="Szenario_withInvokeFH_4">
+		<plnk:role name="Szenario_withInvokeFH_4Provider" portType="tns:Szenario_withInvokeFH_4"/>
+	</plnk:partnerLinkType>
+
+	<binding name="Szenario_withInvokeFH_4SOAPBinding" type="tns:Szenario_withInvokeFH_4">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="process">
+			<soap:operation soapAction="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4/process"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+			<output>
+				<soap:body use="literal"/>
+			</output>
+		</operation>
+	</binding>
+	<service name="Szenario_withInvokeFH_4ProcessService">
+		<port binding="tns:Szenario_withInvokeFH_4SOAPBinding" name="Szenario_withInvokeFH_4ProcessPort">
+			<soap:address location="http://localhost:8080/ode/processes/Szenario_withInvokeFH_4"/>
+		</port>
+	</service>
+</definitions>

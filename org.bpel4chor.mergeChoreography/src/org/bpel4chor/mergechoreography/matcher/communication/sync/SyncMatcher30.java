@@ -69,14 +69,15 @@ public class SyncMatcher30 implements SyncMatcher {
 		
 		// s is an <invoke>, check if it is inside an EH or FH
 		
-		// check if r is an EH
-		if (r instanceof OnEvent) {
-			this.log.info("r is <onEvent> !! : " + r);
-			Condition cond = new Condition(true);
-			this.results.add(cond.evaluate());
-			pkg.addNMML(mlSend);
-			pkg.addNMML(mlReply);
-		}
+//		// check if r is an EH
+		//EventHandlerUtil can now process EH
+//		if (r instanceof OnEvent) {
+//			this.log.info("r is <onEvent> !! : " + r);
+//			Condition cond = new Condition(true);
+//			this.results.add(cond.evaluate());
+//			pkg.addNMML(mlSend);
+//			pkg.addNMML(mlReply);
+//		}
 		
 		// check if r is FCTE-Handler
 		// if (ChoreoMergeUtil.isElementInFCTEHandler(s) ||

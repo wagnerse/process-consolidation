@@ -15,10 +15,13 @@ import org.eclipse.bpel.model.CatchAll;
 import org.eclipse.bpel.model.Compensate;
 import org.eclipse.bpel.model.CompensationHandler;
 import org.eclipse.bpel.model.Empty;
+import org.eclipse.bpel.model.EventHandler;
 import org.eclipse.bpel.model.FaultHandler;
 import org.eclipse.bpel.model.Flow;
 import org.eclipse.bpel.model.Link;
 import org.eclipse.bpel.model.Links;
+import org.eclipse.bpel.model.OnAlarm;
+import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.Process;
 import org.eclipse.bpel.model.Scope;
 import org.eclipse.bpel.model.Source;
@@ -41,7 +44,7 @@ import de.uni_stuttgart.iaas.bpel.model.utilities.ExtendedActivityIterator;
  * <br>
  * 
  * @author Peter Berger
- * 
+ *
  */
 public class FCTEUtil implements Constants {
 	
@@ -68,6 +71,7 @@ public class FCTEUtil implements Constants {
 		}
 	}
 	
+
 	/**
 	 * Looks for all {@link Scope}s in <code>mergedProcess</code> and checks if
 	 * any one should be processed
@@ -165,6 +169,7 @@ public class FCTEUtil implements Constants {
 				// Scope-Handler get a new search
 				iterator.prune();
 				continue treeIterator;
+				
 			} else if (oElement instanceof Activity) {
 				// if one activity with Target was found, break search and
 				// return true
@@ -178,6 +183,41 @@ public class FCTEUtil implements Constants {
 		return result;
 	}
 	
+	/**
+	 * Checks if any {@link Activity} contains a {@link Source}. If one
+	 * {@link Source} exists that has a connected {@link Target} outside of the
+	 * EventHandler then it should be processed.
+	 * 
+	 * @param eAllContents BPEL element that should be traced and checked
+	 * @return true if a {@link Source} with connected {@link Target} outside of
+	 *         the EventHandler is found
+	 */
+	public static boolean checkIfActivityOrSubActivityhaveOutgoingSource(EObject eAllContents) {
+		boolean result = false;
+		TreeIterator<?> iterator = eAllContents.eAllContents();
+		Object oElement = null;
+		// trace the given tree
+		treeIterator: while (iterator.hasNext()) {
+			oElement = iterator.next();
+			if (oElement instanceof EventHandler) {
+				// stop this tree line, only search in Scope activities, every
+				// Scope-Handler get a new search
+				iterator.prune();
+				continue treeIterator;
+			} else if (oElement instanceof Activity) {
+				// if one activity with Source was found, break search and
+				// return true
+				Activity act = (Activity) oElement;
+				if (act.getSources() != null && act.getSources().getChildren().size() > 0) {
+					result = true;
+					break treeIterator;
+				}
+			}
+		}
+		return result;
+	}
+	
+
 	/**
 	 * Inner Links are allowed but if an {@link Activity} comes from outside the
 	 * handler it should be processed. Only {@link Source}s in the same handler
@@ -212,7 +252,7 @@ public class FCTEUtil implements Constants {
 	 * 
 	 * @param oldScope {@link Scope} that should be processed
 	 * @param shb contains information on if {@link TerminationHandler} or
-	 *            {@link FaultHandler} should be processed
+	 *            {@link FaultHandler} or {@link EventHandler} should be processed
 	 */
 	private static void processScope(Scope oldScope, ScopeHandlerBean shb) {
 		Flow newSurFlow = BPELFactory.eINSTANCE.createFlow();
@@ -229,7 +269,7 @@ public class FCTEUtil implements Constants {
 		// outgoing link
 		emptyContinue.setSources(oldScope.getSources());
 		newSurFlow.getActivities().add(emptyContinue);
-		
+				
 		/** process FaultHandler */
 		if (shb.isFaultHandler()) {
 			FaultHandlerUtil.processFaultHandler(oldScope.getFaultHandlers(), oldScope.getName(), newSurScope, emptyContinue, newSurFlow);

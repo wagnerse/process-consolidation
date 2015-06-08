@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://uni-stuttgart.de/bpel/SimpleCallFH" name="SimpleCallFH" targetNamespace="http://uni-stuttgart.de/bpel/SimpleCallFH">
+
+    <types>
+        <schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://uni-stuttgart.de/bpel/SimpleCallFH">
+
+            <element name="SimpleCallFHRequest">
+                <complexType>
+                    <sequence>
+                        <element name="input" type="string"/>
+                    </sequence>
+                </complexType>
+            </element>
+            
+        </schema>
+    </types>
+
+    <message name="SimpleCallFHRequestMessage">
+        <part element="tns:SimpleCallFHRequest" name="payload"/>
+    </message>
+
+    <portType name="SimpleCallFH">
+        <operation name="process">
+            <input message="tns:SimpleCallFHRequestMessage"/>
+        </operation>
+    </portType>   
+    
+    <plnk:partnerLinkType name="SimpleCallFH">
+        <plnk:role name="SimpleCallFHProvider" portType="tns:SimpleCallFH"/>
+    </plnk:partnerLinkType>
+    
+    <binding name="SimpleCallFHSOAPBinding" type="tns:SimpleCallFH">
+    	<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    	<operation name="process">
+    		<soap:operation soapAction="http://uni-stuttgart.de/bpel/SimpleCallFH/process"/>
+    		<input>
+    			<soap:body use="literal"/>
+    		</input>
+    	</operation>
+    </binding>
+
+    <service name="SimpleCallFHProcessService">
+    	<port binding="tns:SimpleCallFHSOAPBinding" name="SimpleCallFHProcessPort">
+    		<soap:address location="http://localhost:8080/ode/processes/SimpleCallFH"/>
+    	</port>
+    </service>
+</definitions>

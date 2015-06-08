@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract"
+    xmlns:ns="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFHFault"
+    xmlns:ns0="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4" xmlns:ns1="http://webservice.iaas.uni_stuttgart.de">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Szenario_withInvokeFH_4Artifacts.wsdl" namespace="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Szenario_withInvokeFHFaultArtifacts.wsdl" namespace="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFHFault"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="BPELPrinter.wsdl" namespace="http://webservice.iaas.uni_stuttgart.de"/>
+    <variables>
+        <variable
+            messageType="ns:Szenario_withInvokeFHFaultRequestMessage" name="input"/>
+        <variable name="outputInvokeFaultResponse"/>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="callFaultProcessTOError"/>
+            <link name="replyFaultTOEmptyrwO7"/>
+        </links>
+        <scope exitOnStandardFault="yes"
+            name="Scope_Szenario_withInvokeFH_4" suppressJoinFailure="yes">
+            <variables>
+                <variable
+                    messageType="ns0:Szenario_withInvokeFH_4RequestMessage" name="input"/>
+                <variable
+                    messageType="ns0:Szenario_withInvokeFH_4ResponseMessage" name="output"/>
+                <variable name="inputInvokeFaultRequest"/>
+                <variable messageType="ns1:printInformationResponse" name="providerPrintResponse"/>
+                <variable messageType="ns1:printInformationRequest" name="providerPrintRequest"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="Szenario_withInvokeFH_4Provider"
+                    name="client" partnerLinkType="ns0:Szenario_withInvokeFH_4"/>
+                <partnerLink initializePartnerRole="no"
+                    name="providerPrint"
+                    partnerLinkType="ns0:printerPLTN" partnerRole="providerRole"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <sequence name="main">
+                <receive createInstance="yes" name="receiveInput" variable="input"/>
+                <assign name="Assign" validate="no">
+                    <copy>
+                        <from>
+                            <literal>
+                                <tns:Szenario_withInvokeFH_4Response
+                                    xmlns:tns="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFH_4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <tns:result>tns:result</tns:result>
+                                </tns:Szenario_withInvokeFH_4Response>
+                            </literal>
+                        </from>
+                        <to part="payload" variable="output"/>
+                    </copy>
+                    <copy>
+                        <from>
+                            <literal>
+                                <tns:Szenario_withInvokeFHFaultRequest
+                                    xmlns:tns="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFHFault" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <tns:input>tns:input</tns:input>
+                                </tns:Szenario_withInvokeFHFaultRequest>
+                            </literal>
+                        </from>
+                        <to part="payload" variable="inputInvokeFaultRequest"/>
+                    </copy>
+                    <copy>
+                        <from part="payload" variable="input">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:input]]></query>
+                        </from>
+                        <to part="payload" variable="inputInvokeFaultRequest">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[swifhf:input]]></query>
+                        </to>
+                    </copy>
+                    <copy>
+                        <from part="payload" variable="input">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:input]]></query>
+                        </from>
+                        <to part="payload" variable="output">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:result]]></query>
+                        </to>
+                    </copy>
+                </assign>
+                <scope exitOnStandardFault="no" isolated="no" name="Scope">
+                    <faultHandlers>
+                        <catch>
+                            <scope name="FH_SurScope_Scope1">
+                                <flow name="FH_Processing_Scope1">
+                                    <links>
+                                    <link name="e8fee9c9-a124-46b1-838f-65b97a52aca8"/>
+                                    <link name="45ba7934-272b-459f-9599-6a7b3aa264f0"/>
+                                    <link name="3ce6c6e6-81c8-441e-a669-550a1badd458"/>
+                                    </links>
+                                    <empty name="continueProcess">
+                                    <targets>
+                                    <target linkName="45ba7934-272b-459f-9599-6a7b3aa264f0"/>
+                                    <target linkName="3ce6c6e6-81c8-441e-a669-550a1badd458"/>
+                                    </targets>
+                                    </empty>
+                                    <scope name="Scope1_catch">
+                                    <targets>
+                                    <target linkName="e8fee9c9-a124-46b1-838f-65b97a52aca8"/>
+                                    </targets>
+                                    <sources>
+                                    <source linkName="45ba7934-272b-459f-9599-6a7b3aa264f0"/>
+                                    </sources>
+                                    <compensationHandler>
+                                    <empty/>
+                                    </compensationHandler>
+                                    <scope exitOnStandardFault="no"
+                                    isolated="no" name="PRE_PROCESSING_SI_340f1e94-34ed-4776-99e3-5706f6470ce2">
+                                    <faultHandlers>
+                                    <catch
+                                    faultMessageType="ns:MyServiceException"
+                                    faultName="ns:MyServiceException" faultVariable="faultVar">
+                                    <sequence>
+                                    <assign
+                                    name="Assign1" validate="no">
+                                    <copy>
+                                    <from>
+                                    <literal>
+
+                                    <impl:printInformation
+                                    xmlns:impl="http://webservice.iaas.uni_stuttgart.de" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <impl:information>Fehler von Invoke</impl:information>
+                                    </impl:printInformation>
+                                    </literal>
+                                    </from>
+                                    <to variable="providerPrintRequest"/>
+                                    </copy>
+                                    </assign>
+                                    <invoke
+                                    inputVariable="providerPrintRequest"
+                                    name="Invoke" outputVariable="providerPrintResponse"/>
+                                    </sequence>
+                                    </catch>
+                                    </faultHandlers>
+                                    <sequence>
+                                    <assign
+                                    name="callFaultProcess" validate="no">
+                                    <sources>
+                                    <source linkName="callFaultProcessTOError"/>
+                                    </sources>
+                                    <copy>
+                                    <from variable="inputInvokeFaultRequest"/>
+                                    <to variable="input"/>
+                                    </copy>
+                                    </assign>
+                                    <empty>
+                                    <targets>
+                                    <target linkName="replyFaultTOEmptyrwO7"/>
+                                    </targets>
+                                    </empty>
+                                    </sequence>
+                                    </scope>
+                                    </scope>
+                                    <scope exitOnStandardFault="no"
+                                    isolated="no" name="Scope1">
+                                    <sources>
+                                    <source linkName="3ce6c6e6-81c8-441e-a669-550a1badd458"/>
+                                    </sources>
+                                    <faultHandlers>
+                                    <catch>
+                                    <empty>
+                                    <sources>
+                                    <source linkName="e8fee9c9-a124-46b1-838f-65b97a52aca8"/>
+                                    </sources>
+                                    </empty>
+                                    </catch>
+                                    </faultHandlers>
+                                    <throw name="Throw1"/>
+                                    </scope>
+                                </flow>
+                            </scope>
+                        </catch>
+                    </faultHandlers>
+                    <sequence>
+                        <throw name="Throw"/>
+                    </sequence>
+                </scope>
+                <reply name="Reply" variable="output"/>
+            </sequence>
+        </scope>
+        <scope exitOnStandardFault="yes"
+            name="Scope_Szenario_withInvokeFHFault" suppressJoinFailure="yes">
+            <variables>
+                <variable
+                    messageType="ns:Szenario_withInvokeFHFaultResponseMessage" name="output"/>
+                <variable messageType="ns:MyServiceException" name="faultResponse"/>
+            </variables>
+            <faultHandlers>
+                <catchAll>
+                    <sequence>
+                        <assign name="Assign" validate="no">
+                            <copy>
+                                <from>
+                                    <literal>
+                                    <tns:MyServiceException
+                                    xmlns:tns="http://uni-stuttgart.de/iaas/bpel/Szenario_withInvokeFHFault" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <tns:faultInfo>
+                                    <tns:faultCode>110</tns:faultCode>
+                                    <tns:faultString>Fehler</tns:faultString>
+                                    </tns:faultInfo>
+                                    </tns:MyServiceException>
+                                    </literal>
+                                </from>
+                                <to part="payload" variable="faultResponse"/>
+                            </copy>
+                        </assign>
+                        <assign name="replyFault" validate="no">
+                            <sources>
+                                <source linkName="replyFaultTOEmptyrwO7"/>
+                            </sources>
+                            <copy>
+                                <from variable="faultResponse"/>
+                                <to variable="outputInvokeFaultResponse"/>
+                            </copy>
+                        </assign>
+                    </sequence>
+                </catchAll>
+            </faultHandlers>
+            <sequence name="main">
+                <throw name="Error">
+                    <targets>
+                        <target linkName="callFaultProcessTOError"/>
+                    </targets>
+                </throw>
+            </sequence>
+        </scope>
+    </flow>
+</process>

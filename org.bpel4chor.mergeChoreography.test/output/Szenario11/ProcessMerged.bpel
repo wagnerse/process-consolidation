@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://uni-stuttgart.de/iaas/bpel/Scenario7withPrintService"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract"
+    xmlns:ns="http://uni-stuttgart.de/iaas/bpel/BpelPrinter"
+    xmlns:ns0="http://uni-stuttgart.de/iaas/bpel/Scenario7withPrintService"
+    xmlns:ns1="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://webservice.iaas.uni_stuttgart.de">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Scenario7withPrintServiceArtifacts.wsdl" namespace="http://uni-stuttgart.de/iaas/bpel/Scenario7withPrintService"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="BpelPrinterArtifacts.wsdl" namespace="http://uni-stuttgart.de/iaas/bpel/BpelPrinter"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="BPELPrinter.wsdl" namespace="http://webservice.iaas.uni_stuttgart.de"/>
+    <variables>
+        <variable messageType="ns:BpelPrinterRequestMessage" name="input"/>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="callBpelPrinterTOEingabe_Zuweisen"/>
+        </links>
+        <scope exitOnStandardFault="yes"
+            name="Scope_Scenario7withPrintService" suppressJoinFailure="yes">
+            <variables>
+                <variable
+                    messageType="ns0:Scenario7withPrintServiceRequestMessage" name="input"/>
+                <variable
+                    messageType="ns0:Scenario7withPrintServiceResponseMessage" name="output"/>
+                <variable name="errorMessage" type="ns1:string"/>
+                <variable name="printerRequestVar"/>
+                <variable name="directPrinterRequest"/>
+                <variable name="directPrinterResponse"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="Scenario7withPrintServiceProvider"
+                    name="client" partnerLinkType="ns0:Scenario7withPrintService"/>
+                <partnerLink initializePartnerRole="no" name="PrinterPLN"/>
+                <partnerLink initializePartnerRole="no" name="directPrinterPLN"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <scope exitOnStandardFault="no" isolated="no" name="Faulthandler_2">
+                        <faultHandlers>
+                            <catchAll>
+                                <scope exitOnStandardFault="no"
+                                    isolated="no" name="Faulthandler_3">
+                                    <faultHandlers>
+                                    <catchAll>
+                                    <sequence>
+                                    <assign name="Error" validate="no">
+                                    <copy>
+                                    <from>
+                                    <literal>Es ist ein Fehler aufgetreten. 
+                            Nested Faulthandler -&gt; Tiefe 3</literal>
+                                    </from>
+                                    <to
+                                    part="parameters" variable="directPrinterRequest">
+                                    <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[directPrinter:information]]></query>
+                                    </to>
+                                    </copy>
+                                    </assign>
+                                    <invoke
+                                    inputVariable="directPrinterRequest"
+                                    name="Invoke_PrintService" outputVariable="directPrinterResponse"/>
+                                    </sequence>
+                                    </catchAll>
+                                    </faultHandlers>
+                                    <sequence>
+                                    <assign name="Error" validate="no">
+                                    <copy>
+                                    <from>
+                                    <literal>Es ist ein Fehler aufgetreten. 
+                            Nested Faulthandler -&gt; Tiefe 2</literal>
+                                    </from>
+                                    <to variable="errorMessage"/>
+                                    </copy>
+                                    <copy>
+                                    <from variable="errorMessage"/>
+                                    <to part="payload" variable="printerRequestVar">
+                                    <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[bp:input]]></query>
+                                    </to>
+                                    </copy>
+                                    </assign>
+                                    <assign name="callBpelPrinter" validate="no">
+                                    <sources>
+                                    <source linkName="callBpelPrinterTOEingabe_Zuweisen"/>
+                                    </sources>
+                                    <copy>
+                                    <from variable="printerRequestVar"/>
+                                    <to variable="input"/>
+                                    </copy>
+                                    </assign>
+                                    <wait name="Wait">
+                                    <for><![CDATA['PT10S']]></for>
+                                    </wait>
+                                    <throw name="Throw_2"/>
+                                    </sequence>
+                                </scope>
+                            </catchAll>
+                        </faultHandlers>
+                        <sequence>
+                            <assign name="Error" validate="no">
+                                <copy>
+                                    <from>
+                                    <literal>Es ist ein Fehler aufgetreten. 
+                            Nested Faulthandler -&gt; Tiefe 1</literal>
+                                    </from>
+                                    <to variable="errorMessage"/>
+                                </copy>
+                                <copy>
+                                    <from variable="errorMessage"/>
+                                    <to part="parameters" variable="directPrinterRequest">
+                                    <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[directPrinter:information]]></query>
+                                    </to>
+                                </copy>
+                            </assign>
+                            <invoke inputVariable="directPrinterRequest"
+                                name="Invoke_PrintService" outputVariable="directPrinterResponse"/>
+                            <wait name="Wait">
+                                <for><![CDATA['PT10S']]></for>
+                            </wait>
+                            <throw name="Throw_1"/>
+                        </sequence>
+                    </scope>
+                </catchAll>
+            </faultHandlers>
+            <sequence name="main">
+                <receive createInstance="yes" name="receiveInput" variable="input"/>
+                <assign name="Assign" validate="no">
+                    <copy>
+                        <from>
+                            <literal>
+                                <tns:Scenario7withPrintServiceResponse
+                                    xmlns:tns="http://uni-stuttgart.de/iaas/bpel/Scenario7withPrintService" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <tns:result>tns:result</tns:result>
+                                </tns:Scenario7withPrintServiceResponse>
+                            </literal>
+                        </from>
+                        <to part="payload" variable="output"/>
+                    </copy>
+                    <copy>
+                        <from part="payload" variable="input">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:input]]></query>
+                        </from>
+                        <to part="payload" variable="output">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:result]]></query>
+                        </to>
+                    </copy>
+                    <copy>
+                        <from>
+                            <literal>
+                                <tns:BpelPrinterRequest
+                                    xmlns:tns="http://uni-stuttgart.de/iaas/bpel/BpelPrinter" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <tns:input>test</tns:input>
+                                </tns:BpelPrinterRequest>
+                            </literal>
+                        </from>
+                        <to part="payload" variable="printerRequestVar"/>
+                    </copy>
+                    <copy>
+                        <from part="payload" variable="input">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:input]]></query>
+                        </from>
+                        <to part="payload" variable="printerRequestVar">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[bp:input]]></query>
+                        </to>
+                    </copy>
+                    <copy>
+                        <from>
+                            <literal>
+                                <impl:printInformation
+                                    xmlns:impl="http://webservice.iaas.uni_stuttgart.de" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <impl:information>Init direct PrintService</impl:information>
+                                </impl:printInformation>
+                            </literal>
+                        </from>
+                        <to part="parameters" variable="directPrinterRequest"/>
+                    </copy>
+                </assign>
+                <if name="If">
+                    <condition><![CDATA[$input.payload/tns:input="Hallo"]]></condition>
+                    <sequence>
+                        <assign name="Fehler_ausgabe" validate="no">
+                            <copy>
+                                <from>
+                                    <literal>Es wird ein Fehler geworfen</literal>
+                                </from>
+                                <to part="payload" variable="output">
+                                    <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:result]]></query>
+                                </to>
+                            </copy>
+                        </assign>
+                        <reply name="replyOutput" variable="output"/>
+                        <throw name="Falsche_Eingabe"/>
+                    </sequence>
+                    <else>
+                        <sequence name="Sequence">
+                            <reply name="ReplyOutput_ohne_Fehler" variable="output"/>
+                        </sequence>
+                    </else>
+                </if>
+            </sequence>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_BpelPrinter" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns2:printInformationRequest" name="printerRequest"/>
+                <variable messageType="ns2:printInformationResponse" name="printerResponse"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    name="PrinterWebservice"
+                    partnerLinkType="ns:PrinterWebservicePartnerLinkType" partnerRole="clientPrinterWebservice"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <sequence name="main">
+                <assign name="Eingabe_Zuweisen" validate="no">
+                    <targets>
+                        <target linkName="callBpelPrinterTOEingabe_Zuweisen"/>
+                    </targets>
+                    <copy>
+                        <from>
+                            <literal>
+                                <impl:printInformation
+                                    xmlns:impl="http://webservice.iaas.uni_stuttgart.de" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    <impl:information>impl:information</impl:information>
+                                </impl:printInformation>
+                            </literal>
+                        </from>
+                        <to part="parameters" variable="printerRequest"/>
+                    </copy>
+                    <copy>
+                        <from part="payload" variable="input">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[tns:input]]></query>
+                        </from>
+                        <to part="parameters" variable="printerRequest">
+                            <query queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"><![CDATA[pb:information]]></query>
+                        </to>
+                    </copy>
+                </assign>
+                <invoke inputVariable="printerRequest" name="Invoke" outputVariable="printerResponse"/>
+            </sequence>
+        </scope>
+    </flow>
+</process>

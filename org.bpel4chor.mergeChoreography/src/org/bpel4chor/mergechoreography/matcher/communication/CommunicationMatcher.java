@@ -27,7 +27,7 @@ import org.eclipse.bpel.model.Reply;
  * <br>
  * 
  * @author Peter.Debicki
- * 
+ * 3
  */
 public class CommunicationMatcher implements Serializable {
 	

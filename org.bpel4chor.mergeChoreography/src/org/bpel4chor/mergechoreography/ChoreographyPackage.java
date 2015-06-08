@@ -212,6 +212,8 @@ public class ChoreographyPackage implements Serializable {
 						// Set Abstract Process profile !!
 						proc2Add.setAbstractProcessProfile(BPEL4ChorConstants.PBD_ABSTRACT_PROCESS_PROFILE);
 						ChoreographyPackage.this.pbds.add(proc2Add);
+					} else {
+						ChoreographyPackage.this.log.log(Level.WARN, "Cannot process file, unknown file-suffix" + file.toUri() + " ... ");
 					}
 					
 					return FileVisitResult.CONTINUE;
@@ -379,6 +381,15 @@ public class ChoreographyPackage implements Serializable {
 		if (this.visitedLinks.indexOf(link) == -1) {
 			this.visitedLinks.add(link);
 		}
+	}
+	
+	/**
+	 * Removes a {@link MessageLink} from visited Links
+	 * 
+	 * @param link The visited {@link MessageLink}
+	 */
+	public void removeVisitedLink(MessageLink link) {
+			this.visitedLinks.remove(link);	
 	}
 	
 	/**

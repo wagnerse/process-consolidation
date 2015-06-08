@@ -19,11 +19,13 @@ public class MergePostProcessor {
 	 * @param choreographyPackage contains information for processing
 	 */
 	public static void startPostProcessing(ChoreographyPackage choreographyPackage) {
+		
 		// sets an alternative CompensationHandler
-		FCTEUtil.processCompensationHandler(choreographyPackage.getMergedProcess());
-		// checks/processes if FaultHandler or TerminationHandler should
-		// be processed
+		// FCTEUtil.processCompensationHandler(choreographyPackage.getMergedProcess());
+		// checks/processes if FaultHandler or TerminationHandler should be processed
 		FCTEUtil.processScopesFT(choreographyPackage.getMergedProcess(), choreographyPackage.getPbds());
 		// ### EXTEND PostProcessing code here EXTEND ###
+		
+
 	}
 }

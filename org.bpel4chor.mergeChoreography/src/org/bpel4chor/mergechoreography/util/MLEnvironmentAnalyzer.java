@@ -9,6 +9,7 @@ import org.bpel4chor.model.topology.impl.MessageLink;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.Invoke;
+import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.OnMessage;
 import org.eclipse.bpel.model.PartnerActivity;
 import org.eclipse.bpel.model.Receive;
@@ -73,6 +74,7 @@ public class MLEnvironmentAnalyzer implements Serializable {
 			// We need to get the <pick> containing the <onMessage>
 			r = (Activity) recAct.eContainer();
 		}
+
 		
 		environment.setS(s);
 		environment.setR(r);
@@ -90,6 +92,7 @@ public class MLEnvironmentAnalyzer implements Serializable {
 		
 		// Analyze environment before receive
 		List<Activity> beforeRec = ChoreoMergeUtil.getPreceedingActivities(r);
+		
 		if (beforeRec != null) {
 			environment.getPreR().addAll(beforeRec);
 		}

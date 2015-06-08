@@ -27,9 +27,25 @@ public interface Constants {
 	 */
 	String FH_NAME_FLOW = "FH_Processing_";
 	/**
-	 * Name prefix for new surround {@link Scope}
+	 * Name prefix for new {@link Flow} in EHPreprocessing
+	 */
+	String EH_NAME_FLOW = "EH_Processing_Flow_"; 
+	/**
+	 * Name prefix for new surrounding {@link Scope}
 	 */
 	String FH_NAME_NEW_SUR_SCOPE = "FH_SurScope_";
+	/**
+	 * Name prefix for new surrounding {@link Scope} in EHPreprocessing
+	 */
+	String EH_NAME_NEW_SUR_SCOPE = "EH_SurScope_";
+	/**
+	 * Name prefix for copied EH-{@link Scope} in EHPreprocessing
+	 */
+	String EH_NAME_EH_SCOPE = "EH_Scope_";
+	/**
+	 * Name prefix for copied EH-Logic-{@link Scope} in EHPreprocessing
+	 */
+	String EH_NAME_EH_LOGIC_SCOPE = "EH_Logic_Scope_";
 	/**
 	 * Name prefix for new {@link TerminationHandler} {@link Scope}
 	 */

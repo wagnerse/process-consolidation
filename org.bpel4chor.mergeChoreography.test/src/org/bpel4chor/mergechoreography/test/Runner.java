@@ -19,7 +19,7 @@ public class Runner {
 	 */
 	public static void main(String[] args) {
 		
-		String outputPath = "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput\\";
+		String outputPath = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/output/";
 		Map<String, String> args2 = new HashMap<>();
 		
 		args2.put("", "");
@@ -44,21 +44,21 @@ public class Runner {
 		// }
 		// }
 		
-		// ASP11
-		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.asyncPattern11Choreo);
-		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
-		choreographyMerger1.merge(outputPath + "ASP11\\");
-		Process process1 = package1.getMergedProcess();
-		if (process1 != null) {
-			try {
-				AbstractBPELWriter writer = new AbstractBPELWriter();
-				
-				writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath + "ASP11\\" + process1.getName() + ".bpel").eResource(), System.out, args2);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+//		// ASP11
+//		ChoreographyMerger choreographyMerger1 = new ChoreographyMerger(Constants.asyncPattern11Choreo);
+//		ChoreographyPackage package1 = choreographyMerger1.getChoreographyPackage();
+//		choreographyMerger1.merge(outputPath + "ASP11\\");
+//		Process process1 = package1.getMergedProcess();
+//		if (process1 != null) {
+//			try {
+//				AbstractBPELWriter writer = new AbstractBPELWriter();
+//				
+//				writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath + "ASP11\\" + process1.getName() + ".bpel").eResource(), System.out, args2);
+//				
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
 		
 		// Test Demo !!
 		
@@ -279,45 +279,45 @@ public class Runner {
 		// }
 		// }
 		//
-		// // ASP22 2 Send to one Pick with distinct <onMessage>-branches, which
-		// // uses different variables
-		// ChoreographyMerger choreographyMerger13 = new
-		// ChoreographyMerger(Constants.asyncPattern222SendDiffVarsChoreo);
-		// ChoreographyPackage package13 =
-		// choreographyMerger13.getChoreographyPackage();
-		// choreographyMerger13.merge(outputPath + "ASP222SendDiffVars\\");
-		// Process process13 = package13.getMergedProcess();
-		// if (process13 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "ASP222SendDiffVars\\" + process13.getName() + ".bpel").eResource(),
-		// System.out, args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
-		//
-		// // ASP23
-		// ChoreographyMerger choreographyMerger14 = new
-		// ChoreographyMerger(Constants.asyncPattern23Choreo);
-		// ChoreographyPackage package14 =
-		// choreographyMerger14.getChoreographyPackage();
-		// choreographyMerger14.merge(outputPath + "ASP23\\");
-		// Process process14 = package14.getMergedProcess();
-		// if (process14 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "ASP23\\" + process14.getName() + ".bpel").eResource(), System.out,
-		// args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
-		//
+//		 // ASP22 2 Send to one Pick with distinct <onMessage>-branches, which
+//		 // uses different variables
+//		 ChoreographyMerger choreographyMerger13 = new
+//		 ChoreographyMerger(Constants.asyncPattern222SendDiffVarsChoreo);
+//		 ChoreographyPackage package13 =
+//		 choreographyMerger13.getChoreographyPackage();
+//		 choreographyMerger13.merge(outputPath + "ASP222SendDiffVars\\");
+//		 Process process13 = package13.getMergedProcess();
+//		 if (process13 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "ASP222SendDiffVars\\" + process13.getName() + ".bpel").eResource(),
+//		 System.out, args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
+		
+//		 // ASP23
+//		 ChoreographyMerger choreographyMerger14 = new
+//		 ChoreographyMerger(Constants.asyncPattern23Choreo);
+//		 ChoreographyPackage package14 =
+//		 choreographyMerger14.getChoreographyPackage();
+//		 choreographyMerger14.merge(outputPath + "ASP23\\");
+//		 Process process14 = package14.getMergedProcess();
+//		 if (process14 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "ASP23\\" + process14.getName() + ".bpel").eResource(), System.out,
+//		 args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
+		
 		// // ASP23 with createInstance=yes in <pick>
 		// ChoreographyMerger choreographyMerger15 = new
 		// ChoreographyMerger(Constants.asyncPattern23CreateInstanceChoreo);
@@ -432,24 +432,24 @@ public class Runner {
 		// }
 		// }
 		//
-		// // SP15 with <invoke> in FH
-		// ChoreographyMerger choreographyMerger21 = new
-		// ChoreographyMerger(Constants.syncPattern15FHChoreo);
-		// ChoreographyPackage package21 =
-		// choreographyMerger21.getChoreographyPackage();
-		// choreographyMerger21.merge(outputPath + "SP15FH\\");
-		// Process process21 = package21.getMergedProcess();
-		// if (process21 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "SP15FH\\" + process21.getName() + ".bpel").eResource(), System.out,
-		// args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
+//		 // SP15 with <invoke> in FH
+//		 ChoreographyMerger choreographyMerger21 = new
+//		 ChoreographyMerger(Constants.syncPattern15FHChoreo);
+//		 ChoreographyPackage package21 =
+//		 choreographyMerger21.getChoreographyPackage();
+//		 choreographyMerger21.merge(outputPath + "SP15FH\\");
+//		 Process process21 = package21.getMergedProcess();
+//		 if (process21 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "SP15FH\\" + process21.getName() + ".bpel").eResource(), System.out,
+//		 args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
 		//
 		// // // SP15 with <invoke> in EH
 		// ChoreographyMerger choreographyMerger22 = new
@@ -546,25 +546,25 @@ public class Runner {
 		// }
 		// }
 		//
-		// // SP23
-		// ChoreographyMerger choreographyMerger27 = new
-		// ChoreographyMerger(Constants.syncPattern23Choreo);
-		// ChoreographyPackage package27 =
-		// choreographyMerger27.getChoreographyPackage();
-		// choreographyMerger27.merge(outputPath + "SP23\\");
-		// Process process27 = package27.getMergedProcess();
-		// if (process27 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "SP23\\" + process27.getName() + ".bpel").eResource(), System.out,
-		// args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
-		//
+//		 // SP23
+//		 ChoreographyMerger choreographyMerger27 = new
+//		 ChoreographyMerger(Constants.syncPattern23Choreo);
+//		 ChoreographyPackage package27 =
+//		 choreographyMerger27.getChoreographyPackage();
+//		 choreographyMerger27.merge(outputPath + "SP23\\");
+//		 Process process27 = package27.getMergedProcess();
+//		 if (process27 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "SP23\\" + process27.getName() + ".bpel").eResource(), System.out,
+//		 args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
+		
 		// // SP24
 		// ChoreographyMerger choreographyMerger28 = new
 		// ChoreographyMerger(Constants.syncPattern24Choreo);
@@ -584,24 +584,22 @@ public class Runner {
 		// }
 		// }
 		//
-		// // ASP30 <receive> is <onEvent>
-		// ChoreographyMerger choreographyMerger29 = new
-		// ChoreographyMerger(Constants.asyncPattern30RisEHChoreo);
-		// ChoreographyPackage package29 =
-		// choreographyMerger29.getChoreographyPackage();
-		// choreographyMerger29.merge(outputPath + "ASP30RisEH\\");
-		// Process process29 = package29.getMergedProcess();
-		// if (process29 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "ASP30RisEH\\" + process29.getName() + ".bpel").eResource(),
-		// System.out, args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
+		
+//		 // ASP30 <receive> is <onEvent>
+//		 ChoreographyMerger choreographyMerger29 = new
+//		 ChoreographyMerger(Constants.asyncPattern30RisEHChoreo);
+//		 ChoreographyPackage package29 =
+//		 choreographyMerger29.getChoreographyPackage();
+//		 choreographyMerger29.merge(outputPath + "ASP30RisEH\\");
+//		 Process process29 = package29.getMergedProcess();
+//		 if (process29 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath + "ASP30RisEH\\" + process29.getName() + ".bpel").eResource(), System.out, args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
 		//
 		// // ASP30 <invoke> is in <compensationHandler>
 		// ChoreographyMerger choreographyMerger30 = new
@@ -622,24 +620,24 @@ public class Runner {
 		// }
 		// }
 		//
-		// // ASP30 <receive> is in <onEvent>
-		// ChoreographyMerger choreographyMerger31 = new
-		// ChoreographyMerger(Constants.asyncPattern30RinEHChoreo);
-		// ChoreographyPackage package31 =
-		// choreographyMerger31.getChoreographyPackage();
-		// choreographyMerger31.merge(outputPath + "ASP30RinEH\\");
-		// Process process31 = package31.getMergedProcess();
-		// if (process31 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "ASP30RinEH\\" + process31.getName() + ".bpel").eResource(),
-		// System.out, args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
+//		 // ASP30 <receive> is in <onEvent>
+//		 ChoreographyMerger choreographyMerger31 = new
+//		 ChoreographyMerger(Constants.asyncPattern30RinEHChoreo);
+//		 ChoreographyPackage package31 =
+//		 choreographyMerger31.getChoreographyPackage();
+//		 choreographyMerger31.merge(outputPath + "ASP30RinEH\\");
+//		 Process process31 = package31.getMergedProcess();
+//		 if (process31 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "ASP30RinEH\\" + process31.getName() + ".bpel").eResource(),
+//		 System.out, args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
 		//
 		// // ASP30 <invoke> is in <while>
 		// ChoreographyMerger choreographyMerger32 = new
@@ -717,24 +715,24 @@ public class Runner {
 		// }
 		// }
 		//
-		// // SP30 <invoke> and <receive> in FCTE-Handler
-		// ChoreographyMerger choreographyMerger36 = new
-		// ChoreographyMerger(Constants.syncPattern30SRinFCTEChoreo);
-		// ChoreographyPackage package36 =
-		// choreographyMerger36.getChoreographyPackage();
-		// choreographyMerger36.merge(outputPath + "SP30SRinFCTE\\");
-		// Process process36 = package36.getMergedProcess();
-		// if (process36 != null) {
-		// try {
-		// AbstractBPELWriter writer = new AbstractBPELWriter();
-		//
-		// writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
-		// "SP30SRinFCTE\\" + process36.getName() + ".bpel").eResource(),
-		// System.out, args2);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// }
+//		 // SP30 <invoke> and <receive> in FCTE-Handler
+//		 ChoreographyMerger choreographyMerger36 = new
+//		 ChoreographyMerger(Constants.syncPattern30SRinFCTEChoreo);
+//		 ChoreographyPackage package36 =
+//		 choreographyMerger36.getChoreographyPackage();
+//		 choreographyMerger36.merge(outputPath + "SP30SRinFCTE\\");
+//		 Process process36 = package36.getMergedProcess();
+//		 if (process36 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "SP30SRinFCTE\\" + process36.getName() + ".bpel").eResource(),
+//		 System.out, args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
 		//
 		// // SP30 <invoke> and receiving <onMessage> of <Pick> in FCTE-Handler
 		// ChoreographyMerger choreographyMerger37 = new
@@ -772,7 +770,7 @@ public class Runner {
 		// } catch (IOException e) {
 		// e.printStackTrace();
 		// }
-		// }
+		// }3
 		//
 		// // SP30 <invoke> is in <while> multiple <reply>s
 		// ChoreographyMerger choreographyMerger39 = new
@@ -814,6 +812,28 @@ public class Runner {
 		// e.printStackTrace();
 		// }
 		// }
+		
+		// EventHandler Tests
+
+//		 // ASP30 two <receive> are <onEvent> in same EventHandler
+//		 ChoreographyMerger choreographyMerger41 = new
+//		 ChoreographyMerger(Constants.asyncPattern30Ris2EHChoreo);
+//		 ChoreographyPackage package41 =
+//		 choreographyMerger41.getChoreographyPackage();
+//		 choreographyMerger41.merge(outputPath + "ASP30RisEHx2\\");
+//		 Process process41 = package41.getMergedProcess();
+//		 if (process41 != null) {
+//		 try {
+//		 AbstractBPELWriter writer = new AbstractBPELWriter();
+//		
+//		 writer.write((BPELResource) BPEL4ChorReader.readBPEL(outputPath +
+//		 "ASP30RisEHx2\\" + process41.getName() + ".bpel").eResource(),
+//		 System.out, args2);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+//		 }
+//		 }
+		 
 		
 	}
 }

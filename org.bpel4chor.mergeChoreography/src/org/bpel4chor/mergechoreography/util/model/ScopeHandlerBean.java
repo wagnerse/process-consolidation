@@ -14,12 +14,16 @@ import org.eclipse.bpel.model.TerminationHandler;
  * <br>
  * 
  * @author Peter Berger
+ * @author Aleksandar Milutinovic
  * 
  */
 public class ScopeHandlerBean {
 	
 	private boolean terminationHandler = false;
 	private boolean faultHandler = false;
+	private boolean eventHandler = false;
+	private boolean EHOnEvent = false;
+	private boolean EHOnAlarm = false;
 	private boolean pbdScope = false;
 	
 	
@@ -86,6 +90,54 @@ public class ScopeHandlerBean {
 	 *         otherwise false
 	 */
 	public boolean processScope() {
-		return isFaultHandler() || isTerminationHandler();
+		return isFaultHandler() || isTerminationHandler() || isEventHandler();
+	}
+
+	/**
+	 * It is a flag which tells if any {@link Activity} in the
+	 * {@link EventHandler} has a {@link Target} and this {@link Target} is
+	 * connected with a {@link Source} outside of the {@link EventHandler}
+	 * or vice versa has a {@link Source} which is connected with a 
+	 * {@link Target} outside of the {@link EventHandler}.
+	 * 
+	 * @return true if {@link EventHandler} contains a {@link Target} or
+	 *         {@link Source} which is connected outside of the {@link EventHandler}<br>
+	 *         otherwise false
+	 */
+	public boolean isEventHandler() {
+		return eventHandler;
+	}
+	
+	/**
+	 * @param EHOnEvent Set true if Scope is instance of OnEvent in EH
+	 */
+	public void setEHOnEvent(boolean EHOnEvent) {
+		this.EHOnEvent = EHOnEvent;
+	}
+	
+	public boolean isEHOnEvent() {
+		return EHOnEvent;
+	}
+	
+	/**
+	 * @param EHOnEvent Set true if Scope is instance of OnAlarm in EH
+	 */
+	public void setEHOnAlarm(boolean EHOnAlarm) {
+		this.EHOnAlarm = EHOnAlarm;
+	}
+	/**
+	 * It is a flag which tells if the {@link Scope} in an {@link EventHandler} is within an OnAlarm
+	 * @return true if {@link Scope} is the OnAlarm Scope in an {@link EventHandler}
+	 */
+	public boolean isEHOnAlarm() {
+		return EHOnAlarm;
+	}
+	
+	/**
+	 * @param eventHandler the eventHandler to set
+	 */
+	public void setEventHandler(boolean eventHandler) {
+		this.eventHandler = eventHandler;
+		
 	}
 }

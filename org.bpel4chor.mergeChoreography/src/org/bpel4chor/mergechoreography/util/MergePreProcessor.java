@@ -6,17 +6,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.ChoreographyPackage;
+import org.bpel4chor.model.topology.impl.MessageLink;
 import org.eclipse.bpel.model.Activity;
+import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
 import org.eclipse.bpel.model.CompensateScope;
 import org.eclipse.bpel.model.CompensationHandler;
 import org.eclipse.bpel.model.FaultHandler;
 import org.eclipse.bpel.model.Invoke;
+import org.eclipse.bpel.model.OnAlarm;
+import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.Process;
 import org.eclipse.bpel.model.Scope;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.wst.wsdl.WSDLElement;
+
 
 /**
  * This class contains methods for PreProcessing. <br>
@@ -33,8 +40,11 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * 
  * @author Peter Berger
  * 
+ * 
  */
 public class MergePreProcessor implements Constants {
+	
+
 	
 	/**
 	 * Starts PreProcessing of merge process.
@@ -46,6 +56,7 @@ public class MergePreProcessor implements Constants {
 		startPreprocessingForInvokes(choreographyPackage.getPbds());
 		// ### EXTEND PreProcessing code here EXTEND ###
 	}
+	
 	
 	/**
 	 * Searches for {@link Invoke}s with {@link FaultHandler} or

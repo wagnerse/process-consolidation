@@ -36,7 +36,7 @@ public class Tester {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String outputPath = "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\EmptyOptimizer\\";
+		String outputPath = "/Users/aleks/Documents/workspace/StAMerge/";
 		Map<String, String> args2 = new HashMap<>();
 		
 //		args2.put("EmptyOpt1.bpel", outputPath);
