@@ -47,7 +47,11 @@ public class ChoreographyMergerTest {
 //		ChoreographyMergerTest.patterns.put(Constants.syncPattern22Choreo, "SP22");
 //		ChoreographyMergerTest.patterns.put(Constants.syncPattern23Choreo, "SP23");
 //		ChoreographyMergerTest.patterns.put(Constants.syncPattern24Choreo, "SP24");
+<<<<<<< HEAD
 //		ChoreographyMergerTest.patterns.put(Constants.asyncPattern30RisEHChoreo, "ASP30RisEH");
+=======
+		ChoreographyMergerTest.patterns.put(Constants.asyncPattern30RisEHChoreo, "ASP30RisEH");
+>>>>>>> master
 //		ChoreographyMergerTest.patterns.put(Constants.asyncPattern30SinCHChoreo, "ASP30SinCH");
 //		ChoreographyMergerTest.patterns.put(Constants.asyncPattern30RinEHChoreo, "ASP30RinEH");
 //		ChoreographyMergerTest.patterns.put(Constants.asyncPattern30SinWhileChoreo, "ASP30SinWhile");
@@ -61,7 +65,12 @@ public class ChoreographyMergerTest {
 //		ChoreographyMergerTest.patterns.put(Constants.syncPattern30SinWhileMultiReplyWSDLChoreo, "SP30SinWhileMultiReplyWSDL");
 //		ChoreographyMergerTest.patterns.put(Constants.demoChoreo, "DemoChoreo");
 //		ChoreographyMergerTest.patterns.put(Constants.correlationPropagatorChoreo, "CorrelationPropagator");
+<<<<<<< HEAD
 		ChoreographyMergerTest.patterns.put(Constants.multiInstanceChoreo, "Multi-Instance-Test");
+=======
+//		
+		
+>>>>>>> master
 	}
 	
 	@AfterClass

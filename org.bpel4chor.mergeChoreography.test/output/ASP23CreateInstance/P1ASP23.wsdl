@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.iaas.uni-stuttgart.de" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="P1ASP23" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		TYPE DEFINITION - List of services participating in this BPEL process The 
+		default output of the BPEL designer uses strings as input and output to the 
+		BPEL Process. But you can define or import any XML Schema type and us them 
+		as part of the message types. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+			<element name="P1ASP23Request">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="P1ASP23Response">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+		</schema>
+	</types>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		MESSAGE TYPE DEFINITION - Definition of the message types used as part of 
+		the port type defintions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<message name="P1ASP23RequestMessage">
+		<part element="tns:P1ASP23Request" name="payload"/>
+	</message>
+
+	<message name="P1ASP23ResponseMessage">
+		<part element="tns:P1ASP23Response" name="payload"/>
+	</message>
+
+	<message name="P12P2ASP23RequestMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PORT TYPE DEFINITION - A port type groups a set of operations into a logical 
+		service unit. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- portType implemented by the P1ASP23 BPEL process -->
+	<portType name="P1ASP23">
+		<operation name="initiate">
+			<input message="tns:P1ASP23RequestMessage"/>
+		</operation>
+	</portType>
+
+	<!-- portType implemented by the requester of P1ASP23 BPEL process for asynchronous 
+		callback purposes -->
+	<portType name="P1ASP23Callback">
+		<operation name="onResult">
+			<input message="tns:P1ASP23ResponseMessage"/>
+		</operation>
+	</portType>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PARTNER LINK TYPE DEFINITION the P1ASP23 partnerLinkType binds the provider 
+		and requester portType into an asynchronous conversation. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<plnk:partnerLinkType name="P1ASP23">
+		<plnk:role name="P1ASP23Provider" portType="tns:P1ASP23"/>
+		<plnk:role name="P1ASP23Requester" portType="tns:P1ASP23Callback"/>
+	</plnk:partnerLinkType>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		BINDING DEFINITION - Defines the message format and protocol details for 
+		a web service. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<binding name="P1ASP23Binding" type="tns:P1ASP23">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="initiate">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/initiate"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<binding name="P1ASP23CallbackBinding" type="tns:P1ASP23Callback">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="onResult">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/onResult"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		SERVICE DEFINITION - A service groups a set of ports into a service unit. 
+		~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<service name="P1ASP23Service">
+		<port binding="tns:P1ASP23Binding" name="P1ASP23Port">
+			<soap:address location="http://localhost:8080/P1ASP23"/>
+		</port>
+	</service>
+
+	<service name="P1ASP23ServiceCallback">
+		<port binding="tns:P1ASP23CallbackBinding" name="P1ASP23PortCallbackPort">
+			<soap:address location="http://localhost:8080/P1ASP23Callback"/>
+		</port>
+	</service>
+</definitions>

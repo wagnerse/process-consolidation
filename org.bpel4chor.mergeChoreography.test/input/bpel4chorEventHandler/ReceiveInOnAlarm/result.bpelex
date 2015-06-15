@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="ASCII"?>
+<extensionmodel:ExtensionMap xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:extensionmodel="http:///extensionmodel.ecore" xmlns:org.eclipse.bpel.ui.uiextensionmodel="http:///org/eclipse/bpel/ui/uiextensionmodel.ecore" namespace="http://org.eclipse.bpel.ui/">
+  <extensions>
+    <extendedObject href="result.bpel#//@variables/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:VariableExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@variables/@children.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:VariableExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@variables/@children.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:VariableExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="166" y="53"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="8" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#/"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ProcessExtension" modificationStamp="1423182078000"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" width="1314" height="903"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="647" y="59" width="347" height="200"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="8" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@activities.0/@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@activities.0/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@activities.0/@activity/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@links/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@links/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="143" y="137"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.1/@copy.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:CopyExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="27" y="51"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.3"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="127" y="560"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.4"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="69" y="94"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.5"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="144" y="517"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="50" y="180"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity/@activities.0/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="35" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity/@activities.0/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="8" y="51"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity/@activities.0/@activities.1/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.6/@activity/@activities.0/@links/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@activities.7"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="144" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.3"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.4"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.5"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.1/@links/@children.6"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="656" y="341"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="224" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@faultHandlers/@catch.0/@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@faultHandlers/@catch.0/@activity/@activities.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@faultHandlers/@catch.0/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="8" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="160" y="137"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@activities.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="95" y="51"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@activities.3"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="177" y="94"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@activities.4"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension" x="177" y="8"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@links/@children.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@links/@children.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@links/@children.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity/@links/@children.3"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@terminationHandler/@activity/@activities.0"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@terminationHandler/@activity"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@faultHandlers/@catch.0/@activity/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@links/@children.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.0/@terminationHandler/@activity/@activities.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:ActivityExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@links/@children.2"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+  <extensions>
+    <extendedObject href="result.bpel#//@activity/@activities.0/@activities.2/@links/@children.1"/>
+    <extensionObject xsi:type="org.eclipse.bpel.ui.uiextensionmodel:LinkExtension"/>
+  </extensions>
+</extensionmodel:ExtensionMap>

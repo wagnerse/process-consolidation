@@ -8,6 +8,7 @@ import org.bpel4chor.mergechoreography.matcher.communication.CommunicationMatche
 import org.bpel4chor.mergechoreography.pattern.MergePattern;
 import org.bpel4chor.mergechoreography.util.MergePostProcessor;
 import org.bpel4chor.mergechoreography.util.MergePreProcessor;
+import org.bpel4chor.mergechoreography.util.MergePreProcessorForEH;
 import org.bpel4chor.model.topology.impl.MessageLink;
 import org.eclipse.bpel.model.resource.BPELResourceFactoryImpl;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -91,6 +92,9 @@ public class ChoreographyMerger implements Serializable {
 	private void mergeChoreography() {
 		// Iinitialize the merged BPEL Process
 		this.choreographyPackage.initMergedProcess();
+		
+		// Debug: Check EH related Code
+		MergePreProcessorForEH.startPreProcessing(this.choreographyPackage);
 		
 		// Now check the MessageLinks and merge
 		CommunicationMatcher matcher = new CommunicationMatcher();

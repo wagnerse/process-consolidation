@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://www.iaas.uni-stuttgart.de"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract" xmlns:ns="http://www.iaas.uni-stuttgart.de">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P2SP14.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P1SP14.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <variables>
+        <variable messageType="ns:P12P2SP14RequestMessage" name="varRec1P2"/>
+        <variable messageType="ns:P22P1SP14ResponseMessage" name="varReply1P1"/>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="Invoke1P1SP14TOReceive1P2SP14"/>
+            <link name="Reply1P2SP14TOThrow"/>
+            <link name="Reply2P2SP14TOThrow"/>
+        </links>
+        <scope exitOnStandardFault="yes" name="Scope_P2SP14" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P2SP14RequestMessage" name="input"/>
+                <variable messageType="ns:P2SP14ResponseMessage" name="output"/>
+                <variable messageType="ns:P22P1SP14ResponseMessage" name="varReply1P2"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P2SP14Provider" name="client"
+                    partnerLinkType="ns:P2SP14" partnerRole="P2SP14Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link2"/>
+                    <link name="link3"/>
+                    <link name="link5"/>
+                    <link name="link6"/>
+                    <link name="link7"/>
+                    <link name="link4"/>
+                    <link name="link8"/>
+                    <link name="link9"/>
+                    <link name="link10"/>
+                </links>
+                <assign name="Reply2P2SP14" validate="no">
+                    <targets>
+                        <target linkName="link9"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link10"/>
+                        <source linkName="Reply2P2SP14TOThrow"/>
+                    </sources>
+                    <copy>
+                        <from variable="varReply1P2"/>
+                        <to variable="varReply1P1"/>
+                    </copy>
+                </assign>
+                <receive createInstance="yes" name="receiveInputP2SP14" variable="input">
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </receive>
+                <invoke inputVariable="output" name="callbackClientP2SP14">
+                    <targets>
+                        <target linkName="link6"/>
+                    </targets>
+                </invoke>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <empty name="Empty2">
+                    <targets>
+                        <target linkName="link3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link4"/>
+                        <source linkName="link8"/>
+                    </sources>
+                </empty>
+                <empty name="Receive1P2SP14">
+                    <targets>
+                        <joinCondition><![CDATA[$Invoke1P1SP14TOReceive1P2SP14 and ($link2)]]></joinCondition>
+                        <target linkName="link2"/>
+                        <target linkName="Invoke1P1SP14TOReceive1P2SP14"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link3"/>
+                    </sources>
+                </empty>
+                <assign name="Reply1P2SP14" validate="no">
+                    <targets>
+                        <target linkName="link7"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link5"/>
+                        <source linkName="Reply1P2SP14TOThrow"/>
+                    </sources>
+                    <copy>
+                        <from variable="varReply1P2"/>
+                        <to variable="varReply1P1"/>
+                    </copy>
+                </assign>
+                <empty name="Empty3">
+                    <targets>
+                        <target linkName="link5"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link6"/>
+                    </sources>
+                </empty>
+                <empty name="Empty4">
+                    <targets>
+                        <target linkName="link4"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link7"/>
+                    </sources>
+                </empty>
+                <empty name="Empty5">
+                    <targets>
+                        <target linkName="link8"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link9"/>
+                    </sources>
+                </empty>
+                <empty name="Empty6">
+                    <targets>
+                        <target linkName="link10"/>
+                    </targets>
+                </empty>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P1SP14" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P1SP14RequestMessage" name="input"/>
+                <variable messageType="ns:P1SP14ResponseMessage" name="output"/>
+                <variable messageType="ns:P12P2SP14RequestMessage" name="varInv1P1"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P1SP14Provider" name="client"
+                    partnerLinkType="ns:P1SP14" partnerRole="P1SP14Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link2"/>
+                    <link name="link4"/>
+                    <link name="link3"/>
+                </links>
+                <receive createInstance="yes" name="receiveInputP1SP14" variable="input">
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </receive>
+                <invoke inputVariable="output" name="callbackClientP1SP14">
+                    <targets>
+                        <target linkName="link4"/>
+                    </targets>
+                </invoke>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2"/>
+                    </sources>
+                </empty>
+                <empty name="Empty2">
+                    <targets>
+                        <target linkName="link3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link4"/>
+                    </sources>
+                </empty>
+                <scope name="Invoke1P1SP14">
+                    <targets>
+                        <target linkName="link2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link3"/>
+                    </sources>
+                    <faultHandlers>
+                        <catch faultName="ns:exitFault">
+                            <empty/>
+                        </catch>
+                    </faultHandlers>
+                    <sequence>
+                        <assign name="Invoke1P1SP14" validate="no">
+                            <sources>
+                                <source linkName="Invoke1P1SP14TOReceive1P2SP14"/>
+                            </sources>
+                            <copy>
+                                <from/>
+                                <to variable="varRec1P2"/>
+                            </copy>
+                        </assign>
+                        <flow>
+                            <throw faultName="ns:exitFault">
+                                <targets>
+                                    <target linkName="Reply1P2SP14TOThrow"/>
+                                </targets>
+                            </throw>
+                            <throw faultName="ns:exitFault">
+                                <targets>
+                                    <target linkName="Reply2P2SP14TOThrow"/>
+                                </targets>
+                            </throw>
+                        </flow>
+                    </sequence>
+                </scope>
+            </flow>
+        </scope>
+    </flow>
+</process>

@@ -56,7 +56,7 @@ public class CompensationHandlerUtil implements Constants {
 	 *            {@link Flow}.
 	 */
 	public static void processCompensation(Scope pbdScope) {
-		log.debug("Compensation logic startet for Scope=" + pbdScope.getName());
+		log.debug("Compensation logic started for Scope=" + pbdScope.getName());
 		
 		HashMap<Activity, TreeNode> mapperATn = new HashMap<>();
 		// build compensation tree
@@ -425,6 +425,7 @@ public class CompensationHandlerUtil implements Constants {
 			// TODO CHECK could it be that getScopeOrSurroundingScope are equal?
 			// do not set the leaf, if another TreeNode must point to the
 			// rootScope, we can not overwrite the leaf successor
+			// TODO Running ASP23 throws nullPonterException here
 			sourceTN.getLeaf().addLinkSuccessor(targetTN);
 			// sourceTN.addLinkSuccessor(targetTN);
 			// CHECK add parent to use Flow in compensation

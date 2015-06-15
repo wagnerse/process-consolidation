@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://uni-stuttgart.de/bpel/TerminationTest" xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop" xmlns:wsdl="http://webservice.iaas.uni_stuttgart.de" name="TerminationTest" targetNamespace="http://uni-stuttgart.de/bpel/TerminationTest">
+        
+    <plnk:partnerLinkType name="BpePLT">
+    <plnk:role name="bpeProvider" portType="wsdl:BpelPrinterException"/>
+  </plnk:partnerLinkType>
+    <import location="BpelPrinterException.wsdl" namespace="http://webservice.iaas.uni_stuttgart.de"/>
+    <types>
+        <schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://uni-stuttgart.de/bpel/TerminationTest">
+
+            <element name="TerminationTestRequest">
+                <complexType>
+                    <sequence>
+                        <element name="input" type="string"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+    </types>
+ 
+    <message name="TerminationTestRequestMessage">
+        <part element="tns:TerminationTestRequest" name="payload"/>
+    </message>
+
+    <portType name="TerminationTest">
+        <operation name="process">
+            <input message="tns:TerminationTestRequestMessage"/>
+        </operation>
+    </portType>   
+    
+    <plnk:partnerLinkType name="TerminationTest">
+        <plnk:role name="TerminationTestProvider" portType="tns:TerminationTest"/>
+    </plnk:partnerLinkType>
+    
+    <binding name="TerminationTestSOAPBinding" type="tns:TerminationTest">
+    	<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    	<operation name="process">
+    		<soap:operation soapAction="http://uni-stuttgart.de/bpel/TerminationTest/process"/>
+    		<input>
+    			<soap:body use="literal"/>
+    		</input>
+    	</operation>
+    </binding>
+
+    <service name="TerminationTestProcessService">
+    	<port binding="tns:TerminationTestSOAPBinding" name="TerminationTestProcessPort">
+    		<soap:address location="http://localhost:8080/ode/processes/TerminationTest"/>
+    	</port>
+    </service>
+</definitions>

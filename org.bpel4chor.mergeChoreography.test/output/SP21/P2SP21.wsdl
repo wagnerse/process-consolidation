@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.iaas.uni-stuttgart.de" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="P2SP21" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		TYPE DEFINITION - List of services participating in this BPEL process The 
+		default output of the BPEL designer uses strings as input and output to the 
+		BPEL Process. But you can define or import any XML Schema type and us them 
+		as part of the message types. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+			<element name="P2SP21Request">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="P2SP21Response">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+		</schema>
+	</types>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		MESSAGE TYPE DEFINITION - Definition of the message types used as part of 
+		the port type defintions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<message name="P2SP21RequestMessage">
+		<part element="tns:P2SP21Request" name="payload"/>
+	</message>
+
+	<message name="P2SP21ResponseMessage">
+		<part element="tns:P2SP21Response" name="payload"/>
+	</message>
+
+	<message name="P12P2SP21RequestMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+	
+	<message name="P22P1SP21ResponseMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PORT TYPE DEFINITION - A port type groups a set of operations into a logical 
+		service unit. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- portType implemented by the P2SP21 BPEL process -->
+	<portType name="P2SP21">
+		<operation name="initiate">
+			<input message="tns:P2SP21RequestMessage"/>
+		</operation>
+	</portType>
+
+	<!-- portType implemented by the requester of P2SP21 BPEL process for asynchronous 
+		callback purposes -->
+	<portType name="P2SP21Callback">
+		<operation name="onResult">
+			<input message="tns:P2SP21ResponseMessage"/>
+		</operation>
+	</portType>
+	
+	<portType name="P1SP21toP2SP22PT">
+		<operation name="Invoke1toReceive1Operation">
+			<input message="tns:P12P2SP21RequestMessage"/>
+			<output message="tns:P22P1SP21ResponseMessage"/>
+		</operation>
+	</portType>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PARTNER LINK TYPE DEFINITION the P2SP21 partnerLinkType binds the provider 
+		and requester portType into an asynchronous conversation. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<plnk:partnerLinkType name="P2SP21">
+		<plnk:role name="P2SP21Provider" portType="tns:P2SP21"/>
+		<plnk:role name="P2SP21Requester" portType="tns:P2SP21Callback"/>
+	</plnk:partnerLinkType>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		BINDING DEFINITION - Defines the message format and protocol details for 
+		a web service. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<binding name="P2SP21Binding" type="tns:P2SP21">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="initiate">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/initiate"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<binding name="P2SP21CallbackBinding" type="tns:P2SP21Callback">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="onResult">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/onResult"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		SERVICE DEFINITION - A service groups a set of ports into a service unit. 
+		~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<service name="P2SP21Service">
+		<port binding="tns:P2SP21Binding" name="P2SP21Port">
+			<soap:address location="http://localhost:8080/P2SP21"/>
+		</port>
+	</service>
+
+	<service name="P2SP21ServiceCallback">
+		<port binding="tns:P2SP21CallbackBinding" name="P2SP21PortCallbackPort">
+			<soap:address location="http://localhost:8080/P2SP21Callback"/>
+		</port>
+	</service>
+</definitions>

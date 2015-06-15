@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.bpel4chor.mergechoreography.ChoreographyMerger;
 import org.bpel4chor.mergechoreography.test.util.Constants;
+import org.bpel4chor.mergechoreography.test.util.ZipFilenameFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,10 +30,17 @@ public class ChoreographyMergerFhTest {
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
+<<<<<<< HEAD
 //		 ############# Generate all files.
 		 initAllFiles();
 //		 ############# Generate single file.
 //		initSingleFile(8);
+=======
+		// ############# Generate all files.
+		initAllFiles();
+		// ############# Generate single file.
+		//initSingleFile(17);
+>>>>>>> master
 	}
 	
 	private static void initSingleFile(int change) {
@@ -41,7 +49,7 @@ public class ChoreographyMergerFhTest {
 	
 	private static void initAllFiles() {
 		// reads all zips and put it into patterns
-		File[] fileList = new File(Constants.pathToFhZipFiles).listFiles();
+		File[] fileList = new File(Constants.pathToFhZipFiles).listFiles(new ZipFilenameFilter());
 		for (File f : fileList)
 			patterns.put(f.getAbsolutePath(), f.getName().substring(0, f.getName().length() - 4));
 	}

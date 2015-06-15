@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.iaas.uni-stuttgart.de" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="P4Demo" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		TYPE DEFINITION - List of services participating in this BPEL process The 
+		default output of the BPEL designer uses strings as input and output to the 
+		BPEL Process. But you can define or import any XML Schema type and us them 
+		as part of the message types. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+			<element name="P4DemoRequest">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="P4DemoResponse">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+		</schema>
+	</types>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		MESSAGE TYPE DEFINITION - Definition of the message types used as part of 
+		the port type defintions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<message name="P4DemoRequestMessage">
+		<part element="tns:P4DemoRequest" name="payload"/>
+	</message>
+
+	<message name="P4DemoResponseMessage">
+		<part element="tns:P4DemoResponse" name="payload"/>
+	</message>
+
+	<message name="P22P4DemoRequestMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+	
+	<message name="P32P5DemoRequestMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+	
+	<message name="P42P2DemoResponseMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+	
+	<message name="P1DemoChoreoResponseMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+	
+	
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PORT TYPE DEFINITION - A port type groups a set of operations into a logical 
+		service unit. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- portType implemented by the P4Demo BPEL process -->
+	<portType name="P4Demo">
+		<operation name="initiate">
+			<input message="tns:P4DemoRequestMessage"/>
+		</operation>
+	</portType>
+
+	<!-- portType implemented by the requester of P4Demo BPEL process for asynchronous 
+		callback purposes -->
+	<portType name="P4DemoCallback">
+		<operation name="onResult">
+			<input message="tns:P4DemoResponseMessage"/>
+		</operation>
+	</portType>
+	
+	<portType name="P1DemoTOP4DemoPT">
+		<operation name="Invoke1toReceive1Operation">
+			<input message="tns:P22P4DemoRequestMessage"/>
+		</operation>
+	</portType>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PARTNER LINK TYPE DEFINITION the P4Demo partnerLinkType binds the provider 
+		and requester portType into an asynchronous conversation. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<plnk:partnerLinkType name="P4Demo">
+		<plnk:role name="P4DemoProvider" portType="tns:P4Demo"/>
+		<plnk:role name="P4DemoRequester" portType="tns:P4DemoCallback"/>
+	</plnk:partnerLinkType>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		BINDING DEFINITION - Defines the message format and protocol details for 
+		a web service. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<binding name="P4DemoBinding" type="tns:P4Demo">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="initiate">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/initiate"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<binding name="P4DemoCallbackBinding" type="tns:P4DemoCallback">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="onResult">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/onResult"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		SERVICE DEFINITION - A service groups a set of ports into a service unit. 
+		~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<service name="P4DemoService">
+		<port binding="tns:P4DemoBinding" name="P4DemoPort">
+			<soap:address location="http://localhost:8080/P4Demo"/>
+		</port>
+	</service>
+
+	<service name="P4DemoServiceCallback">
+		<port binding="tns:P4DemoCallbackBinding" name="P4DemoPortCallbackPort">
+			<soap:address location="http://localhost:8080/P4DemoCallback"/>
+		</port>
+	</service>
+</definitions>

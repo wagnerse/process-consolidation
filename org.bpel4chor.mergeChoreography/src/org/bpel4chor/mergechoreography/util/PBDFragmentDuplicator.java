@@ -1520,7 +1520,8 @@ public class PBDFragmentDuplicator {
 		if (act == null) {
 			return null;
 		}
-		Empty newEmpty = BPELFactory.eINSTANCE.createEmpty();
+		Empty newEmpty = BPELFactory.eINSTANCE.createEmpty();	
+		newEmpty.setElement(act.getElement());
 		FragmentDuplicator.copyStandardAttributes(act, newEmpty);
 		PBDFragmentDuplicator.copyStandardElements(act, newEmpty);
 		return newEmpty;

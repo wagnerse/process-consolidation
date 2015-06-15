@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://uni-stuttgart.de/iaas/bpel/FaultHandler" xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="FaultHandler" targetNamespace="http://uni-stuttgart.de/iaas/bpel/FaultHandler">
+
+	<!-- correlationFaulHandlerProperty -->
+	
+
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://uni-stuttgart.de/iaas/bpel/FaultHandler">
+
+			<element name="FaultHandlerRequest">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="FaultHandlerResponse">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+		</schema>
+	</types>
+
+	<message name="FaultHandlerRequestMessage">
+		<part element="tns:FaultHandlerRequest" name="payload"/>
+	</message>
+	<message name="FaultHandlerResponseMessage">
+		<part element="tns:FaultHandlerResponse" name="payload"/>
+	</message>
+
+	<portType name="FaultHandlerPT">
+		<operation name="processFault">
+			<input message="tns:FaultHandlerRequestMessage"/>
+			<output message="tns:FaultHandlerResponseMessage"/>
+		</operation>
+	</portType>
+
+	<binding name="FaultHandlerSOAPBinding" type="tns:FaultHandlerPT">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="processFault">
+			<soap:operation soapAction="http://uni-stuttgart.de/iaas/bpel/FaultHandler/process"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+			<output>
+				<soap:body use="literal"/>
+			</output>
+		</operation>
+	</binding>
+
+	<service name="FaultHandlerProcessService">
+		<port binding="tns:FaultHandlerSOAPBinding" name="FaultHandlerProcessPort">
+			<soap:address location="http://localhost:8080/ode/processes/FaultHandler"/>
+		</port>
+	</service>
+</definitions>
