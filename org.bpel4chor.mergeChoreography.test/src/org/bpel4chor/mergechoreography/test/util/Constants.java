@@ -17,12 +17,7 @@ public class Constants {
 
 	// The outputPath for the merged choreographies
 	// public static String mergeOutputPath =
-<<<<<<< HEAD
-	// "E:\\Arbeit\\Diplom\\EclipseBPELWS\\MeineTestChoreos\\bpelContent\\MergeOutput";
-	public static String mergeOutputPath = "c:\\temp";
-=======
 	public static String mergeOutputPath = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/output/";
->>>>>>> master
 	
 	// path to source Files for bpel4chor FaultHandler Scenario
 	public static String pathToFhSzenarioBpel4chor = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/";
@@ -82,5 +77,4 @@ public class Constants {
 	public static String syncPattern30SinWhileMultiReplyWSDLChoreo = Constants.baseDir + File.separator + "SP30SinWhileMultiReplyWSDL.zip";
 	public static String demoChoreo = Constants.baseDir + File.separator + "DemoChoreo.zip";
 	public static String correlationPropagatorChoreo = Constants.baseDir + File.separator + "CorrelationPropagator.zip";
-	public static String multiInstanceChoreo = Constants.baseDir + File.separator + "multiinstance" + File.separator + "MIP.zip";
 }

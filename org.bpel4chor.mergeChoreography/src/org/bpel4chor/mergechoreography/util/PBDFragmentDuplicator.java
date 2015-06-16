@@ -1,9 +1,6 @@
 package org.bpel4chor.mergechoreography.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -16,7 +13,6 @@ import org.eclipse.bpel.model.CatchAll;
 import org.eclipse.bpel.model.Compensate;
 import org.eclipse.bpel.model.CompensateScope;
 import org.eclipse.bpel.model.CompensationHandler;
-import org.eclipse.bpel.model.CompletionCondition;
 import org.eclipse.bpel.model.Copy;
 import org.eclipse.bpel.model.Correlation;
 import org.eclipse.bpel.model.CorrelationSet;
@@ -25,7 +21,6 @@ import org.eclipse.bpel.model.ElseIf;
 import org.eclipse.bpel.model.Empty;
 import org.eclipse.bpel.model.EventHandler;
 import org.eclipse.bpel.model.Exit;
-import org.eclipse.bpel.model.Expression;
 import org.eclipse.bpel.model.FaultHandler;
 import org.eclipse.bpel.model.Flow;
 import org.eclipse.bpel.model.ForEach;
@@ -63,8 +58,6 @@ import org.eclipse.bpel.model.Wait;
 import org.eclipse.bpel.model.While;
 import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
 import org.eclipse.bpel.model.util.WSDLUtil;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.wst.wsdl.Definition;
 import org.eclipse.wst.wsdl.Message;
 
@@ -82,7 +75,6 @@ import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
 public class PBDFragmentDuplicator {
 	
 	protected static Logger log = Logger.getLogger(PBDFragmentDuplicator.class);
-	public static PBDFragmentDuplicatorExtension pbdFragmentDuplicatorExtension = new PBDFragmentDuplicatorExtension();
 	
 	private static ChoreographyPackage pkg = null;
 	
@@ -154,19 +146,15 @@ public class PBDFragmentDuplicator {
 		}
 		
 		// If origAct is instance of PartnerActivity add it to old2New Map
-		String wsuID = null;
-		if (origAct.getElement() != null)
-			if (origAct.getElement().getAttribute("wsu:id") != null)
-				wsuID = origAct.getElement().getAttribute("wsu:id");
+		String wsuID = origAct.getElement().getAttribute("wsu:id");
 		if (((wsuID) != null) && (!wsuID.equals(""))) {
-			PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement()
-					.getAttribute("wsu:id"), newActivity);
-
+			PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement().getAttribute("wsu:id"), newActivity);
+			
 			// We also set the name if the newActivity to the wsu:id to make it
 			// unique
 			newActivity.setName(origAct.getElement().getAttribute("wsu:id"));
 		}
-
+		
 		return newActivity;
 	}
 	
@@ -445,7 +433,7 @@ public class PBDFragmentDuplicator {
 		if ((origScope.getPartnerLinks() != null) && (origScope.getPartnerLinks().getChildren().size() > 0)) {
 			newScope.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 			for (PartnerLink pLink : origScope.getPartnerLinks().getChildren()) {
-				PartnerLink newLink = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyPartnerLink(pLink);
+				PartnerLink newLink = PBDFragmentDuplicator.copyPartnerLink(pLink);
 				newScope.getPartnerLinks().getChildren().add(newLink);
 			}
 		}
@@ -531,11 +519,46 @@ public class PBDFragmentDuplicator {
 				newScope.setPartnerLinks(BPELFactory.eINSTANCE.createPartnerLinks());
 			}
 			for (PartnerLink link : origProc.getPartnerLinks().getChildren()) {
-				PartnerLink newLink = PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyPartnerLink(link);
+				PartnerLink newLink = PBDFragmentDuplicator.copyPartnerLink(link);
 				newScope.getPartnerLinks().getChildren().add(newLink);
 			}
 		}
 	}
+	
+	/**
+	 * Get a new copy of the given partnerLink, including the partnerLinkType,
+	 * role, portType.
+	 * 
+	 * @param origPartnerLink
+	 * @return
+	 */
+	public static PartnerLink copyPartnerLink(PartnerLink origPartnerLink) {
+		
+		if (origPartnerLink == null) {
+			throw new NullPointerException("argument is null.");
+		}
+		
+		PartnerLink newPL = FragmentDuplicator.copyPartnerLink(origPartnerLink);
+		
+		// Get the corresponding wsdl-File for automatic import-creation in new
+		// merged process
+		Definition defSearched = PBDFragmentDuplicator.pkg.getPbd2wsdl().get(ChoreoMergeUtil.getProcessOfElement(origPartnerLink));
+		PartnerLinkType plType = null;
+		// CHECK need search for wsdl because its not defined in process-wsdl
+		if (defSearched == null) {
+			for (Definition def : PBDFragmentDuplicator.pkg.getWsdls()) {
+				plType = MyWSDLUtil.findPartnerLinkType(def, newPL.getPartnerLinkType().getName());
+				if (plType != null)
+					break;
+			}
+		} else {
+			plType = MyWSDLUtil.findPartnerLinkType(defSearched, newPL.getPartnerLinkType().getName());
+		}
+		newPL.setPartnerLinkType(plType);
+		
+		return newPL;
+	}
+	
 	/**
 	 * Get a new copy of the given variable, including the message.
 	 * 
@@ -563,20 +586,6 @@ public class PBDFragmentDuplicator {
 					refMsg = WSDLUtil.resolveMessage(def, origMsg.getQName());
 					if (refMsg != null)
 						break;
-				}
-				if (refMsg == null) {
-					// last resort: guess WSDL file name from PBD name
-					String origMsgQNameStr = origMsg.getQName().toString();
-					String processToBeSearched = origMsgQNameStr.substring(
-							origMsgQNameStr.lastIndexOf('/') + 1,
-							origMsgQNameStr.indexOf('}'));
-
-					Process targetProc = pkg.choreographyPackageExtension
-							.getPBDByName(processToBeSearched);
-
-					defSearched = PBDFragmentDuplicator.pkg.getPbd2wsdl().get(
-							targetProc);
-					refMsg = WSDLUtil.resolveMessage(defSearched, origMsg.getQName());
 				}
 			} else {
 				refMsg = WSDLUtil.resolveMessage(defSearched, origMsg.getQName());
@@ -725,11 +734,6 @@ public class PBDFragmentDuplicator {
 		Scope newScope = BPELFactory.eINSTANCE.createScope();
 		newScope.setName(getNewPBDNameForScope(pbd));
 		
-
-		// Todo Added code for renaming scopes when there is participant set in
-		// topology
-		PBDFragmentDuplicatorExtension.updateScopeName(newScope);
-		// End of added code
 		if (pbd.getExitOnStandardFault() != null) {
 			newScope.setExitOnStandardFault(pbd.getExitOnStandardFault());
 		}
@@ -768,11 +772,6 @@ public class PBDFragmentDuplicator {
 		Activity newActivity = PBDFragmentDuplicator.copyActivity(pbd.getActivity());
 		newScope.setActivity(newActivity);
 		
-		/**
-		 * TODO Added code
-		 */
-		pbdFragmentDuplicatorExtension.mergedProcessScopeMap.put(
-				newScope.getName(), newScope);
 	}
 	
 	/**
@@ -963,67 +962,7 @@ public class PBDFragmentDuplicator {
 		if (act.getCompletionCondition() != null) {
 			newForEach.setCompletionCondition(FragmentDuplicator.copyCompletionCondition(act.getCompletionCondition()));
 		}
-		newForEach.setActivity(PBDFragmentDuplicator.copyActivity(act
-				.getActivity()));
-
-		ArrayList<String> finalCounterValueList = new ArrayList<String>();
-		finalCounterValueList = pbdFragmentDuplicatorExtension
-				.containsNestedForEach(newForEach, finalCounterValueList);
-		String finalCounterValue = "";
-		for (int i = 0; i < finalCounterValueList.size(); i++) {
-
-			if (!pbdFragmentDuplicatorExtension.isInteger(finalCounterValueList
-					.get(i))
-					|| !pbdFragmentDuplicatorExtension.isInteger(newForEach
-							.getFinalCounterValue().getBody().toString())) {
-				if (finalCounterValue.length() == 0) {
-					finalCounterValue = finalCounterValueList.get(i)
-							+ "*"
-							+ newForEach.getFinalCounterValue().getBody()
-									.toString();
-				} else {
-					finalCounterValue = "*"
-							+ finalCounterValueList.get(i)
-							+ "*"
-							+ newForEach.getFinalCounterValue().getBody()
-									.toString();
-				}
-
-			} else {
-				if (finalCounterValue.length() == 0) {
-					finalCounterValue = ""
-							+ (Integer.parseInt(finalCounterValueList.get(i)) * Integer
-									.parseInt(newForEach.getFinalCounterValue()
-											.getBody().toString()));
-				} else {
-					finalCounterValue = ""
-							+ (Integer.parseInt(finalCounterValue)
-									* Integer.parseInt(finalCounterValueList
-											.get(i)) * Integer
-										.parseInt(newForEach
-												.getFinalCounterValue()
-												.getBody().toString()));
-				}
-			}
-		}
-		if (finalCounterValue.length() > 0) {
-			System.out.println("-----------------Final COunter Value:   "
-					+ finalCounterValue + "\tForEach: " + newForEach.getName());
-			newForEach.getFinalCounterValue().setBody(finalCounterValue);
-		}
-		// Added code
-		// I assume that each ForEach name will be unique
-		// newForEach .getFinalCounterValue().getBody().toString()
-
-		/*
-		 * System.out.println("--------- Foreach: " + newForEach.getName() +
-		 * "\tParent is ForEach: " + checkParentIsForEach(act));
-		 */
-
-		pbdFragmentDuplicatorExtension.processForEachMap.put(
-				newForEach.getName(), newForEach);// currentProcess.getName()
-		// + ","
-		// End of Added code
+		newForEach.setActivity(PBDFragmentDuplicator.copyActivity(act.getActivity()));
 		return newForEach;
 	}
 	
@@ -1203,7 +1142,7 @@ public class PBDFragmentDuplicator {
 		newRepeatUntil.setActivity(PBDFragmentDuplicator.copyActivity(act.getActivity()));
 		return newRepeatUntil;
 	}
-
+	
 	/**
 	 * Copy given {@link Sequence}
 	 * 
@@ -1380,7 +1319,7 @@ public class PBDFragmentDuplicator {
 			newTo.setExpression(FragmentDuplicator.copyExpression(to.getExpression()));
 		}
 		if (to.getPartnerLink() != null) {
-			newTo.setPartnerLink(PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.copyPartnerLink(to.getPartnerLink()));
+			newTo.setPartnerLink(PBDFragmentDuplicator.copyPartnerLink(to.getPartnerLink()));
 		}
 		return newTo;
 	}

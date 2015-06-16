@@ -19,7 +19,7 @@
     </variables>
     <flow name="MergedFlow">
         <links>
-            <link name="Invoke1P3ASP30TOReceive2P2ASP30Txxh"/>
+            <link name="Invoke1P3ASP30TOReceive2P2ASP30USZj"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -298,7 +298,7 @@
                             </targets>
                             <sources>
                                 <source linkName="link4"/>
-                                <source linkName="Invoke1P3ASP30TOReceive2P2ASP30Txxh"/>
+                                <source linkName="Invoke1P3ASP30TOReceive2P2ASP30USZj"/>
                             </sources>
                             <copy>
                                 <from variable="varInv2"/>
@@ -353,18 +353,18 @@
                                 </wait>
                                 <flow name="mainOnAlarm2">
                                     <links>
-                                    <link name="linkEH1TwFo"/>
+                                    <link name="linkEH1ECIF"/>
                                     </links>
                                     <empty name="EmptyEH1">
                                     <sources>
-                                    <source linkName="linkEH1TwFo"/>
+                                    <source linkName="linkEH1ECIF"/>
                                     </sources>
                                     </empty>
                                     <empty name="EmptyEH2">
                                     <targets>
-                                    <joinCondition><![CDATA[($Invoke1P3ASP30TOReceive2P2ASP30Txxh and ($linkEH1TwFo))]]></joinCondition>
-                                    <target linkName="Invoke1P3ASP30TOReceive2P2ASP30Txxh"/>
-                                    <target linkName="linkEH1TwFo"/>
+                                    <joinCondition><![CDATA[($Invoke1P3ASP30TOReceive2P2ASP30USZj and ($linkEH1ECIF))]]></joinCondition>
+                                    <target linkName="linkEH1ECIF"/>
+                                    <target linkName="Invoke1P3ASP30TOReceive2P2ASP30USZj"/>
                                     </targets>
                                     </empty>
                                 </flow>

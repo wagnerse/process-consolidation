@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.bpel4chor.mergechoreography.ChoreographyMerger;
 import org.bpel4chor.mergechoreography.test.util.Constants;
+import org.bpel4chor.mergechoreography.test.util.ZipFilenameFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,16 +31,17 @@ public class ChoreographyMergerEHTest {
 	private static String outputPath = Constants.mergeOutputPath;
 	
 	// put all scenarios 
-	private static String[] scenarios = {"ReceiveInOnEvent", "ReceiveInOnAlarmTest", "ReceiveInOnAlarmTest2", "RisOnEvent", "ReceiveInOnAlarm" , "ReceiveIn2OnAlarm" , "ReceiveIn2OnAlarmv2" , "ReceiveIn2OnAlarm3p"};
+	private static String[] scenarios = {"ReceiveInOnEvent", "ReceiveInOnAlarmTest", "ReceiveInOnAlarmTest2", "RisOnEvent", 
+		"ReceiveInOnAlarm" , "ReceiveIn2OnAlarm" , "ReceiveIn2OnAlarmv2" , "ReceiveIn2OnAlarm3p", "ReceiveIs2OnEvent3p", "ReceiveInOAandOE", "ProcessHasEH", "ReceiveInOnAlarmRepeatEvery", "ReceiveInOAandOE3p"};
 	
 	// select scenario here. Applies also for result check class CheckEHMergeResukt
-	static String scenario = scenarios[7];
+	static String scenario = scenarios[12];
 	
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// ############# Generate all files.
-		// initAllFiles();
+		//initAllFiles();
 		// ############# Generate single file.
 		initSingleFile(scenario);
 	}
@@ -50,7 +52,7 @@ public class ChoreographyMergerEHTest {
 	
 	private static void initAllFiles() {
 		// reads all zips and put it into patterns
-		File[] fileList = new File(Constants.pathToEHZipFiles).listFiles();
+		File[] fileList = new File(Constants.pathToEHZipFiles).listFiles(new ZipFilenameFilter());
 		for (File f : fileList)
 			patterns.put(f.getAbsolutePath(), f.getName().substring(0, f.getName().length() - 4));
 	}

@@ -45,7 +45,7 @@ public interface Constants {
 	/**
 	 * Name prefix for copied EH-Logic-{@link Scope} in EHPreprocessing
 	 */
-	String EH_NAME_EH_LOGIC_SCOPE = "EH_Logic_Scope_";
+	String EH_NAME_EH_LOGIC_SCOPE = "EH_OnAlarm_Scope_";
 	/**
 	 * Name prefix for new {@link TerminationHandler} {@link Scope}
 	 */

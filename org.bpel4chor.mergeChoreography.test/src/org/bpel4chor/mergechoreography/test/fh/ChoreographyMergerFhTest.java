@@ -30,17 +30,10 @@ public class ChoreographyMergerFhTest {
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-<<<<<<< HEAD
-//		 ############# Generate all files.
-		 initAllFiles();
-//		 ############# Generate single file.
-//		initSingleFile(8);
-=======
 		// ############# Generate all files.
 		initAllFiles();
 		// ############# Generate single file.
 		//initSingleFile(17);
->>>>>>> master
 	}
 	
 	private static void initSingleFile(int change) {
@@ -60,7 +53,6 @@ public class ChoreographyMergerFhTest {
 		for (Map.Entry<String, String> entry : patterns.entrySet()) {
 			// create directory
 			(new File(outputPath + File.separator + entry.getValue())).mkdir();
-			System.out.println(entry.getValue());
 			// start merge
 			choreographyMerger = new ChoreographyMerger(entry.getKey());
 			choreographyMerger.merge(outputPath + File.separator + entry.getValue() + File.separator);

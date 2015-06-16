@@ -63,8 +63,6 @@ import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
  */
 public class ChoreographyPackage implements Serializable {
 	
-	public ChoreographyPackageExtension choreographyPackageExtension;
-	
 	private static final long serialVersionUID = 3949692671093811360L;
 	
 	protected Logger log = Logger.getLogger(this.getClass().getPackage().getName());
@@ -116,15 +114,6 @@ public class ChoreographyPackage implements Serializable {
 		} catch (IncompleteZipFileException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public void setChoreographyPackageExtension(ChoreographyPackageExtension choreographyPackageExtension) {
-		this.choreographyPackageExtension = choreographyPackageExtension;
-		
-	}
-	
-	public void setChoreographyMergerExtension(ChoreographyMergerExtension choreographyMergerExtension) {
-		this.choreographyPackageExtension.choreographyMergerExtension = choreographyMergerExtension;
 	}
 	
 	/**
@@ -248,11 +237,10 @@ public class ChoreographyPackage implements Serializable {
 			for (Definition definition : this.wsdls) {
 				// CHECK: nur eine einzige WSDL ist fuer einen Prozess
 				// zugelassen => variablen Typ kann nicht gesetzt werden
-				if (definition.getQName() != null) {
+				if (definition.getQName() != null)
 					if (process.getName().equals(definition.getQName().getLocalPart())) {
 						this.pbd2wsdl.put(process, definition);
 					}
-				}
 			}
 		}
 	}
@@ -324,15 +312,6 @@ public class ChoreographyPackage implements Serializable {
 		
 		// Initialize PBDFragmentDuplicator with choreographypackage
 		PBDFragmentDuplicator.setPkg(this);
-		/**
-		 * TODO Added Code
-		 */
-		try {
-			PBDFragmentDuplicator.pbdFragmentDuplicatorExtension.setPkg(this);
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-		}
 		
 		// Initialize ChoreoMergeUtil with choreographypackage
 		ChoreoMergeUtil.setPkg(this);
@@ -346,20 +325,17 @@ public class ChoreographyPackage implements Serializable {
 		
 		// Iterate over all PBDs and copy all Process Fragments in separate
 		// scopes into the new merged Process Flow
-		// for (Process process : this.pbds) {
-		// PBDFragmentDuplicator.copyVarsAndActitivies(process);
-		// }
+		for (Process process : this.pbds) {
+			PBDFragmentDuplicator.copyVarsAndActitivies(process);
+		}
 		
 		// CHECK: imports will be automatically added from BPELWriter (IBM), we
 		// add it manuel, first we have to disable it in BPELWriter
-		this.setWsdlImport();
-		
-		/**
-		 * Handles MIP Instantiation when there exists participatnSet in
-		 * topology artifact
-		 * 
-		 */
-		this.choreographyPackageExtension.handleParticipantSetMerge();
+		setWsdlImport();
+	}
+	
+	public List<Process> getPbds() {
+		return this.pbds;
 	}
 	
 	public List<Definition> getWsdls() {
@@ -452,8 +428,19 @@ public class ChoreographyPackage implements Serializable {
 		return this.pbd2MergedVars;
 	}
 	
-	public List<Process> getPbds() {
-		return this.pbds;
+	/**
+	 * Find the PBD with the given Name
+	 * 
+	 * @param pbdName The name of the searched PBD
+	 * @return pbd or null
+	 */
+	public Process getPBDByName(String pbdName) {
+		for (Process pbd : this.pbds) {
+			if (pbd.getName().equals(pbdName)) {
+				return pbd;
+			}
+		}
+		return null;
 	}
 	
 	public Map<Link, Link> getPbd2MergedLinks() {
