@@ -74,35 +74,15 @@ public class AsyncMatcher30 implements AsyncMatcher {
 		// since in MergePreprocessingForEH all OnEvents and OnAlarms with MessageLinks
 		// are modified there should not be any OnEvent with MessageLinks left
 		if ((ChoreoMergeUtil.isElementInEHandler(r)) || (ChoreoMergeUtil.isElementInEHandler(s))) {			
-			// check for repeatEvery-Tag
-			// we can't merge OnAlarms with repeatEvery-Tag because it would generate multiple instances
-			// lifetime issues of the scope and timing issues are the reason for limitation		
-			if (((ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) r)) instanceof OnAlarm) 
-					|| ((ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) s)) instanceof OnAlarm))  {
-				if ((ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) r)))
-						|| (ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) ChoreoMergeUtil.getFCTEHandlerOfActivity((Activity) s)))) {
-					log.info("OnAlarm has <repeatEvery>-Tag. Can't merge this MessageLink");	
-					Condition cond = new Condition(true);
-					this.results.add(cond.evaluate());
-					pkg.addNMML(link);
-				} 
-			} else {
-			// every other case in EventHandler
 			this.log.info("s and/or r are in OnEvent/OnAlarm Scope with external activation !! s : " 
 					+ ChoreoMergeUtil.isElementInEHandler(s) + " . r : " + ChoreoMergeUtil.isElementInEHandler(r));
 			Condition cond = new Condition(true);
 			this.results.add(cond.evaluate());
-			// Case is NMML because the time at which EH is activated is not determinable
-			// because of that the lifetime of the EH-Scope containing s and/or r is unknown
 			pkg.addNMML(link);
-			}
+			
 		}
 				
-		
-		//TODO repeatEvery Tag in OnAlarm prüfen und ->NMML (TESTFALL BAUEN)
-
-		
-		
+	
 		// check if s is in a CH
 		if (ChoreoMergeUtil.isElementInCHandler(s)) {
 			this.log.info("s is in CompensationHandler !! : " + s);

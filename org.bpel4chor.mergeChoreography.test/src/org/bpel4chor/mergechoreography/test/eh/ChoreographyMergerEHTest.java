@@ -22,19 +22,35 @@ import org.junit.Test;
 
 
 public class ChoreographyMergerEHTest {
-	
 
-	
 	// path to zip file, new dir name
 	private static Map<String, String> patterns = new HashMap<>();
 	
 	private static String outputPath = Constants.mergeOutputPath;
 	
 	// put all scenarios 
-	private static String[] scenarios = {"ReceiveInOnEvent", "ReceiveInOnAlarmTest", "ReceiveInOnAlarmTest2", "RisOnEvent", 
-		"ReceiveInOnAlarm" , "ReceiveIn2OnAlarm" , "ReceiveIn2OnAlarmv2" , "ReceiveIn2OnAlarm3p", "ReceiveIs2OnEvent3p", "ReceiveInOAandOE", "ProcessHasEH", "ReceiveInOnAlarmRepeatEvery", "ReceiveInOAandOE3p"};
+	private static String[] scenarios = {
+		"ReceiveIsOnEvent", // OnEvent is receiving Activity --C
+		"ReceiveInOnAlarm", // Receive within OnAlarm --C
+		// FIXME: // OnAlarm with sync communication
+		"ReceiveInOnAlarmRepeatEvery", // OnAlarm with <repeatEvery>-Tag
+		"ReceiveIsAndInOnEvent", // OnEvent with Receive in EH-Logic-Scope --C
+		"SyncReplyInOnEvent", // OnEvent with sync (reply) communication --C
+		"ReceiveInOnEvent", // OnEvent containing <receive> with external Activation
+		"ReceiveIs2OnEvent3p", // 2 OnEvent in same EH activated by 2 processes --C
+		// FIXME: // 2 OnEvent in 2 Processes
+		"ReceiveIn2OnAlarm2p", // 2 OnAlarm in same EH with receive from 1 process --C
+		"ReceiveIn2OnAlarm3p", // 2 OnAlarm in same EH with receive from 2 processes --C
+		"ReceiveInOAandOE3p", // OnAlarm and OnEvent in same EH with receive from 2 processes --C
+		"ReceiveInOAandOE2p", // OnAlarm and OnEvent in same EH with receive from 1 process --C
+		"ReceiveIs2OnEvent2p", // 2 OnEvent in same EH activated by 1 process --C
+		
+		// FIXME: //EH2EH Files
+		
+		"ProcessHasEH", // <process> has attached EH --C
+		};
 	
-	// select scenario here. Applies also for result check class CheckEHMergeResukt
+	// select scenario here. Applies also for result check class CheckEHMergeResult
 	static String scenario = scenarios[12];
 	
 	
@@ -47,7 +63,7 @@ public class ChoreographyMergerEHTest {
 	}
 	
 	private static void initSingleFile(String change) {
-		patterns.put(Constants.pathToEHZipFiles + File.separator  + change + ".zip", "Szenario: " + change);
+		patterns.put(Constants.pathToEHZipFiles + File.separator  + change + ".zip", change);
 	}
 	
 	private static void initAllFiles() {

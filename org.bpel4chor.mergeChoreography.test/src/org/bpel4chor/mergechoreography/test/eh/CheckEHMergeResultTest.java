@@ -6,6 +6,7 @@ import java.nio.file.FileSystems;
 
 import org.bpel4chor.mergechoreography.test.util.Constants;
 import org.bpel4chor.mergechoreography.tester.CheckMergeResult;
+import org.eclipse.core.runtime.Path;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,7 +22,7 @@ import org.junit.Test;
 public class CheckEHMergeResultTest {
 	// get testcase from class ChoreographyMergerEHTest
 	private String checkszenario = ChoreographyMergerEHTest.scenario;
-	private String pathToMergedEHProcess = Constants.mergeOutputPath;
+	private String pathToMergedEHProcess = Constants.mergeOutputPath + File.separator + checkszenario + File.separator + "ProcessMerged.bpel";
 	private String pathToCheckEHProcess = Constants.pathToCheckEHFiles + File.separator + checkszenario +".bpel";
 	
 	

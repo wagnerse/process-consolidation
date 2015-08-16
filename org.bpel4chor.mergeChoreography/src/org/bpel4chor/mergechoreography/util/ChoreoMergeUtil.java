@@ -2130,6 +2130,9 @@ public class ChoreoMergeUtil {
 			newReceive.getElement().setAttribute("wsu:id", wsuID);			
 		}
 		
+		// Set name from onEvent to receive
+		newReceive.setName("Receive_from_" + wsuID);
+		
 		return newReceive;
 	}
 	

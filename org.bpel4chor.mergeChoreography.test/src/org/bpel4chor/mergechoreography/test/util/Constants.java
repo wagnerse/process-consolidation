@@ -25,7 +25,7 @@ public class Constants {
 	
 	// path to source Files for bpel4chor EventHandler scenarios
 	public static String pathToEHSzenarioBpel4chor = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/";
-	public static String pathToEHZipFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorEventHandler").getAbsolutePath();
+	public static String pathToEHZipFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorEventHandler" + File.separator + "Scenarios").getAbsolutePath();
 	
 	// path to check files
 	public static String pathToCheckFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "checkFiles" + File.separator).getAbsolutePath();;
