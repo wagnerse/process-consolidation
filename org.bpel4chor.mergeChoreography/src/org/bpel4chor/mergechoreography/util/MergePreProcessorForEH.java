@@ -122,6 +122,8 @@ public class MergePreProcessorForEH implements Constants {
 				
 			}
 
+			// FIXME: sync communication in OnAlarm : wird der MessageLink dann doppelt hinzugefügt???
+			
 			// Check if r is an OnEvent of EH
 			if (r instanceof OnEvent && !ChoreoMergeUtil.isElementInLoop(r)) {
 				log.info("EH-Preprocessing: receive is <OnEvent> in EventHandler");
@@ -176,7 +178,8 @@ public class MergePreProcessorForEH implements Constants {
 							onEventML.add(link);
 						} else {
 							// check for repeatEvery-Tag
-							if ((ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) s.getContainer()))) {
+							
+							if ((ChoreoMergeUtil.hasRepeatEveryTag((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity(s)))) {
 								log.info("EH-Preprocessing: OnAlarm has <repeatEvery>-Tag. Can't merge this MessageLink");
 							} else {
 								// no repeatEvery-Tag found
@@ -204,6 +207,7 @@ public class MergePreProcessorForEH implements Constants {
 		
 		// cross checking the two lists onEventReceive and onEventML
 		// for every OnEvent there must exist a ML in onEventML		
+		// FIXME: vielleicht kann man die onEventReceive Liste auch entfernen und beim checken nur noch die Links aufnehmen, die auf das OnEvent zeigen?
 		List<MessageLink> deleteOnEventMLitem = null;
 		deleteOnEventMLitem = new ArrayList<>();
 		if (onEventML.size() > 1 ) {

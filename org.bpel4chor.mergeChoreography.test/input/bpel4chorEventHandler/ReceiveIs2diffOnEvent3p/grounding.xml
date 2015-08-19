@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grounding topology="tns:AsyncPattern30Choreography"
+	targetNamespace="urn:HPI_IAAS:choreography:schemas:choreography:grounding:2006/12"
+	xmlns="urn:HPI_IAAS:choreography:schemas:choreography:grounding:2006/12"
+	xmlns:cns="http://www.iaas.uni-stuttgart.de"
+	xmlns:tns="urn:HPI_IAAS:choreography:schemas:choreography:topology:2006/12">
+	<messageLinks>
+		<messageLink name="controlLinkMessageLink1" portType="cns:P1ASP30toP2ASP30PT"
+			operation="Invoke1toReceive1Operation" />
+		<messageLink name="controlLinkMessageLink2" portType="cns:P1ASP30toP3ASP30PT"
+			operation="Invoke2toReceive2Operation" />	
+	</messageLinks>
+
+
+</grounding>

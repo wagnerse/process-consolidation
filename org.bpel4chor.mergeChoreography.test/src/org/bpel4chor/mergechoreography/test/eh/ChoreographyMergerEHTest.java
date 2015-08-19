@@ -30,20 +30,20 @@ public class ChoreographyMergerEHTest {
 	
 	// put all scenarios 
 	private static String[] scenarios = {
-		"ReceiveIsOnEvent", // OnEvent is receiving Activity --C
-		"ReceiveInOnAlarm", // Receive within OnAlarm --C
-		// FIXME: // OnAlarm with sync communication
-		"ReceiveInOnAlarmRepeatEvery", // OnAlarm with <repeatEvery>-Tag
-		"ReceiveIsAndInOnEvent", // OnEvent with Receive in EH-Logic-Scope --C
-		"SyncReplyInOnEvent", // OnEvent with sync (reply) communication --C
-		"ReceiveInOnEvent", // OnEvent containing <receive> with external Activation
-		"ReceiveIs2OnEvent3p", // 2 OnEvent in same EH activated by 2 processes --C
-		// FIXME: // 2 OnEvent in 2 Processes
-		"ReceiveIn2OnAlarm2p", // 2 OnAlarm in same EH with receive from 1 process --C
-		"ReceiveIn2OnAlarm3p", // 2 OnAlarm in same EH with receive from 2 processes --C
-		"ReceiveInOAandOE3p", // OnAlarm and OnEvent in same EH with receive from 2 processes --C
-		"ReceiveInOAandOE2p", // OnAlarm and OnEvent in same EH with receive from 1 process --C
-		"ReceiveIs2OnEvent2p", // 2 OnEvent in same EH activated by 1 process --C
+		"ReceiveIsOnEvent",				//  0: OnEvent is receiving Activity
+		"ReceiveInOnAlarm", 			//  1: Receive within OnAlarm 
+		"SyncInOnAlarm", 				//  2: OnAlarm with sync communication 
+		"ReceiveInOnAlarmRepeatEvery", 	//  3: OnAlarm with <repeatEvery>-Tag
+		"ReceiveIsAndInOnEvent", 		//  4: OnEvent with Receive in EH-Logic-Scope 
+		"SyncReplyInOnEvent", 			//  5: OnEvent with sync (reply) communication 
+		"ReceiveInOnEvent",				//  6: OnEvent containing <receive> with external Activation
+		"ReceiveIs2OnEvent3p", 			//  7: 2 OnEvent in same EH activated by 2 processes 
+		"ReceiveIs2diffOnEvent3p", 		//  8: FIXME: // 2 OnEvent in 2 Processes
+		"ReceiveIn2OnAlarm2p", 			//  9: 2 OnAlarm in same EH with receive from 1 process 
+		"ReceiveIn2OnAlarm3p", 			// 10: 2 OnAlarm in same EH with receive from 2 processes 
+		"ReceiveInOAandOE3p", 			// 11: OnAlarm and OnEvent in same EH with receive from 2 processes 
+		"ReceiveInOAandOE2p", 			// 12: OnAlarm and OnEvent in same EH with receive from 1 process 
+		"ReceiveIs2OnEvent2p", 			// 13: 2 OnEvent in same EH activated by 1 process 
 		
 		// FIXME: //EH2EH Files
 		
@@ -51,7 +51,7 @@ public class ChoreographyMergerEHTest {
 		};
 	
 	// select scenario here. Applies also for result check class CheckEHMergeResult
-	static String scenario = scenarios[12];
+	static String scenario = scenarios[8];
 	
 	
 	@BeforeClass

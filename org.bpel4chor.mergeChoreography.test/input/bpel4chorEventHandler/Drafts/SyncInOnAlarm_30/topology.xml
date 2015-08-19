@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topology name="SyncPattern30Choreography"
+	targetNamespace="urn:HPI_IAAS:choreography:schemas:choreography:topology:2006/12"
+	xmlns="urn:HPI_IAAS:choreography:schemas:choreography:topology:2006/12"
+	xmlns:cns="http://www.iaas.uni-stuttgart.de">
+	<participantTypes>
+		<participantType name="p1Type"
+			participantBehaviorDescription="cns:P1SP30" />
+		<participantType name="p2Type"
+			participantBehaviorDescription="cns:P2SP30" />
+	</participantTypes>
+
+	<participants>
+		<participant name="p2" type="p2Type" />
+		<participant name="p1" type="p1Type" />
+	</participants>
+
+	<messageLinks>
+		<messageLink name="controlLinkMessageLink1" messageName="P12P2SP30RequestMessage"
+			sender="p1" sendActivity="Invoke1P1SP30" receiver="p2"
+			receiveActivity="Receive1P2SP30" />
+		<messageLink name="controlLinkMessageLink2" messageName="P22P1SP30ResponseMessage"
+			sender="p2" sendActivity="Reply1P2SP30" receiver="p1"
+			receiveActivity="Invoke1P1SP30" />
+	</messageLinks>
+
+</topology>
