@@ -15,12 +15,13 @@
         <variable messageType="ns:P2ASP30RequestMessage" name="input"/>
         <variable messageType="ns:P2ASP30ResponseMessage" name="output"/>
         <variable messageType="ns:P12P2ASP30RequestMessage" name="varRec1"/>
-        <variable messageType="ns:P32P2ASP30RequestMessage" name="varRec2"/>
+        <variable name="varInv2"/>
+        <variable messageType="ns:P22P3ASP30RequestMessage" name="varRec2"/>
     </variables>
     <flow name="MergedFlow">
         <links>
-            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
-            <link name="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
+            <link name="Invoke1P1ASP30TOEvent1P2ASP30OkoY"/>
+            <link name="Invoke1P2ASP30TOReceive_from_Event1P3ASP30"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -33,7 +34,6 @@
                     <sequence>
                         <empty name="CallThrowSimEHfromFH">
                             <sources>
-                                <source linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P1ASP30"/>
                                 <source linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P3ASP30"/>
                             </sources>
                         </empty>
@@ -44,7 +44,6 @@
             <terminationHandler>
                 <empty name="CallThrowSimEHfromTH">
                     <sources>
-                        <source linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P1ASP30"/>
                         <source linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P3ASP30"/>
                     </sources>
                 </empty>
@@ -52,9 +51,8 @@
             <flow name="main">
                 <links>
                     <link name="link1"/>
-                    <link name="link4"/>
-                    <link name="link2"/>
-                    <link name="link3"/>
+                    <link name="link2A1aP"/>
+                    <link name="link3MMok"/>
                 </links>
                 <receive createInstance="yes" name="receiveInputP2ASP30" variable="input">
                     <sources>
@@ -62,6 +60,83 @@
                     </sources>
                 </receive>
                 <invoke inputVariable="output" name="callbackClientP2ASP30">
+                    <targets>
+                        <joinCondition><![CDATA[($Invoke1P1ASP30TOEvent1P2ASP30OkoY and ($link2A1aP or $link3MMok))]]></joinCondition>
+                        <target linkName="link2A1aP"/>
+                        <target linkName="Invoke1P1ASP30TOEvent1P2ASP30OkoY"/>
+                        <target linkName="link3MMok"/>
+                    </targets>
+                </invoke>
+                <empty name="Empty1">
+                    <targets>
+                        <target linkName="link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link2A1aP"/>
+                    </sources>
+                </empty>
+                <empty name="Empty3">
+                    <sources>
+                        <source linkName="link3MMok"/>
+                    </sources>
+                </empty>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_P1ASP30" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:P1ASP30RequestMessage" name="input"/>
+                <variable messageType="ns:P1ASP30ResponseMessage" name="output"/>
+                <variable messageType="ns:P12P2ASP30RequestMessage" name="varInv1"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="P1ASP30Provider" name="client"
+                    partnerLinkType="ns:P1ASP30" partnerRole="P1ASP30Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="link1"/>
+                    <link name="link4"/>
+                    <link name="link5"/>
+                    <link name="link2"/>
+                    <link name="link3"/>
+                    <link name="link7"/>
+                    <link name="link8"/>
+                </links>
+                <wait name=" Wait33s">
+                    <sources>
+                        <source linkName="link8"/>
+                    </sources>
+                    <for><![CDATA[P33S]]></for>
+                </wait>
+                <assign name="Invoke1P1ASP30" validate="no">
+                    <targets>
+                        <target linkName="link2"/>
+                        <target linkName="link3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link7"/>
+                        <source linkName="Invoke1P1ASP30TOEvent1P2ASP30OkoY"/>
+                    </sources>
+                    <copy>
+                        <from variable="varInv1"/>
+                        <to variable="varRec1"/>
+                    </copy>
+                </assign>
+                <receive createInstance="yes" name="receiveInputP1ASP30" variable="input">
+                    <targets>
+                        <target linkName="link8"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link1"/>
+                    </sources>
+                </receive>
+                <invoke inputVariable="output" name="callbackClientP1ASP30">
                     <targets>
                         <target linkName="link4"/>
                     </targets>
@@ -74,42 +149,75 @@
                         <source linkName="link2"/>
                     </sources>
                 </empty>
-                <empty name="Empty2">
+                <empty name="oldInvoke2">
                     <targets>
-                        <target linkName="link2"/>
-                        <target linkName="link3"/>
+                        <target linkName="link5"/>
                     </targets>
                     <sources>
                         <source linkName="link4"/>
                     </sources>
                 </empty>
-                <empty name="Empty3">
+                <scope exitOnStandardFault="no" isolated="no" name="Scope">
+                    <targets>
+                        <target linkName="link7"/>
+                    </targets>
+                    <sources>
+                        <source linkName="link5"/>
+                    </sources>
+                    <sequence>
+                        <flow name="Flow">
+                            <links>
+                                <link name="link6"/>
+                            </links>
+                            <empty name="Empty3">
+                                <sources>
+                                    <source linkName="link6"/>
+                                </sources>
+                            </empty>
+                            <scope exitOnStandardFault="no"
+                                isolated="no" name="Scope1">
+                                <targets>
+                                    <target linkName="link6"/>
+                                </targets>
+                                <empty name="Empty4"/>
+                            </scope>
+                        </flow>
+                    </sequence>
+                </scope>
+                <empty name="Empty6">
                     <sources>
                         <source linkName="link3"/>
                     </sources>
                 </empty>
             </flow>
         </scope>
-        <scope name="EH_SurScope_Scope_P1ASP30">
-            <flow name="EH_Processing_Flow_Scope_P1ASP30">
-                <scope exitOnStandardFault="yes" name="Scope_P1ASP30" suppressJoinFailure="yes">
-                    <variables>
-                        <variable messageType="ns:P1ASP30RequestMessage" name="input"/>
-                        <variable
-                            messageType="ns:P1ASP30ResponseMessage" name="output"/>
-                        <variable
-                            messageType="ns:P12P2ASP30RequestMessage" name="varInv1"/>
-                    </variables>
+        <scope name="EH_SurScope_Scope_P3ASP30">
+            <flow name="EH_Processing_Flow_Scope_P3ASP30">
+                <scope exitOnStandardFault="yes" name="Scope_P3ASP30" suppressJoinFailure="yes">
                     <partnerLinks>
                         <partnerLink initializePartnerRole="no"
-                            myRole="P1ASP30Provider" name="client"
-                            partnerLinkType="ns:P1ASP30" partnerRole="P1ASP30Requester"/>
+                            myRole="P3ASP30Provider" name="client"
+                            partnerLinkType="ns:P3ASP30" partnerRole="P3ASP30Requester"/>
                     </partnerLinks>
                     <faultHandlers>
                         <catchAll>
-                            <compensate/>
+                            <sequence>
+                                <empty name="CallThrowSimEHfromFH">
+                                    <sources>
+                                    <source linkName="CallThrowSimEHfromFHTOThrowSimEHEH_Scope_Throw_Scope_P2ASP30"/>
+                                    </sources>
+                                </empty>
+                                <compensate/>
+                            </sequence>
                         </catchAll>
                     </faultHandlers>
+                    <terminationHandler>
+                        <empty name="CallThrowSimEHfromTH">
+                            <sources>
+                                <source linkName="CallThrowSimEHfromTHTOThrowSimEHEH_Scope_Throw_Scope_P2ASP30"/>
+                            </sources>
+                        </empty>
+                    </terminationHandler>
                     <flow name="main">
                         <links>
                             <link name="link1"/>
@@ -126,22 +234,17 @@
                             </sources>
                             <for><![CDATA[P33S]]></for>
                         </wait>
-                        <assign name="Invoke1P1ASP30" validate="no">
+                        <empty name="oldInvoke1">
                             <targets>
                                 <target linkName="link2"/>
                                 <target linkName="link3"/>
                             </targets>
                             <sources>
                                 <source linkName="link7"/>
-                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
                             </sources>
-                            <copy>
-                                <from variable="varInv1"/>
-                                <to variable="varRec1"/>
-                            </copy>
-                        </assign>
+                        </empty>
                         <receive createInstance="yes"
-                            name="receiveInputP1ASP30" variable="input">
+                            name="receiveInputP3ASP30" variable="input">
                             <targets>
                                 <target linkName="link8"/>
                             </targets>
@@ -149,7 +252,7 @@
                                 <source linkName="link1"/>
                             </sources>
                         </receive>
-                        <invoke inputVariable="output" name="callbackClientP1ASP30">
+                        <invoke inputVariable="output" name="callbackClientP3ASP30">
                             <targets>
                                 <target linkName="link4"/>
                             </targets>
@@ -211,154 +314,41 @@
                         </catch>
                     </faultHandlers>
                     <flow name="EH_Processing_Flow_Throw_Scope_P2ASP30">
-                        <scope name="EH_Scope_Event1P2ASP30_Scope_P2ASP30">
+                        <scope name="EH_OnAlarm_Scope_0_EHScope_P2ASP30">
                             <sequence>
-                                <empty name="EmptyEH1">
-                                    <targets>
-                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2)]]></joinCondition>
-                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
-                                    </targets>
+                                <wait>
+                                    <for><![CDATA['P30S']]></for>
+                                </wait>
+                                <empty name="Invoke1P2ASP30">
+                                    <sources>
+                                    <source linkName="Invoke1P2ASP30TOReceive_from_Event1P3ASP30"/>
+                                    </sources>
                                 </empty>
                             </sequence>
                         </scope>
-                        <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope_P1ASP30">
+                        <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope_P3ASP30">
                             <targets>
-                                <target linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P1ASP30"/>
-                                <target linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P1ASP30"/>
+                                <target linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P3ASP30"/>
+                                <target linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P3ASP30"/>
                             </targets>
                         </throw>
                     </flow>
                 </scope>
-            </flow>
-        </scope>
-        <scope name="EH_SurScope_Scope_P3ASP30">
-            <flow name="EH_Processing_Flow_Scope_P3ASP30">
-                <scope exitOnStandardFault="yes" name="Scope_P3ASP30" suppressJoinFailure="yes">
-                    <variables>
-                        <variable messageType="ns:P3ASP30RequestMessage" name="input"/>
-                        <variable
-                            messageType="ns:P3ASP30ResponseMessage" name="output"/>
-                        <variable
-                            messageType="ns:P32P2ASP30RequestMessage" name="varInv2"/>
-                    </variables>
-                    <partnerLinks>
-                        <partnerLink initializePartnerRole="no"
-                            myRole="P3ASP30Provider" name="client"
-                            partnerLinkType="ns:P3ASP30" partnerRole="P3ASP30Requester"/>
-                    </partnerLinks>
-                    <faultHandlers>
-                        <catchAll>
-                            <compensate/>
-                        </catchAll>
-                    </faultHandlers>
-                    <flow name="main">
-                        <links>
-                            <link name="link1"/>
-                            <link name="link4"/>
-                            <link name="link5"/>
-                            <link name="link2"/>
-                            <link name="link3"/>
-                            <link name="link7"/>
-                            <link name="link8"/>
-                        </links>
-                        <wait name=" Wait33s">
-                            <sources>
-                                <source linkName="link8"/>
-                            </sources>
-                            <for><![CDATA[P33S]]></for>
-                        </wait>
-                        <empty name="oldInvoke1">
-                            <targets>
-                                <target linkName="link2"/>
-                                <target linkName="link3"/>
-                            </targets>
-                            <sources>
-                                <source linkName="link7"/>
-                            </sources>
-                        </empty>
-                        <receive createInstance="yes"
-                            name="receiveInputP3ASP30" variable="input">
-                            <targets>
-                                <target linkName="link8"/>
-                            </targets>
-                            <sources>
-                                <source linkName="link1"/>
-                            </sources>
-                        </receive>
-                        <invoke inputVariable="output" name="callbackClientP3ASP30">
-                            <targets>
-                                <target linkName="link4"/>
-                            </targets>
-                        </invoke>
-                        <empty name="Empty1">
-                            <targets>
-                                <target linkName="link1"/>
-                            </targets>
-                            <sources>
-                                <source linkName="link2"/>
-                            </sources>
-                        </empty>
-                        <assign name="Invoke1P3ASP30" validate="no">
-                            <targets>
-                                <target linkName="link5"/>
-                            </targets>
-                            <sources>
-                                <source linkName="link4"/>
-                                <source linkName="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
-                            </sources>
-                            <copy>
-                                <from variable="varInv2"/>
-                                <to variable="varRec2"/>
-                            </copy>
-                        </assign>
-                        <scope exitOnStandardFault="no" isolated="no" name="Scope">
-                            <targets>
-                                <target linkName="link7"/>
-                            </targets>
-                            <sources>
-                                <source linkName="link5"/>
-                            </sources>
-                            <sequence>
-                                <flow name="Flow">
-                                    <links>
-                                    <link name="link6"/>
-                                    </links>
-                                    <empty name="Empty3">
-                                    <sources>
-                                    <source linkName="link6"/>
-                                    </sources>
-                                    </empty>
-                                    <scope exitOnStandardFault="no"
-                                    isolated="no" name="Scope1">
-                                    <targets>
-                                    <target linkName="link6"/>
-                                    </targets>
-                                    <empty name="Empty4"/>
-                                    </scope>
-                                </flow>
-                            </sequence>
-                        </scope>
-                        <empty name="Empty6">
-                            <sources>
-                                <source linkName="link3"/>
-                            </sources>
-                        </empty>
-                    </flow>
-                </scope>
-                <scope name="EH_Scope_Throw_Scope_P2ASP30">
+                <scope name="EH_Scope_Throw_Scope_P3ASP30">
                     <faultHandlers>
                         <catch faultName="lifetimeEHFailure">
                             <empty name="defindedEHcatch"/>
                         </catch>
                     </faultHandlers>
-                    <flow name="EH_Processing_Flow_Throw_Scope_P2ASP30">
-                        <scope name="EH_Scope_Event2P2ASP30_Scope_P2ASP30">
+                    <flow name="EH_Processing_Flow_Throw_Scope_P3ASP30">
+                        <scope name="EH_Scope_Event1P3ASP30_Scope_P3ASP30">
                             <sequence>
-                                <flow name="mainOnAlarm2">
+                                <empty name="Receive_from_Event1P3ASP30">
                                     <targets>
-                                    <joinCondition><![CDATA[($Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm)]]></joinCondition>
-                                    <target linkName="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
+                                    <target linkName="Invoke1P2ASP30TOReceive_from_Event1P3ASP30"/>
                                     </targets>
+                                </empty>
+                                <flow name="mainOnAlarm2">
                                     <links>
                                     <link name="linkEH1"/>
                                     <link name="linkEH2"/>
@@ -384,10 +374,10 @@
                                 </flow>
                             </sequence>
                         </scope>
-                        <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope_P3ASP30">
+                        <throw faultName="lifetimeEHFailure" name="ThrowSimEHEH_Scope_Throw_Scope_P2ASP30">
                             <targets>
-                                <target linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P3ASP30"/>
-                                <target linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P3ASP30"/>
+                                <target linkName="CallThrowSimEHfromFHTOThrowSimEHEH_Scope_Throw_Scope_P2ASP30"/>
+                                <target linkName="CallThrowSimEHfromTHTOThrowSimEHEH_Scope_Throw_Scope_P2ASP30"/>
                             </targets>
                         </throw>
                     </flow>

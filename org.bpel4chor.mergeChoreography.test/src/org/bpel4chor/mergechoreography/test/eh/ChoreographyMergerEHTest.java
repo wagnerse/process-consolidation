@@ -31,35 +31,39 @@ public class ChoreographyMergerEHTest {
 	// put all scenarios 
 	private static String[] scenarios = {
 		"ReceiveIsOnEvent",				//  0: OnEvent is receiving Activity
-		"ReceiveInOnAlarm", 			//  1: Receive within OnAlarm 
+		"ReceiveInOnAlarm", 			//  1: Receive within OnAlarm
 		"SyncInOnAlarm", 				//  2: OnAlarm with sync communication 
 		"ReceiveInOnAlarmRepeatEvery", 	//  3: OnAlarm with <repeatEvery>-Tag
 		"ReceiveIsAndInOnEvent", 		//  4: OnEvent with Receive in EH-Logic-Scope 
 		"SyncReplyInOnEvent", 			//  5: OnEvent with sync (reply) communication 
 		"ReceiveInOnEvent",				//  6: OnEvent containing <receive> with external Activation
 		"ReceiveIs2OnEvent3p", 			//  7: 2 OnEvent in same EH activated by 2 processes 
-		"ReceiveIs2diffOnEvent3p", 		//  8: FIXME: // 2 OnEvent in 2 Processes
-		"ReceiveIn2OnAlarm2p", 			//  9: 2 OnAlarm in same EH with receive from 1 process 
-		"ReceiveIn2OnAlarm3p", 			// 10: 2 OnAlarm in same EH with receive from 2 processes 
-		"ReceiveInOAandOE3p", 			// 11: OnAlarm and OnEvent in same EH with receive from 2 processes 
-		"ReceiveInOAandOE2p", 			// 12: OnAlarm and OnEvent in same EH with receive from 1 process 
-		"ReceiveIs2OnEvent2p", 			// 13: 2 OnEvent in same EH activated by 1 process 
-		
-		// FIXME: //EH2EH Files
-		
-		"ProcessHasEH", // <process> has attached EH --C
+		"ReceiveIs2diffOnEvent3p", 		//  8: 2 OnEvent in 2 Processes
+		"ReceiveIs2diffOnAlarm3p",		//  9: 2 OnAlarm in 2 Processes
+		"ReceiveIn2OnAlarm2p", 			// 10: 2 OnAlarm in same EH with receive from 1 process 
+		"ReceiveIn2OnAlarm3p", 			// 11: 2 OnAlarm in same EH with receive from 2 processes 
+		"ReceiveInOAandOE3p", 			// 12: OnAlarm and OnEvent in same EH with receive from 2 processes 
+		"ReceiveInOAandOE2p", 			// 13: OnAlarm and OnEvent in same EH with receive from 1 process
+		"ReceiveIs2OnEvent2p", 			// 14: 2 OnEvent in same EH activated by 1 process 
+		"OnAlarm2OnEvent",				// 15: OnAlarm calls OnEvent
+		"OnAlarm2OnAlarm",				// 16: OnAlarm sends to another OnAlarm
+		"NestedExternalOnEvent",		// 17: OnEvent calls OnEvent, but initial OnEvent is not in Choreo
+		"NestedOnEvent", 				// 18: 3 OnEvent, nested first EH calls second EH	
+		"ProcessHasEH", 				// 19: <process> has attached EH
 		};
 	
+	// scenarios are listed in file "scenarios.pptx"
+	
 	// select scenario here. Applies also for result check class CheckEHMergeResult
-	static String scenario = scenarios[8];
+	static String scenario = scenarios[14];
 	
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// ############# Generate all files.
-		//initAllFiles();
+		initAllFiles();
 		// ############# Generate single file.
-		initSingleFile(scenario);
+		//initSingleFile(scenario);
 	}
 	
 	private static void initSingleFile(String change) {

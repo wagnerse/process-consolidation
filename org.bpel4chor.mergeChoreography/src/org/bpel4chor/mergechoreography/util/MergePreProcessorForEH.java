@@ -28,6 +28,7 @@ import org.eclipse.bpel.model.OnAlarm;
 import org.eclipse.bpel.model.OnEvent;
 import org.eclipse.bpel.model.Process;
 import org.eclipse.bpel.model.Receive;
+import org.eclipse.bpel.model.Reply;
 import org.eclipse.bpel.model.Scope;
 import org.eclipse.bpel.model.Sequence;
 import org.eclipse.bpel.model.Throw;
@@ -83,15 +84,21 @@ public class MergePreProcessorForEH implements Constants {
 		List<OnEvent> onEventList = null;
 		List<OnAlarm> onAlarmList = null;
 
+
 		List<MessageLink> onEventML = null;
 		List<MessageLink> onEventReceive = null;
 		List<MessageLink> onAlarmML = null;
+		List<MessageLink> onAlarmEHML = null;
+		List<MessageLink> onEventEHML = null;
 		onEventML = new ArrayList<>();
+		onEventEHML = new ArrayList<>();
 		onEventReceive = new ArrayList<>();
 		onAlarmML = new ArrayList<>();
-
+		onAlarmEHML = new ArrayList<>();
+		
 		onEventList = new ArrayList<>();
 		onAlarmList = new ArrayList<>();
+
 
 		// check all MessageLinks
 		for (MessageLink link : pkg.getTopology().getMessageLinks()) {
@@ -100,30 +107,45 @@ public class MergePreProcessorForEH implements Constants {
 			BPELExtensibleElement s = ChoreoMergeUtil.resolveActivity(link.getSendActivity());
 			BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
 			
-			// FIXME: Check here if s and r are in EH
-			
+			// Check here if s and r are both in EH first
 			if (ChoreoMergeUtil.isElementInEHandler(r) && ChoreoMergeUtil.isElementInEHandler(s)) {
 				log.info("EH-Preprocessing: receive and send are both within EventHandler-Scope");
 				if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm) && 
 						(ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnAlarm)) {
 					log.info("EH-Preprocessing: s and r are in OnAlarms. No Problem here. Starting later with modifying EH-scope of s");
-				} else {
-					if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnEvent) && 
+					// add found OnAlarm of sender to List of MessageLinks
+					if (!onAlarmList.contains((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity((Activity) s))) {
+						onAlarmML.add(link);
+						onAlarmList.add((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity((Activity) s));
+						onAlarmList.add((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity((Activity) r));
+					}
+						
+				} else if ((r instanceof OnEvent) && 
 							(ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnAlarm)) {
 						log.info("EH-Preprocessing: s is in OnAlarm. r is OnEvent. No Problem here. Starting with OnAlarm first");
-						//TODO: Problem hier: OnEvent wird zuerst umgebaut. Checken ob die Logik korrekt in den OnAlarm Scope kopiert wird.
-					} else {
-						// 2 cases left:
-						// OnEvent to OnEvent - or OnEvent to OnAlarm.
-					}
-					
-				}
-				ChoreoMergeUtil.getEHandlerOfActivity(r);
-				
-			}
+						// add found OnAlarm of sender to List of MessageLinks
+						if (!onAlarmList.contains((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity((Activity) s))) {
+							onAlarmEHML.add(link);
+							onAlarmList.add((OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity((Activity) s));
+							// adding OnEvent for Modifying too
+							onEventReceive.add(link);
+							onEventList.add((OnEvent) r);
+						}
 
-			// FIXME: sync communication in OnAlarm : wird der MessageLink dann doppelt hinzugefügt???
+				} else {
+					// 2 cases left: OnEvent to OnEvent - or OnEvent to OnAlarm.
+					// either way: OnEvent needs to be activated by choreo
+					if (checkOE2OE(link, pkg)) {
+						log.info("EH-Preprocessing: Nested OnEvent found - initial EH is invoked by Choreo ");
+						onEventEHML.add(link);
+						onEventList.add((OnEvent) r);
+					}
+
+				}
 			
+				// Check now for "normal" MessageLinks where one end is not in EH
+			} else {
+						
 			// Check if r is an OnEvent of EH
 			if (r instanceof OnEvent && !ChoreoMergeUtil.isElementInLoop(r)) {
 				log.info("EH-Preprocessing: receive is <OnEvent> in EventHandler");
@@ -131,7 +153,7 @@ public class MergePreProcessorForEH implements Constants {
 				onEventList.add((OnEvent) r);
 
 				// Check if r or s are within an EH
-				// Build List of messagelinks within EHs - dont duplicate
+				// Build List of messagelinks within EHs - don't duplicate
 			} else {
 				// Check if Scope is after OnEvent or OnAlarm within EventHandler
 				if (ChoreoMergeUtil.isElementInEHandler(r) || ChoreoMergeUtil.isElementInEHandler(s)) {
@@ -198,6 +220,7 @@ public class MergePreProcessorForEH implements Constants {
 				}
 			}
 		}
+	}
 		
 		// onEvent List cleanup		
 		if (onEventReceive.isEmpty()) {
@@ -207,7 +230,7 @@ public class MergePreProcessorForEH implements Constants {
 		
 		// cross checking the two lists onEventReceive and onEventML
 		// for every OnEvent there must exist a ML in onEventML		
-		// FIXME: vielleicht kann man die onEventReceive Liste auch entfernen und beim checken nur noch die Links aufnehmen, die auf das OnEvent zeigen?
+		// TODO: vielleicht kann man diese Routine auch komplett entfernen
 		List<MessageLink> deleteOnEventMLitem = null;
 		deleteOnEventMLitem = new ArrayList<>();
 		if (onEventML.size() > 1 ) {
@@ -228,12 +251,12 @@ public class MergePreProcessorForEH implements Constants {
 						found = true;
 						
 					}
-					// check here if s and r are both in EH
-					if (ChoreoMergeUtil.isElementInEHandler(s) && (ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnEvent)) {
-						log.info("EH-Preprocessing: s is in EH within OnEvent, r is OnEvent. Checking for initial activation of OnEvent");
-						bothinEH = true;
-						foundbothEH = checkOE2OE(oneventmlink, pkg);	
-					}	
+//					// check here if s and r are both in EH
+//					if (ChoreoMergeUtil.isElementInEHandler(s) && (ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnEvent)) {
+//						log.info("EH-Preprocessing: s is in EH within OnEvent, r is OnEvent. Checking for initial activation of OnEvent");
+//						bothinEH = true;
+//						foundbothEH = checkOE2OE(oneventmlink, pkg);	
+//					}	
 					
 				}
 				// if found: great, if not: delete link
@@ -254,7 +277,6 @@ public class MergePreProcessorForEH implements Constants {
 			onEventML.remove(dellink);
 		}
 		
-		//FIXME: check here for OnEvents activating other OnEvents
 
 		
 		
@@ -265,6 +287,14 @@ public class MergePreProcessorForEH implements Constants {
 		List<EventHandler> modifiedEHList = null;
 		modifiedEHList = new ArrayList<>();
 
+		// hier zuerst die OnAlarms umbauen die in EH gegenseitig sind (aus der Erkennung ja nur einer von beiden)
+		// Bei der Erkennung der OnAlarms also immer schauen, ob die schon in einer der beiden Listen sind
+		
+		// Check if there are OnAlarms with EH2EH ML to modify
+		if (!onAlarmEHML.isEmpty()) {
+			createAlternateOnAlarm(onAlarmList, onAlarmEHML, pkg, modifiedEHList);
+		}
+				
 		// Check if there are OnEvents to modify
 		if (!onEventReceive.isEmpty()) {
 			createAlternateOnEvent(onEventML, onEventReceive, pkg, modifiedEHList);
@@ -273,6 +303,12 @@ public class MergePreProcessorForEH implements Constants {
 		if (!onAlarmML.isEmpty()) {
 			createAlternateOnAlarm(onAlarmList, onAlarmML, pkg, modifiedEHList);
 		}
+		
+		// Check if there are nested OnEvents to modify, since now first OnEvent is in Choreo
+		if (!onEventEHML.isEmpty()) {
+			createAlternateOnEvent(onEventML, onEventEHML, pkg, modifiedEHList);
+		}
+		
 		// Check if there are EHs to remove
 		garbageCollectionEH(onEventList, onAlarmList);
 	}
@@ -302,12 +338,14 @@ public class MergePreProcessorForEH implements Constants {
 			Scope newSurScope = null;
 			Scope newOnEventScope = null;
 			Scope newThrowScope = null;
+			Scope scopewithvars = null;
 			Flow newThrowFlow = null;		
 			Flow newSurFlow = null;
 			Flow mergedflow = null;
 			OnEvent oneventobj = null;
 			boolean alreadymodified = false;
 			boolean scopeAndEHmod = false;
+			boolean invscopealreadymod = false;
 
 			// Resolve send- and receiveActivity
 			BPELExtensibleElement s = ChoreoMergeUtil.resolveActivity(link.getSendActivity());
@@ -334,7 +372,23 @@ public class MergePreProcessorForEH implements Constants {
 			
 			// Get Container to host new surrounding scope - should be Flow named "MergedFlow"
 			mergedflow = ChoreoMergeUtil.getMergedFlow(oldEventHandlerScope);
-
+			
+			// check for already modified Process Scope 
+			// in case one process calls multiple different EH
+			if (!alreadymodified) {
+			for (Activity act : mergedflow.getActivities()) {
+				if ((act.getName().toString().equals(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName()))
+					|| ((act == ChoreoMergeUtil.getHighestScopeOfActivity(invokingScope)) 
+							&& act.getName().toString().startsWith(EH_NAME_NEW_SUR_SCOPE))){
+					// second condition added for nested EH-Scopes
+					// found scope already containing EH-logic
+					newSurScope = (Scope) act;
+					invscopealreadymod = true;
+					break;
+				}
+			}
+			}
+			
 			// Output for Debug
 			log.info("EH-Preprocessing: Alternate OnEvent logic started for Scope: " + oldEventHandlerScope.getName());
 			
@@ -361,21 +415,32 @@ public class MergePreProcessorForEH implements Constants {
 			if (!alreadymodified || !scopeAndEHmod) {
 				// Create Parent-Scope with Variables from OldEventHandlerScope
 				// If Parent-Scope of EventHandler has no Vars, get Vars from Highest Process Scope
-				Scope scopewithvars = oldEventHandlerScope;
+				scopewithvars = oldEventHandlerScope;
 				if (oldEventHandlerScope.getVariables() == null) {
 					scopewithvars = ChoreoMergeUtil.getHighestScopeOfActivity((Activity) r.eContainer().eContainer());
 				}		
-				newSurScope = createNewSurroundingScope(scopewithvars);
-				// Set Surrounding Scope Name to invokingScope
-				newSurScope.setName(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName());				
+				if (!invscopealreadymod) {
+					newSurScope = createNewSurroundingScope(scopewithvars);
+					// Set Surrounding Scope Name to invokingScope
+					newSurScope.setName(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName());					
+				}
+				
 			}
 
 			
-			if ((!alreadymodified) && (newSurScope.getVariables() != null)){
+			if ((!alreadymodified) && (newSurScope.getVariables() != null) || invscopealreadymod){
 				List<Variable> vars = null;
 				vars = new ArrayList<>();
-				vars = newSurScope.getVariables().getChildren();
-								
+
+				// if the invoking scope already contains EH-logic
+				// then only the vars of the EH-Scope need to be uplifted since
+				// the vars of invokingscope were uplifted in the very first iteration
+				if (!invscopealreadymod){
+					vars = newSurScope.getVariables().getChildren();
+				} else {
+					vars = scopewithvars.getVariables().getChildren();
+				}
+		
 				// uplift vars to <process> in case different processes initiate same EH
 				
 				// Variable uplift already in preprocessing (in Pmerged), Create Variables element in Pmerged
@@ -387,14 +452,21 @@ public class MergePreProcessorForEH implements Constants {
 					int i = vars.size();
 					for (int j = 0; j < i; j++) {
 						// since Iterator also modifies List, this simple loop always uplifts first element in list
-						ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
+						Variable recvar = (Variable) r.eContents().get(1);
+						// Uplift only vars that are needed by EH
+						if (vars.get(0).getName().equals(recvar.getName() ) ) {
+							ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
+						} else {
+							vars.remove(0);
+						}
+						
 					}
 				}
 
 			}
 			
 
-			if (!alreadymodified || !scopeAndEHmod) {
+			if ((!alreadymodified || !scopeAndEHmod) && !invscopealreadymod ) {
 				// Create new Surrounding Scope with Flow in Scope with attached EventHandler
 				newSurFlow = BPELFactory.eINSTANCE.createFlow();
 				newSurFlow.setName(EH_NAME_FLOW + invokingScope.getName());
@@ -404,7 +476,7 @@ public class MergePreProcessorForEH implements Constants {
 			}
 			
 			// construct new Scope and modified EH structure
-			if (!alreadymodified || !scopeAndEHmod) {
+			if ((!alreadymodified || !scopeAndEHmod) && !invscopealreadymod ) {
 				// Add new Surrounding Scope to MergedFlow
 				mergedflow.getActivities().add(newSurScope);
 	
@@ -415,7 +487,7 @@ public class MergePreProcessorForEH implements Constants {
 				newSurScope.setActivity(newSurFlow);
 			}
 
-			if (!alreadymodified || !scopeAndEHmod) {				
+			if ((!alreadymodified || !scopeAndEHmod) ) {				
 				// create Surrounding Scope for <throw> in EH
 				newThrowScope = BPELFactory.eINSTANCE.createScope();
 				// this scope is the one in which modified EH-Scopes will be added
@@ -440,7 +512,7 @@ public class MergePreProcessorForEH implements Constants {
 						break;
 					}
 				}
-				// get the scope's acttivity
+				// get the scope's activity
 				newThrowFlow = (Flow) newThrowScope.getActivity();
 			}
 			
@@ -524,12 +596,16 @@ public class MergePreProcessorForEH implements Constants {
 			Scope newOnAlarmScope = null;
 			Scope newThrowScope = null;
 			Scope invokingScope = null;
+			Scope scopewithvars = null;
 			Flow mergedflow = null;
 			Flow newThrowFlow = null;		
 			Flow newSurFlow = null;
 			boolean alreadymodified = false;
 			boolean scopeAndEHmod = false;
 			boolean bothinOnAlarm = false;
+			boolean ehscopealreadymod = false;
+			Variable recvar = null;
+			
 			BPELExtensibleElement communicator = null;
 			BPELExtensibleElement ehcommunicator = null;
 
@@ -537,27 +613,39 @@ public class MergePreProcessorForEH implements Constants {
 			BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
 			
 			// get communicating element in EH separately
-			if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm)) {
-				// r is in EH
-				ehcommunicator = r;
-				communicator = s;
-			} else if ((ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnAlarm)) {
-				// s is in EH
-				ehcommunicator = s;
-				communicator = r;				
-			} else if ((ChoreoMergeUtil.isElementInEHandler(r)) && (ChoreoMergeUtil.isElementInEHandler(s))) {
+			if ((ChoreoMergeUtil.isElementInEHandler(r)) && (ChoreoMergeUtil.isElementInEHandler(s))) {
 				log.info("EH-Preprocessing: Both messagelink-Ends are in EH");
 				if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm) && 
 						(ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnAlarm)) {
 					log.info("EH-Preprocessing: s and r are in OnAlarms. No Problem here. Starting with modifying EH-scope of s");
+					ehcommunicator = s;
+					communicator = r;	
 					// add link again to list for r
 					bothinOnAlarm = true;
 				} 
 			}
+			if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm)) {
+					// r is in EH
+					ehcommunicator = r;
+					communicator = s;
+			}
+			if ((ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnAlarm)) {
+					// s is in EH
+					ehcommunicator = s;
+					communicator = r;				
+			} 
 			
 
 			// Get Scope communication with EH
-			invokingScope = ChoreoMergeUtil.getParentScopeOfActivity((Activity) communicator);
+			// Special Case for OnAlarm initiating onEvent
+			if (communicator instanceof OnEvent) {
+				invokingScope = (Scope) communicator.eContainer().eContainer();
+			} else if (bothinOnAlarm) {
+				// since both are in OnAlarm parentscope of communicator would be the OnAlarm Scope
+				invokingScope = (Scope) ChoreoMergeUtil.getEHandlerOfActivity(communicator).eContainer().eContainer();
+			}else {
+				invokingScope = ChoreoMergeUtil.getParentScopeOfActivity((Activity) communicator);
+			}
 
 			// Get OnEvent-Scope with Logic
 			OnAlarm onalarmobj = (OnAlarm) ChoreoMergeUtil.getEHandlerOfActivity(ehcommunicator);
@@ -569,15 +657,31 @@ public class MergePreProcessorForEH implements Constants {
 				modifiedEHList.add((EventHandler) onalarmobj.eContainer());
 			}
 			
+			// Get Scope Containing EH
+			oldEventHandlerScope = (Scope) onalarmobj.eContainer().eContainer();
+			
+			// Get Container to host new surrounding scope - should be Flow named "MergedFlow"
+			mergedflow = ChoreoMergeUtil.getMergedFlow(oldEventHandlerScope);
+			
+			// check for already modified Process Scope 
+			// in case one process calls multiple different EH
+			if (!alreadymodified) {
+			for (Activity act : mergedflow.getActivities()) {
+				if ((act.getName().toString().equals(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName()))
+						|| ((act == ChoreoMergeUtil.getHighestScopeOfActivity(invokingScope)) 
+								&& act.getName().toString().startsWith(EH_NAME_NEW_SUR_SCOPE))){
+					// found scope already containing EH-logic
+					newSurScope = (Scope) act;
+					ehscopealreadymod = true;
+					break;
+				}
+			}
+			}
+		
+			
 			// get the EH-Logic Scope with the execution logic after OnAlarm
 			onAlarmScope = (Scope) (onalarmobj.getActivity());
 
-			// Get Scope Containing EH
-			oldEventHandlerScope = (Scope) onalarmobj.eContainer().eContainer();
-
-			// Get Container to host new surrounding scope
-			// should be Flow named "MergedFlow" per definition
-			mergedflow = ChoreoMergeUtil.getMergedFlow(oldEventHandlerScope);
 
 			// Output for Debug
 			log.info("EH-Preprocessing: Alternate OnAlarm logic started for Scope: "+ oldEventHandlerScope.getName());
@@ -603,22 +707,40 @@ public class MergePreProcessorForEH implements Constants {
 				}			
 			} 
 			
+
 			if (!alreadymodified || !scopeAndEHmod) {
-			// Create Parent-Scope with Variables from OldEventHandlerScope
-			newSurScope = createNewSurroundingScope(oldEventHandlerScope);
-			
-			// Set Surrounding Scope Name to invokingScope
-			newSurScope.setName(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName());
+				// Create Parent-Scope with Variables from OldEventHandlerScope
+				// If Parent-Scope of EventHandler has no Vars, get Vars from Highest Process Scope
+				scopewithvars  = oldEventHandlerScope;
+				if (oldEventHandlerScope.getVariables() == null) {
+					scopewithvars = ChoreoMergeUtil.getHighestScopeOfActivity((Activity) r.eContainer().eContainer());
+				}		
+				if (!ehscopealreadymod) {
+					newSurScope = createNewSurroundingScope(scopewithvars);
+					// Set Surrounding Scope Name to invokingScope
+					newSurScope.setName(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName());					
+				}
+				
 			}
-			
-			if (!alreadymodified) {
+
+			// Uplift variables
+			if ((!alreadymodified) && (newSurScope.getVariables() != null) || ehscopealreadymod){
 				List<Variable> vars = null;
 				vars = new ArrayList<>();
-				vars = newSurScope.getVariables().getChildren();
+
+				// if the invoking scope already contains EH-logic
+				// then only the vars of the EH-Scope need to be uplifted since
+				// the vars of invokingscope were uplifted in the very first iteration
+				if (!ehscopealreadymod){
+					vars = newSurScope.getVariables().getChildren();
+				} else {
+					vars = scopewithvars.getVariables().getChildren();
+				}
+
 								
 				// uplift vars to <process> in case different processes initiate same EH
 				
-				// Variablen uplift already in preprocessing (in Pmerged), Create Variables element in Pmerged
+				// Variable uplift already in preprocessing (in Pmerged), Create Variables element in Pmerged
 				if (pkg.getMergedProcess().getVariables() == null) {
 						pkg.getMergedProcess().setVariables(newSurScope.getVariables());
 						newSurScope.setVariables(null);
@@ -627,14 +749,28 @@ public class MergePreProcessorForEH implements Constants {
 					int i = vars.size();
 					for (int j = 0; j < i; j++) {
 						// since Iterator also modifies List, this simple loop always uplifts first element in list
-						ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
+						if (ehcommunicator instanceof Receive) {
+							recvar = ((Receive) ehcommunicator).getVariable();
+						} else if (ehcommunicator instanceof Invoke) {
+						 	recvar = ((Invoke) ehcommunicator).getInputVariable();
+						 	if (recvar == null) {
+						 		recvar = ((Invoke) ehcommunicator).getOutputVariable();	
+						 	}						 	
+						} else if (ehcommunicator instanceof Reply) {
+							recvar = ((Reply) ehcommunicator).getVariable();
+						}					
+						// Uplift only vars that are needed by EH
+						if (vars.get(0).getName().equals(recvar.getName())) {
+							ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
+						} else {
+							vars.remove(0);
+						}						
 					}
 				}
-
 			}
-			
+						
 
-			if (!alreadymodified || !scopeAndEHmod) {
+			if ((!alreadymodified || !scopeAndEHmod) && !ehscopealreadymod) {
 				// Create new Surrounding Scope with Flow in Scope with attached EventHandler
 				newSurFlow = BPELFactory.eINSTANCE.createFlow();
 				newSurFlow.setName(EH_NAME_FLOW + invokingScope.getName());
@@ -644,7 +780,7 @@ public class MergePreProcessorForEH implements Constants {
 			}
 				
 			// construct new Scope and modified EH structure
-			if (!alreadymodified || !scopeAndEHmod) {
+			if ((!alreadymodified || !scopeAndEHmod) && !ehscopealreadymod) {
 				// invokeContainer muss FLow sein (pmerged baut ja Flows
 				// drumherum...
 				mergedflow.getActivities().add(newSurScope);
@@ -668,7 +804,7 @@ public class MergePreProcessorForEH implements Constants {
 			newOnAlarmScope.setName(EH_NAME_EH_LOGIC_SCOPE + onAlarmScope.getName() + "_EH" + oldEventHandlerScope.getName());
 			}
 	
-			if (!alreadymodified || !scopeAndEHmod) {				
+			if ((!alreadymodified || !scopeAndEHmod)) {				
 				// create Surrounding Scope for <throw> in EH
 				newThrowScope = BPELFactory.eINSTANCE.createScope();
 				// this scope is the one in which modified EH-Scopes will be added
@@ -783,7 +919,6 @@ public class MergePreProcessorForEH implements Constants {
 			} else {
 				// alreadymodified means that sequence was added with Empty in first position, since there is always a CH added
 				emptyinFH = (Empty) ((Sequence) oldEventHandlerScope.getFaultHandlers().getCatchAll().getActivity()).getActivities().get(0);
-
 			}
 		}
 
@@ -807,8 +942,6 @@ public class MergePreProcessorForEH implements Constants {
 				} else {
 					emptyinTH = (Empty) oldEventHandlerScope.getTerminationHandler().getActivity();
 				}
-				
-
 			}
 		}
 
@@ -861,41 +994,39 @@ public class MergePreProcessorForEH implements Constants {
 
 		// first check OnEvents
 		if (!onEventList.isEmpty()) {
-		for (OnEvent oe : onEventList) {
-			// getting OnEvent Activity (must be Scope)
-			Scope oeScope = (Scope) oe.getActivity();
-			Scope removeEH = (Scope) oeScope.eContainer().eContainer().eContainer();
-			if (oeScope.getActivity() == null) {
-				// empty Scope found - OnEvent should be removed
-				removeEH.getEventHandlers().getEvents().remove(oe);
+			for (OnEvent oe : onEventList) {
+				// getting OnEvent Activity (must be Scope)
+				Scope oeScope = (Scope) oe.getActivity();
+				Scope removeEH = (Scope) oeScope.eContainer().eContainer().eContainer();
+				if (oeScope.getActivity() == null) {
+					// empty Scope found - OnEvent should be removed
+					removeEH.getEventHandlers().getEvents().remove(oe);
+				}
+				// now checking Old Event Handler Scope if EH is empty
+				if ((removeEH.getEventHandlers().getEvents().isEmpty())
+						&& (removeEH.getEventHandlers().getAlarm().isEmpty())) {
+					removeEH.setEventHandlers(null);
+				}
 			}
-			// now checking Old Event Handler Scope if EH is empty
-			if ((removeEH.getEventHandlers().getEvents().isEmpty())
-					&& (removeEH.getEventHandlers().getAlarm().isEmpty())) {
-				removeEH.setEventHandlers(null);
-			}
-		}
 		}
 		
 		// checking if original EH is empty and can be removed
-		if (!onAlarmList.isEmpty()) {
-					for (OnAlarm oa : onAlarmList) {
-						// getting OnEvent Activity (must be Scope)
-						Scope oeScope = (Scope) oa.getActivity();
-						Scope removeEH = (Scope) oeScope.eContainer().eContainer().eContainer();
-						if (oeScope.getActivity() == null) {
-							// empty Scope found - OnEvent should be removed
-							removeEH.getEventHandlers().getAlarm().remove(oa);							
-						}
-						// now checking Old Event Handler Scope if EH is empty
-						if ((removeEH.getEventHandlers().getEvents().isEmpty())
-								&& (removeEH.getEventHandlers().getAlarm().isEmpty())) {
-							removeEH.setEventHandlers(null);
-						}
-					}
+		if (!onAlarmList.isEmpty()) {			
+			for (OnAlarm oa : onAlarmList) {
+				// getting OnEvent Activity (must be Scope)
+				Scope oeScope = (Scope) oa.getActivity();
+				Scope removeEH = (Scope) oeScope.eContainer().eContainer().eContainer();
+				if (oeScope.getActivity() == null) {
+					// empty Scope found - OnEvent should be removed
+					removeEH.getEventHandlers().getAlarm().remove(oa);							
+				}
+				// now checking Old Event Handler Scope if EH is empty
+				if ((removeEH.getEventHandlers().getEvents().isEmpty())
+						&& (removeEH.getEventHandlers().getAlarm().isEmpty())) {
+					removeEH.setEventHandlers(null);
+				}
+			}
 		}
-		
-
 	}
 	
 	
@@ -920,20 +1051,18 @@ public class MergePreProcessorForEH implements Constants {
 			if ((ChoreoMergeUtil.getEHandlerOfActivity(s) instanceof OnEvent)) {
 				// Search for the new MessageLink with the OnEvent and check it
 			for (MessageLink link : pkg.getTopology().getMessageLinks()) {
-				BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
-				if (ChoreoMergeUtil.getEHandlerOfActivity(s) == ChoreoMergeUtil.getEHandlerOfActivity(r)) {
+				BPELExtensibleElement recEH = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
+				if (ChoreoMergeUtil.getEHandlerOfActivity(s) == recEH) {
 					// rekursiver aufruf
-					checkOE2OE(link, pkg);
+				return checkOE2OE(link, pkg);
 				}
-				
 			}
-			}
-			
+		}			
 		} else {
 			// s is not in EH - so true
+			log.info("EH-Preprocessing: first invoke calling OnEvent is not within EventHandler");
 			found = true;
-		}
-		
+		}		
 		return found;
 	}
 

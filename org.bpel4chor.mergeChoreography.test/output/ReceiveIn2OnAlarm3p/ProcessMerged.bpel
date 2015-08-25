@@ -19,8 +19,7 @@
     </variables>
     <flow name="MergedFlow">
         <links>
-            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
-            <link name="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
+            <link name="Invoke1P3ASP30TOReceive2P2ASP30LkG1"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -126,20 +125,15 @@
                             </sources>
                             <for><![CDATA[P33S]]></for>
                         </wait>
-                        <assign name="Invoke1P1ASP30" validate="no">
+                        <empty name="Invoke1P1ASP30">
                             <targets>
                                 <target linkName="link2"/>
                                 <target linkName="link3"/>
                             </targets>
                             <sources>
                                 <source linkName="link7"/>
-                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
                             </sources>
-                            <copy>
-                                <from variable="varInv1"/>
-                                <to variable="varRec1"/>
-                            </copy>
-                        </assign>
+                        </empty>
                         <receive createInstance="yes"
                             name="receiveInputP1ASP30" variable="input">
                             <targets>
@@ -211,14 +205,14 @@
                         </catch>
                     </faultHandlers>
                     <flow name="EH_Processing_Flow_Throw_Scope_P2ASP30">
-                        <scope name="EH_Scope_Event1P2ASP30_Scope_P2ASP30">
+                        <scope name="EH_OnAlarm_Scope_0_EHScope_P2ASP30">
                             <sequence>
-                                <empty name="EmptyEH1">
-                                    <targets>
-                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2)]]></joinCondition>
-                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30eaJ2"/>
-                                    </targets>
-                                </empty>
+                                <wait>
+                                    <for><![CDATA['P30S']]></for>
+                                </wait>
+                                <sequence>
+                                    <empty name="Receive1P2ASP30"/>
+                                </sequence>
                             </sequence>
                         </scope>
                         <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope_P1ASP30">
@@ -304,7 +298,7 @@
                             </targets>
                             <sources>
                                 <source linkName="link4"/>
-                                <source linkName="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
+                                <source linkName="Invoke1P3ASP30TOReceive2P2ASP30LkG1"/>
                             </sources>
                             <copy>
                                 <from variable="varInv2"/>
@@ -352,33 +346,25 @@
                         </catch>
                     </faultHandlers>
                     <flow name="EH_Processing_Flow_Throw_Scope_P2ASP30">
-                        <scope name="EH_Scope_Event2P2ASP30_Scope_P2ASP30">
+                        <scope name="EH_OnAlarm_Scope_1_EHScope_P2ASP30">
                             <sequence>
+                                <wait>
+                                    <for><![CDATA['P20S']]></for>
+                                </wait>
                                 <flow name="mainOnAlarm2">
-                                    <targets>
-                                    <joinCondition><![CDATA[($Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm)]]></joinCondition>
-                                    <target linkName="Invoke1P3ASP30TOReceive_from_Event2P2ASP30qgMm"/>
-                                    </targets>
                                     <links>
-                                    <link name="linkEH1"/>
-                                    <link name="linkEH2"/>
+                                    <link name="linkEH1651Y"/>
                                     </links>
                                     <empty name="EmptyEH1">
                                     <sources>
-                                    <source linkName="linkEH1"/>
+                                    <source linkName="linkEH1651Y"/>
                                     </sources>
                                     </empty>
                                     <empty name="EmptyEH2">
                                     <targets>
-                                    <target linkName="linkEH1"/>
-                                    </targets>
-                                    <sources>
-                                    <source linkName="linkEH2"/>
-                                    </sources>
-                                    </empty>
-                                    <empty name="EmptyEH2">
-                                    <targets>
-                                    <target linkName="linkEH2"/>
+                                    <joinCondition><![CDATA[($Invoke1P3ASP30TOReceive2P2ASP30LkG1 and ($linkEH1651Y))]]></joinCondition>
+                                    <target linkName="Invoke1P3ASP30TOReceive2P2ASP30LkG1"/>
+                                    <target linkName="linkEH1651Y"/>
                                     </targets>
                                     </empty>
                                 </flow>

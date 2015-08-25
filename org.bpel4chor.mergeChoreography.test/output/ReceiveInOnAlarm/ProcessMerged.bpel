@@ -6,18 +6,15 @@
     targetNamespace="http://www.iaas.uni-stuttgart.de"
     xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract" xmlns:ns="http://www.iaas.uni-stuttgart.de">
     <import importType="http://schemas.xmlsoap.org/wsdl/"
-        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
-    <import importType="http://schemas.xmlsoap.org/wsdl/"
         location="P2ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
     <variables>
         <variable messageType="ns:P2ASP30RequestMessage" name="input"/>
         <variable messageType="ns:P2ASP30ResponseMessage" name="output"/>
         <variable messageType="ns:P12P2ASP30RequestMessage" name="varRec1"/>
     </variables>
     <flow name="MergedFlow">
-        <links>
-            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
-        </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
                 <partnerLink initializePartnerRole="no"
@@ -46,10 +43,9 @@
             <flow name="main">
                 <links>
                     <link name="link1"/>
+                    <link name="link4"/>
                     <link name="link2"/>
                     <link name="link3"/>
-                    <link name="link4"/>
-                    <link name="link5"/>
                 </links>
                 <receive createInstance="yes" name="receiveInputP2ASP30" variable="input">
                     <sources>
@@ -71,24 +67,16 @@
                 </empty>
                 <empty name="Empty2">
                     <targets>
+                        <target linkName="link2"/>
                         <target linkName="link3"/>
                     </targets>
                     <sources>
                         <source linkName="link4"/>
                     </sources>
                 </empty>
-                <receive createInstance="no" name="Receive1P2ASP30" variable="varRec1">
-                    <targets>
-                        <target linkName="link2"/>
-                        <target linkName="link5"/>
-                    </targets>
-                    <sources>
-                        <source linkName="link3"/>
-                    </sources>
-                </receive>
                 <empty name="Empty3">
                     <sources>
-                        <source linkName="link5"/>
+                        <source linkName="link3"/>
                     </sources>
                 </empty>
             </flow>
@@ -118,26 +106,31 @@
                             <link name="link1"/>
                             <link name="link4"/>
                             <link name="link5"/>
-                            <link name="link3"/>
                             <link name="link2"/>
+                            <link name="link3"/>
                             <link name="link7"/>
+                            <link name="link8"/>
                         </links>
-                        <assign name="Invoke1P1ASP30" validate="no">
+                        <wait name=" Wait33s">
+                            <sources>
+                                <source linkName="link8"/>
+                            </sources>
+                            <for><![CDATA[P33S]]></for>
+                        </wait>
+                        <empty name="Invoke1P1ASP30">
                             <targets>
+                                <target linkName="link2"/>
                                 <target linkName="link3"/>
-                                <target linkName="link7"/>
                             </targets>
                             <sources>
-                                <source linkName="link2"/>
-                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+                                <source linkName="link7"/>
                             </sources>
-                            <copy>
-                                <from variable="varInv1"/>
-                                <to variable="varRec1"/>
-                            </copy>
-                        </assign>
+                        </empty>
                         <receive createInstance="yes"
                             name="receiveInputP1ASP30" variable="input">
+                            <targets>
+                                <target linkName="link8"/>
+                            </targets>
                             <sources>
                                 <source linkName="link1"/>
                             </sources>
@@ -152,7 +145,7 @@
                                 <target linkName="link1"/>
                             </targets>
                             <sources>
-                                <source linkName="link7"/>
+                                <source linkName="link2"/>
                             </sources>
                         </empty>
                         <empty name="Empty2">
@@ -165,28 +158,30 @@
                         </empty>
                         <scope exitOnStandardFault="no" isolated="no" name="Scope">
                             <targets>
-                                <target linkName="link2"/>
+                                <target linkName="link7"/>
                             </targets>
                             <sources>
                                 <source linkName="link5"/>
                             </sources>
-                            <flow name="Flow">
-                                <links>
+                            <sequence>
+                                <flow name="Flow">
+                                    <links>
                                     <link name="link6"/>
-                                </links>
-                                <empty name="Empty3">
+                                    </links>
+                                    <empty name="Empty3">
                                     <sources>
                                     <source linkName="link6"/>
                                     </sources>
-                                </empty>
-                                <scope exitOnStandardFault="no"
+                                    </empty>
+                                    <scope exitOnStandardFault="no"
                                     isolated="no" name="Scope1">
                                     <targets>
                                     <target linkName="link6"/>
                                     </targets>
                                     <empty name="Empty4"/>
-                                </scope>
-                            </flow>
+                                    </scope>
+                                </flow>
+                            </sequence>
                         </scope>
                         <empty name="Empty6">
                             <sources>
@@ -202,14 +197,12 @@
                         </catch>
                     </faultHandlers>
                     <flow name="EH_Processing_Flow_Throw_Scope_P2ASP30">
-                        <scope name="EH_Scope_Event1P2ASP30_Scope_P2ASP30">
+                        <scope name="EH_OnAlarm_Scope_0_EHScope_P2ASP30">
                             <sequence>
-                                <empty name="Empty">
-                                    <targets>
-                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut)]]></joinCondition>
-                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
-                                    </targets>
-                                </empty>
+                                <wait>
+                                    <for><![CDATA['P30S']]></for>
+                                </wait>
+                                <empty name="Receive1P2ASP30"/>
                             </sequence>
                         </scope>
                         <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope_P1ASP30">

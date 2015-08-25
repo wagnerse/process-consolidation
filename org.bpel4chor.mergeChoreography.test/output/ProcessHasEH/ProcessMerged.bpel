@@ -6,9 +6,9 @@
     targetNamespace="http://www.iaas.uni-stuttgart.de"
     xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract" xmlns:ns="http://www.iaas.uni-stuttgart.de">
     <import importType="http://schemas.xmlsoap.org/wsdl/"
-        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
-    <import importType="http://schemas.xmlsoap.org/wsdl/"
         location="P2ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
     <variables>
         <variable messageType="ns:P2ASP30RequestMessage" name="input"/>
         <variable messageType="ns:P2ASP30ResponseMessage" name="output"/>
@@ -16,7 +16,7 @@
     </variables>
     <flow name="MergedFlow">
         <links>
-            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Yfiz"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -129,7 +129,7 @@
                             </targets>
                             <sources>
                                 <source linkName="link2"/>
-                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Yfiz"/>
                             </sources>
                             <copy>
                                 <from variable="varInv1"/>
@@ -206,8 +206,8 @@
                             <sequence>
                                 <empty name="Empty">
                                     <targets>
-                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut)]]></joinCondition>
-                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30Yfiz)]]></joinCondition>
+                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Yfiz"/>
                                     </targets>
                                 </empty>
                             </sequence>

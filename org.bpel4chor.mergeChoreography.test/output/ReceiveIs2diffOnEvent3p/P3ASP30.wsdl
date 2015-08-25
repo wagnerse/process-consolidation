@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.iaas.uni-stuttgart.de" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="P3ASP30" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		TYPE DEFINITION - List of services participating in this BPEL process The 
+		default output of the BPEL designer uses strings as input and output to the 
+		BPEL Process. But you can define or import any XML Schema type and us them 
+		as part of the message types. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<types>
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.iaas.uni-stuttgart.de">
+
+			<element name="P3ASP30Request">
+				<complexType>
+					<sequence>
+						<element name="input" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+			<element name="P3ASP30Response">
+				<complexType>
+					<sequence>
+						<element name="result" type="string"/>
+					</sequence>
+				</complexType>
+			</element>
+
+		</schema>
+	</types>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		MESSAGE TYPE DEFINITION - Definition of the message types used as part of 
+		the port type defintions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<message name="P3ASP30RequestMessage">
+		<part element="tns:P3ASP30Request" name="payload"/>
+	</message>
+
+	<message name="P3ASP30ResponseMessage">
+		<part element="tns:P3ASP30Response" name="payload"/>
+	</message>
+
+	<message name="P12P3ASP30RequestMessage">
+		<part name="data" type="xsd:string"/>
+	</message>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PORT TYPE DEFINITION - A port type groups a set of operations into a logical 
+		service unit. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- portType implemented by the P3ASP30 BPEL process -->
+	<portType name="P3ASP30">
+		<operation name="initiate">
+			<input message="tns:P3ASP30RequestMessage"/>
+		</operation>
+	</portType>
+
+	<!-- portType implemented by the requester of P3ASP30 BPEL process for asynchronous 
+		callback purposes -->
+	<portType name="P3ASP30Callback">
+		<operation name="onResult">
+			<input message="tns:P3ASP30ResponseMessage"/>
+		</operation>
+	</portType>
+	
+		<portType name="P1ASP30toP3ASP30PT">
+		<operation name="Invoke2toReceive2Operation">
+			<input message="tns:P12P3ASP30RequestMessage"/>
+		</operation>
+	</portType>
+
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		PARTNER LINK TYPE DEFINITION the P3ASP30 partnerLinkType binds the provider 
+		and requester portType into an asynchronous conversation. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<plnk:partnerLinkType name="P3ASP30">
+		<plnk:role name="P3ASP30Provider" portType="tns:P3ASP30"/>
+		<plnk:role name="P3ASP30Requester" portType="tns:P3ASP30Callback"/>
+	</plnk:partnerLinkType>
+
+	<plnk:partnerLinkType name="P1ASP30toP3ASP30PLT">
+		<plnk:role name="P1ASP30toP3ASP30Provider" portType="tns:P1ASP30toP3ASP30PT"/>
+	</plnk:partnerLinkType>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		BINDING DEFINITION - Defines the message format and protocol details for 
+		a web service. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<binding name="P3ASP30Binding" type="tns:P3ASP30">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="initiate">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/initiate"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<binding name="P3ASP30CallbackBinding" type="tns:P3ASP30Callback">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="onResult">
+			<soap:operation soapAction="http://www.iaas.uni-stuttgart.de/onResult"/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+		</operation>
+	</binding>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+		SERVICE DEFINITION - A service groups a set of ports into a service unit. 
+		~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<service name="P3ASP30Service">
+		<port binding="tns:P3ASP30Binding" name="P3ASP30Port">
+			<soap:address location="http://localhost:8080/P3ASP30"/>
+		</port>
+	</service>
+
+	<service name="P3ASP30ServiceCallback">
+		<port binding="tns:P3ASP30CallbackBinding" name="P3ASP30PortCallbackPort">
+			<soap:address location="http://localhost:8080/P3ASP30Callback"/>
+		</port>
+	</service>
+</definitions>

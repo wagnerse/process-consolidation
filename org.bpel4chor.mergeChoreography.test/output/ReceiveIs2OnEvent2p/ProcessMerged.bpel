@@ -6,17 +6,20 @@
     targetNamespace="http://www.iaas.uni-stuttgart.de"
     xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract" xmlns:ns="http://www.iaas.uni-stuttgart.de">
     <import importType="http://schemas.xmlsoap.org/wsdl/"
-        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
-    <import importType="http://schemas.xmlsoap.org/wsdl/"
         location="P2ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="P1ASP30.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
     <variables>
         <variable messageType="ns:P2ASP30RequestMessage" name="input"/>
         <variable messageType="ns:P2ASP30ResponseMessage" name="output"/>
         <variable messageType="ns:P12P2ASP30RequestMessage" name="varRec1"/>
+        <variable messageType="ns:P12P2ASP30RequestMessage2" name="varRec2"/>
+        <variable messageType="ns:P12P2ASP30RequestMessage2" name="varInv2"/>
     </variables>
     <flow name="MergedFlow">
         <links>
-            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+            <link name="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Mmvf"/>
+            <link name="Invoke2P1ASP30TOReceive_from_Event2P2ASP30"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2ASP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -30,6 +33,7 @@
                         <empty name="CallThrowSimEHfromFH">
                             <sources>
                                 <source linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P1ASP30"/>
+                                <source linkName="CallThrowSimEHfromFHTOThrowSimEHScope1"/>
                             </sources>
                         </empty>
                         <compensate/>
@@ -40,6 +44,7 @@
                 <empty name="CallThrowSimEHfromTH">
                     <sources>
                         <source linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P1ASP30"/>
+                        <source linkName="CallThrowSimEHfromTHTOThrowSimEHScope1"/>
                     </sources>
                 </empty>
             </terminationHandler>
@@ -129,7 +134,7 @@
                             </targets>
                             <sources>
                                 <source linkName="link2"/>
-                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+                                <source linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Mmvf"/>
                             </sources>
                             <copy>
                                 <from variable="varInv1"/>
@@ -184,7 +189,11 @@
                                     <targets>
                                     <target linkName="link6"/>
                                     </targets>
-                                    <empty name="Empty4"/>
+                                    <empty name="Invoke2P1ASP30">
+                                    <sources>
+                                    <source linkName="Invoke2P1ASP30TOReceive_from_Event2P2ASP30"/>
+                                    </sources>
+                                    </empty>
                                 </scope>
                             </flow>
                         </scope>
@@ -206,8 +215,8 @@
                             <sequence>
                                 <empty name="Empty">
                                     <targets>
-                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut)]]></joinCondition>
-                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30D3Ut"/>
+                                    <joinCondition><![CDATA[($Invoke1P1ASP30TOReceive_from_Event1P2ASP30Mmvf)]]></joinCondition>
+                                    <target linkName="Invoke1P1ASP30TOReceive_from_Event1P2ASP30Mmvf"/>
                                     </targets>
                                 </empty>
                             </sequence>
@@ -216,6 +225,22 @@
                             <targets>
                                 <target linkName="CallThrowSimEHfromFHTOThrowSimEHScope_P1ASP30"/>
                                 <target linkName="CallThrowSimEHfromTHTOThrowSimEHScope_P1ASP30"/>
+                            </targets>
+                        </throw>
+                        <scope name="EH_Scope_Event2P2ASP30_Scope_P2ASP30">
+                            <sequence>
+                                <empty name="Receive_from_Event2P2ASP30">
+                                    <targets>
+                                    <target linkName="Invoke2P1ASP30TOReceive_from_Event2P2ASP30"/>
+                                    </targets>
+                                </empty>
+                                <empty name="Empty"/>
+                            </sequence>
+                        </scope>
+                        <throw faultName="lifetimeEHFailure" name="ThrowSimEHScope1">
+                            <targets>
+                                <target linkName="CallThrowSimEHfromFHTOThrowSimEHScope1"/>
+                                <target linkName="CallThrowSimEHfromTHTOThrowSimEHScope1"/>
                             </targets>
                         </throw>
                     </flow>

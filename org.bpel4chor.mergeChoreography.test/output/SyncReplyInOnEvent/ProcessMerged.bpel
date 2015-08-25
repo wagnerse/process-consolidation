@@ -19,7 +19,7 @@
     <flow name="MergedFlow">
         <links>
             <link name="Invoke1P1SP30TOReceive_from_Event1P2SP30"/>
-            <link name="Reply1P2SP30TOEmptyHJOh"/>
+            <link name="Reply1P2SP30TOEmptyZsZY"/>
         </links>
         <scope exitOnStandardFault="yes" name="Scope_P2SP30" suppressJoinFailure="yes">
             <partnerLinks>
@@ -192,7 +192,7 @@
                             </assign>
                             <empty>
                                 <targets>
-                                    <target linkName="Reply1P2SP30TOEmptyHJOh"/>
+                                    <target linkName="Reply1P2SP30TOEmptyZsZY"/>
                                 </targets>
                             </empty>
                         </sequence>
@@ -224,7 +224,7 @@
                                 </empty>
                                 <assign name="Reply1P2SP30" validate="no">
                                     <sources>
-                                    <source linkName="Reply1P2SP30TOEmptyHJOh"/>
+                                    <source linkName="Reply1P2SP30TOEmptyZsZY"/>
                                     </sources>
                                     <copy>
                                     <from variable="varReply1P2"/>
