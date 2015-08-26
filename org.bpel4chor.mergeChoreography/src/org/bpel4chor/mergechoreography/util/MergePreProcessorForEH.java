@@ -107,7 +107,13 @@ public class MergePreProcessorForEH implements Constants {
 			BPELExtensibleElement s = ChoreoMergeUtil.resolveActivity(link.getSendActivity());
 			BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
 			
+			
 			// Check here if s and r are both in EH first
+			// TESTFILES:
+			//	"OnAlarm2OnEvent",				// 15: OnAlarm calls OnEvent
+			//	"OnAlarm2OnAlarm",				// 16: OnAlarm sends to another OnAlarm
+			//	"NestedExternalOnEvent",		// 17: OnEvent calls OnEvent, but initial OnEvent is not in Choreo
+			//	"NestedOnEvent					// 18: 3 OnEvent, nested first EH calls second EH	
 			if (ChoreoMergeUtil.isElementInEHandler(r) && ChoreoMergeUtil.isElementInEHandler(s)) {
 				log.info("EH-Preprocessing: receive and send are both within EventHandler-Scope");
 				if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm) && 
@@ -375,6 +381,13 @@ public class MergePreProcessorForEH implements Constants {
 			
 			// check for already modified Process Scope 
 			// in case one process calls multiple different EH
+			// if a process calls multiple different EH, then there is already the Surrounding Scope built
+			// TESTFILES:
+//			"ReceiveIs2OnEvent3p", 			//  7: 2 OnEvent in same EH activated by 2 processes 
+//			"ReceiveIs2diffOnEvent3p", 		//  8: 2 OnEvent in 2 Processes
+//			"ReceiveIs2OnEvent2p", 			// 14: 2 OnEvent in same EH activated by 1 process 
+//			"ReceiveInOAandOE3p", 			// 12: OnAlarm and OnEvent in same EH with receive from 2 processes 
+//			"ReceiveInOAandOE2p", 			// 13: OnAlarm and OnEvent in same EH with receive from 1 process
 			if (!alreadymodified) {
 			for (Activity act : mergedflow.getActivities()) {
 				if ((act.getName().toString().equals(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName()))
@@ -382,6 +395,9 @@ public class MergePreProcessorForEH implements Constants {
 							&& act.getName().toString().startsWith(EH_NAME_NEW_SUR_SCOPE))){
 					// second condition added for nested EH-Scopes
 					// found scope already containing EH-logic
+					// for nested scopes there would be an additional process-scope 
+					// created within MergedFlow if not checked here for existence
+					// TESTFILE: "NestedOnEvent", 				// 18: 3 OnEvent, nested first EH calls second EH	
 					newSurScope = (Scope) act;
 					invscopealreadymod = true;
 					break;
@@ -392,6 +408,7 @@ public class MergePreProcessorForEH implements Constants {
 			// Output for Debug
 			log.info("EH-Preprocessing: Alternate OnEvent logic started for Scope: " + oldEventHandlerScope.getName());
 			
+			// TESTFILES from above valid too
 			if (alreadymodified) {
 				log.info("EH-Preprocessing: EH already modified for "+ oldEventHandlerScope.getName() + ". Checking for invoke in " + invokingScope.getName());
 				// get all scopes aus mergedflow
@@ -412,6 +429,10 @@ public class MergePreProcessorForEH implements Constants {
 				}			
 			} 
 			
+			
+			// TESTFILES without special cases
+//			"ReceiveIsOnEvent",				//  0: OnEvent is receiving Activity
+//			"ReceiveInOnAlarm", 			//  1: Receive within OnAlarm
 			if (!alreadymodified || !scopeAndEHmod) {
 				// Create Parent-Scope with Variables from OldEventHandlerScope
 				// If Parent-Scope of EventHandler has no Vars, get Vars from Highest Process Scope
@@ -427,6 +448,13 @@ public class MergePreProcessorForEH implements Constants {
 				
 			}
 
+			// TESTFILES:
+//			"ReceiveIs2OnEvent3p", 			//  7: 2 OnEvent in same EH activated by 2 processes 
+//			"ReceiveIs2diffOnEvent3p", 		//  8: 2 OnEvent in 2 Processes
+//			"ReceiveIs2OnEvent2p", 			// 14: 2 OnEvent in same EH activated by 1 process 
+//			"ReceiveInOAandOE3p", 			// 12: OnAlarm and OnEvent in same EH with receive from 2 processes 
+//			"ReceiveInOAandOE2p", 			// 13: OnAlarm and OnEvent in same EH with receive from 1 process
+//			"NestedOnEvent", 				// 18: 3 OnEvent, nested first EH calls second EH
 			
 			if ((!alreadymodified) && (newSurScope.getVariables() != null) || invscopealreadymod){
 				List<Variable> vars = null;
@@ -605,6 +633,7 @@ public class MergePreProcessorForEH implements Constants {
 			boolean bothinOnAlarm = false;
 			boolean ehscopealreadymod = false;
 			Variable recvar = null;
+			Variable outvar = null;
 			
 			BPELExtensibleElement communicator = null;
 			BPELExtensibleElement ehcommunicator = null;
@@ -613,6 +642,7 @@ public class MergePreProcessorForEH implements Constants {
 			BPELExtensibleElement r = ChoreoMergeUtil.resolveActivity(link.getReceiveActivity());
 			
 			// get communicating element in EH separately
+			// TESTFILE: "OnAlarm2OnAlarm",				// 16: OnAlarm sends to another OnAlarm
 			if ((ChoreoMergeUtil.isElementInEHandler(r)) && (ChoreoMergeUtil.isElementInEHandler(s))) {
 				log.info("EH-Preprocessing: Both messagelink-Ends are in EH");
 				if ((ChoreoMergeUtil.getEHandlerOfActivity(r) instanceof OnAlarm) && 
@@ -639,11 +669,15 @@ public class MergePreProcessorForEH implements Constants {
 			// Get Scope communication with EH
 			// Special Case for OnAlarm initiating onEvent
 			if (communicator instanceof OnEvent) {
+				// TESTFILE: "OnAlarm2OnEvent",				// 15: OnAlarm calls OnEvent
 				invokingScope = (Scope) communicator.eContainer().eContainer();
 			} else if (bothinOnAlarm) {
+				// TESTFILE: "OnAlarm2OnAlarm",				// 16: OnAlarm sends to another OnAlarm
 				// since both are in OnAlarm parentscope of communicator would be the OnAlarm Scope
 				invokingScope = (Scope) ChoreoMergeUtil.getEHandlerOfActivity(communicator).eContainer().eContainer();
 			}else {
+				// TESTFILE: All other Cases with normal OnAlarm Communication
+				// "SyncInOnAlarm", 				//  2: OnAlarm with sync communication 
 				invokingScope = ChoreoMergeUtil.getParentScopeOfActivity((Activity) communicator);
 			}
 
@@ -665,6 +699,14 @@ public class MergePreProcessorForEH implements Constants {
 			
 			// check for already modified Process Scope 
 			// in case one process calls multiple different EH
+			// TESTFILES: 
+//			"ReceiveIs2diffOnAlarm3p",		//  9: 2 OnAlarm in 2 Processes
+//			"ReceiveIn2OnAlarm2p", 			// 10: 2 OnAlarm in same EH with receive from 1 process 
+//			"ReceiveIn2OnAlarm3p", 			// 11: 2 OnAlarm in same EH with receive from 2 processes 
+//			"ReceiveInOAandOE3p", 			// 12: OnAlarm and OnEvent in same EH with receive from 2 processes 
+//			"ReceiveInOAandOE2p", 			// 13: OnAlarm and OnEvent in same EH with receive from 1 process
+//			"OnAlarm2OnEvent",				// 15: OnAlarm calls OnEvent
+//			"OnAlarm2OnAlarm",				// 16: OnAlarm sends to another OnAlarm
 			if (!alreadymodified) {
 			for (Activity act : mergedflow.getActivities()) {
 				if ((act.getName().toString().equals(EH_NAME_NEW_SUR_SCOPE + invokingScope.getName()))
@@ -686,6 +728,7 @@ public class MergePreProcessorForEH implements Constants {
 			// Output for Debug
 			log.info("EH-Preprocessing: Alternate OnAlarm logic started for Scope: "+ oldEventHandlerScope.getName());
 
+			// TESTFILES from above apply here too
 			if (alreadymodified) {
 				log.info("EH-Preprocessing: EH already modified for "+ oldEventHandlerScope.getName() + ". Checking for invoke in " + invokingScope.getName());
 				// idee: hole alle scopes aus mergedflow
@@ -748,21 +791,29 @@ public class MergePreProcessorForEH implements Constants {
 					// there are already vars in process - uplift every var additionally to process
 					int i = vars.size();
 					for (int j = 0; j < i; j++) {
+						boolean isremoved = false;
 						// since Iterator also modifies List, this simple loop always uplifts first element in list
 						if (ehcommunicator instanceof Receive) {
 							recvar = ((Receive) ehcommunicator).getVariable();
 						} else if (ehcommunicator instanceof Invoke) {
-						 	recvar = ((Invoke) ehcommunicator).getInputVariable();
-						 	if (recvar == null) {
-						 		recvar = ((Invoke) ehcommunicator).getOutputVariable();	
-						 	}						 	
+							// for sync communication
+						 	recvar = ((Invoke) ehcommunicator).getInputVariable();			 	
+						 	outvar = ((Invoke) ehcommunicator).getOutputVariable();	
+						 	
 						} else if (ehcommunicator instanceof Reply) {
 							recvar = ((Reply) ehcommunicator).getVariable();
 						}					
 						// Uplift only vars that are needed by EH
-						if (vars.get(0).getName().equals(recvar.getName())) {
+						if ( (recvar != null) && vars.get(0).getName().equals(recvar.getName()) ) {
 							ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
-						} else {
+							isremoved = true;
+						}
+						
+						if ( (outvar != null) && (vars.get(0).getName().equals(outvar.getName()))) {
+							ChoreoMergeUtil.upliftVariableToProcessScope(vars.get(0), pkg.getMergedProcess());
+							isremoved = true;
+						} 
+						if (!isremoved) {
 							vars.remove(0);
 						}						
 					}

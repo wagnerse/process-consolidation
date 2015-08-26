@@ -55,15 +55,15 @@ public class ChoreographyMergerEHTest {
 	// scenarios are listed in file "scenarios.pptx"
 	
 	// select scenario here. Applies also for result check class CheckEHMergeResult
-	static String scenario = scenarios[14];
+	static String scenario = scenarios[16];
 	
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// ############# Generate all files.
-		initAllFiles();
+		//initAllFiles();
 		// ############# Generate single file.
-		//initSingleFile(scenario);
+		initSingleFile(scenario);
 	}
 	
 	private static void initSingleFile(String change) {
