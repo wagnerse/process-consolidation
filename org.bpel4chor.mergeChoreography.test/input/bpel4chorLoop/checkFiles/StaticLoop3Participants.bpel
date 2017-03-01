@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://www.iaas.uni-stuttgart.de"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract"
+    xmlns:ns="http://www.iaas.uni-stuttgart.de" xmlns:ns0="http://www.w3.org/2001/XMLSchema">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Process3.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Process2.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Process1.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <variables>
+        <variable name="initiate2" type="ns:InitiateMessage"/>
+        <variable name="initiate3" type="ns:InitiateMessage"/>
+        <variable messageType="ns:Process1ToProcess2Message" name="varRec2"/>
+        <variable messageType="ns:Process2ToProcess3Message" name="varRec3"/>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="InvokeProcess2TOInvokeProcess3"/>
+            <link name="InvokeProcess3TOInitCounter3"/>
+            <link name="SLOOP_Invoke1Process1TOReceive2Process21"/>
+            <link name="SLOOP_Invoke1Process1TOReceive2Process22"/>
+            <link name="SLOOP_Invoke2Process2TOReceive3Process31"/>
+            <link name="SLOOP_Invoke2Process2TOReceive3Process32"/>
+        </links>
+        <scope exitOnStandardFault="yes" name="Scope_Process3" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:Process3RequestMessage" name="Process3Input"/>
+                <variable messageType="ns:Process3ResponseMessage" name="output"/>
+                <variable name="counter3" type="ns0:string"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="Process3Provider" name="client3"
+                    partnerLinkType="ns:Process3PLT" partnerRole="Process3Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="Assign3ToWhile3"/>
+                </links>
+                <assign name="InitCounter3" validate="no">
+                    <targets>
+                        <target linkName="InvokeProcess3TOInitCounter3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Assign3ToWhile3"/>
+                    </sources>
+                    <copy>
+                        <from>
+                            <literal>0</literal>
+                        </from>
+                        <to variable="counter3"/>
+                    </copy>
+                </assign>
+                <flow name="UnrolledLoop">
+                    <targets>
+                        <target linkName="Assign3ToWhile3"/>
+                    </targets>
+                    <links>
+                        <link name="SLOOP_Process3While_Entry"/>
+                        <link name="SLOOP_Next1"/>
+                    </links>
+                    <empty name="EntryActivity">
+                        <sources>
+                            <source linkName="SLOOP_Process3While_Entry">
+                                <transitionCondition><![CDATA[$counter3 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                    </empty>
+                    <flow name="Process3WhileFlow1">
+                        <targets>
+                            <target linkName="SLOOP_Process3While_Entry"/>
+                        </targets>
+                        <sources>
+                            <source linkName="SLOOP_Next1">
+                                <transitionCondition><![CDATA[$counter3 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                        <links>
+                            <link name="SLOOP_Receive3ToAssign1"/>
+                        </links>
+                        <empty name="Receive3Process3">
+                            <targets>
+                                <target linkName="SLOOP_Invoke2Process2TOReceive3Process31"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Receive3ToAssign1"/>
+                            </sources>
+                        </empty>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Receive3ToAssign1"/>
+                            </targets>
+                            <copy>
+                                <from><![CDATA[$counter3 + 1]]></from>
+                                <to variable="counter3"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                    <flow name="Process3WhileFlow2">
+                        <targets>
+                            <target linkName="SLOOP_Next1"/>
+                        </targets>
+                        <links>
+                            <link name="SLOOP_Receive3ToAssign2"/>
+                        </links>
+                        <empty name="Receive3Process3">
+                            <targets>
+                                <target linkName="SLOOP_Invoke2Process2TOReceive3Process32"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Receive3ToAssign2"/>
+                            </sources>
+                        </empty>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Receive3ToAssign2"/>
+                            </targets>
+                            <copy>
+                                <from><![CDATA[$counter3 + 1]]></from>
+                                <to variable="counter3"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                </flow>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_Process2" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:Process2RequestMessage" name="Process2Input"/>
+                <variable messageType="ns:Process2ResponseMessage" name="output"/>
+                <variable messageType="ns:Process2ToProcess3Message" name="varInv2"/>
+                <variable name="counter2" type="ns0:string"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="Process2Provider" name="client2"
+                    partnerLinkType="ns:Process2PLT" partnerRole="Process2Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="InvokeToAssign2"/>
+                    <link name="Assign2ToWhile2"/>
+                </links>
+                <assign name="InvokeProcess3" validate="no">
+                    <targets>
+                        <target linkName="InvokeProcess2TOInvokeProcess3"/>
+                    </targets>
+                    <sources>
+                        <source linkName="InvokeToAssign2"/>
+                        <source linkName="InvokeProcess3TOInitCounter3"/>
+                    </sources>
+                    <copy>
+                        <from variable="initiate2"/>
+                        <to variable="initiate3"/>
+                    </copy>
+                </assign>
+                <assign name="InitCounter2" validate="no">
+                    <targets>
+                        <target linkName="InvokeToAssign2"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Assign2ToWhile2"/>
+                    </sources>
+                    <copy>
+                        <from>
+                            <literal>0</literal>
+                        </from>
+                        <to variable="counter2"/>
+                    </copy>
+                </assign>
+                <flow name="UnrolledLoop">
+                    <targets>
+                        <target linkName="Assign2ToWhile2"/>
+                    </targets>
+                    <links>
+                        <link name="SLOOP_Process2While_Entry"/>
+                        <link name="SLOOP_Next1"/>
+                    </links>
+                    <empty name="EntryActivity">
+                        <sources>
+                            <source linkName="SLOOP_Process2While_Entry">
+                                <transitionCondition><![CDATA[$counter2 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                    </empty>
+                    <flow name="Process2WhileWhileFlow1">
+                        <targets>
+                            <target linkName="SLOOP_Process2While_Entry"/>
+                        </targets>
+                        <sources>
+                            <source linkName="SLOOP_Next1">
+                                <transitionCondition><![CDATA[$counter2 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                        <links>
+                            <link name="SLOOP_Receive2ToAssign1"/>
+                            <link name="SLOOP_AssignToInvoke21"/>
+                        </links>
+                        <empty name="Receive2Process2">
+                            <targets>
+                                <target linkName="SLOOP_Invoke1Process1TOReceive2Process21"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Receive2ToAssign1"/>
+                            </sources>
+                        </empty>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Receive2ToAssign1"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_AssignToInvoke21"/>
+                            </sources>
+                            <copy>
+                                <from><![CDATA[$counter2 + 1]]></from>
+                                <to variable="counter2"/>
+                            </copy>
+                        </assign>
+                        <assign name="Invoke2Process2" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_AssignToInvoke21"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Invoke2Process2TOReceive3Process31"/>
+                            </sources>
+                            <copy>
+                                <from variable="varInv2"/>
+                                <to variable="varRec3"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                    <flow name="Process2WhileWhileFlow2">
+                        <targets>
+                            <target linkName="SLOOP_Next1"/>
+                        </targets>
+                        <links>
+                            <link name="SLOOP_Receive2ToAssign2"/>
+                            <link name="SLOOP_AssignToInvoke22"/>
+                        </links>
+                        <empty name="Receive2Process2">
+                            <targets>
+                                <target linkName="SLOOP_Invoke1Process1TOReceive2Process22"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Receive2ToAssign2"/>
+                            </sources>
+                        </empty>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Receive2ToAssign2"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_AssignToInvoke22"/>
+                            </sources>
+                            <copy>
+                                <from><![CDATA[$counter2 + 1]]></from>
+                                <to variable="counter2"/>
+                            </copy>
+                        </assign>
+                        <assign name="Invoke2Process2" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_AssignToInvoke22"/>
+                            </targets>
+                            <sources>
+                                <source linkName="SLOOP_Invoke2Process2TOReceive3Process32"/>
+                            </sources>
+                            <copy>
+                                <from variable="varInv2"/>
+                                <to variable="varRec3"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                </flow>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_Process1" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:Process1RequestMessage" name="Process1Input"/>
+                <variable messageType="ns:Process1ResponseMessage" name="output"/>
+                <variable messageType="ns:Process1ToProcess2Message" name="varInv1"/>
+                <variable name="initiate1" type="ns:InitiateMessage"/>
+                <variable name="counter1" type="ns0:string"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="Process1Provider" name="client1"
+                    partnerLinkType="ns:Process1PLT" partnerRole="Process1Requester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="Link1"/>
+                    <link name="InvokeToAssign1"/>
+                    <link name="Assign1ToWhile1"/>
+                </links>
+                <receive createInstance="yes" name="receive" variable="Process1Input">
+                    <sources>
+                        <source linkName="Link1"/>
+                    </sources>
+                </receive>
+                <assign name="InvokeProcess2" validate="no">
+                    <targets>
+                        <target linkName="Link1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="InvokeToAssign1"/>
+                        <source linkName="InvokeProcess2TOInvokeProcess3"/>
+                    </sources>
+                    <copy>
+                        <from variable="initiate1"/>
+                        <to variable="initiate2"/>
+                    </copy>
+                </assign>
+                <assign name="InitCounter1" validate="no">
+                    <targets>
+                        <target linkName="InvokeToAssign1"/>
+                    </targets>
+                    <sources>
+                        <source linkName="Assign1ToWhile1"/>
+                    </sources>
+                    <copy>
+                        <from>
+                            <literal>0</literal>
+                        </from>
+                        <to variable="counter1"/>
+                    </copy>
+                </assign>
+                <flow name="UnrolledLoop">
+                    <targets>
+                        <target linkName="Assign1ToWhile1"/>
+                    </targets>
+                    <links>
+                        <link name="SLOOP_Process1While_Entry"/>
+                        <link name="SLOOP_Next1"/>
+                    </links>
+                    <empty name="EntryActivity">
+                        <sources>
+                            <source linkName="SLOOP_Process1While_Entry">
+                                <transitionCondition><![CDATA[$counter1 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                    </empty>
+                    <flow name="Process1WhileFlow1">
+                        <targets>
+                            <target linkName="SLOOP_Process1While_Entry"/>
+                        </targets>
+                        <sources>
+                            <source linkName="SLOOP_Next1">
+                                <transitionCondition><![CDATA[$counter1 < 1]]></transitionCondition>
+                            </source>
+                        </sources>
+                        <links>
+                            <link name="SLOOP_Invoke1ToAssign1"/>
+                        </links>
+                        <assign name="Invoke1Process1" validate="no">
+                            <sources>
+                                <source linkName="SLOOP_Invoke1ToAssign1"/>
+                                <source linkName="SLOOP_Invoke1Process1TOReceive2Process21"/>
+                            </sources>
+                            <copy>
+                                <from variable="varInv1"/>
+                                <to variable="varRec2"/>
+                            </copy>
+                        </assign>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Invoke1ToAssign1"/>
+                            </targets>
+                            <copy>
+                                <from><![CDATA[$counter1 + 1]]></from>
+                                <to variable="counter1"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                    <flow name="Process1WhileFlow2">
+                        <targets>
+                            <target linkName="SLOOP_Next1"/>
+                        </targets>
+                        <links>
+                            <link name="SLOOP_Invoke1ToAssign2"/>
+                        </links>
+                        <assign name="Invoke1Process1" validate="no">
+                            <sources>
+                                <source linkName="SLOOP_Invoke1ToAssign2"/>
+                                <source linkName="SLOOP_Invoke1Process1TOReceive2Process22"/>
+                            </sources>
+                            <copy>
+                                <from variable="varInv1"/>
+                                <to variable="varRec2"/>
+                            </copy>
+                        </assign>
+                        <assign name="IncrementInput" validate="no">
+                            <targets>
+                                <target linkName="SLOOP_Invoke1ToAssign2"/>
+                            </targets>
+                            <copy>
+                                <from><![CDATA[$counter1 + 1]]></from>
+                                <to variable="counter1"/>
+                            </copy>
+                        </assign>
+                    </flow>
+                </flow>
+            </flow>
+        </scope>
+    </flow>
+</process>

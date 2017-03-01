@@ -17,7 +17,7 @@ public class Constants {
 
 	// The outputPath for the merged choreographies
 	// public static String mergeOutputPath =
-	public static String mergeOutputPath = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/output/";
+	public static String mergeOutputPath = "H:/Thesis/OutputTest";
 	
 	// path to source Files for bpel4chor FaultHandler Scenario
 	public static String pathToFhSzenarioBpel4chor = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/";
@@ -27,12 +27,15 @@ public class Constants {
 	public static String pathToEHSzenarioBpel4chor = "/Users/aleks/Documents/workspace/StAMerge/org.bpel4chor.mergeChoreography.test/";
 	public static String pathToEHZipFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorEventHandler" + File.separator + "Scenarios").getAbsolutePath();
 	
+	// path to source Files for bpel4chor Loop scenarios
+	public static String pathToLoopZipFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorLoop") + File.separator;
+		
 	// path to check files
 	public static String pathToCheckFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "checkFiles" + File.separator).getAbsolutePath();;
 	public static String pathToCheckEHFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorEventHandler" + File.separator + "checkFiles" + File.separator).getAbsolutePath();;
+	public static String pathToCheckLoopFiles = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorLoop" + File.separator + "checkFiles" + File.separator).getAbsolutePath();;
 	
 	private static File baseDir = new File(new File("").getAbsolutePath() + File.separator + "input" + File.separator + "bpel4chorChoreographies");
-	
 	
 	public static String asyncPattern11Choreo = Constants.baseDir + File.separator + "ASP11.zip";
 	public static String asyncPattern11InvFHCHChoreo = Constants.baseDir + File.separator + "ASP11InvFHCH.zip";

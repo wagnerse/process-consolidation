@@ -19,37 +19,55 @@ import java.util.List;
 import java.util.Map;
 
 import javax.wsdl.WSDLException;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.bpel4chor.mergechoreography.exceptions.IncompleteZipFileException;
+import org.bpel4chor.mergechoreography.pattern.MergePattern;
 import org.bpel4chor.mergechoreography.util.ChoreoMergeUtil;
+import org.bpel4chor.mergechoreography.util.LoopUtil;
 import org.bpel4chor.mergechoreography.util.PBDFragmentDuplicator;
 import org.bpel4chor.model.grounding.impl.Grounding;
 import org.bpel4chor.model.topology.impl.MessageLink;
+import org.bpel4chor.model.topology.impl.Participant;
+import org.bpel4chor.model.topology.impl.ParticipantSet;
+import org.bpel4chor.model.topology.impl.ParticipantType;
 import org.bpel4chor.model.topology.impl.Topology;
 import org.bpel4chor.utils.BPEL4ChorConstants;
 import org.bpel4chor.utils.BPEL4ChorReader;
 import org.bpel4chor.utils.BPEL4ChorWriter;
+import org.bpel4chor.utils.ContainmentValue;
 import org.eclipse.bpel.model.Activity;
 import org.eclipse.bpel.model.BPELExtensibleElement;
 import org.eclipse.bpel.model.BPELFactory;
 import org.eclipse.bpel.model.Flow;
 import org.eclipse.bpel.model.Import;
+import org.eclipse.bpel.model.Invoke;
 import org.eclipse.bpel.model.Link;
 import org.eclipse.bpel.model.PartnerActivity;
+import org.eclipse.bpel.model.PartnerLink;
 import org.eclipse.bpel.model.Process;
+import org.eclipse.bpel.model.Receive;
 import org.eclipse.bpel.model.Variable;
 import org.eclipse.bpel.model.resource.BPELResource;
 import org.eclipse.bpel.model.resource.BPELResourceFactoryImpl;
+import org.eclipse.bpel.model.util.ElementFactory;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.wst.wsdl.Definition;
+import org.eclipse.wst.wsdl.WSDLElement;
 
 import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
 
+import de.uni_stuttgart.iaas.bpel.model.utilities.ActivityIterator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
+import de.uni_stuttgart.iaas.bpel.model.utilities.MyBPELUtils;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
 
 /**
@@ -97,6 +115,9 @@ public class ChoreographyPackage implements Serializable {
 	 */
 	private Map<Link, Link> pbd2MergedLinks;
 	
+	/** Map of participant set with the list of participants */
+	private Map<String, List<String>> pSet2Participants;
+	
 	
 	public ChoreographyPackage(String fileName) {
 		
@@ -107,6 +128,7 @@ public class ChoreographyPackage implements Serializable {
 		this.nmml = new ArrayList<>();
 		this.pbd2MergedVars = new HashMap<>();
 		this.pbd2MergedLinks = new HashMap<>();
+		this.pSet2Participants = new HashMap<>();
 		
 		// read in the given file
 		try {
@@ -212,13 +234,63 @@ public class ChoreographyPackage implements Serializable {
 						// Set Abstract Process profile !!
 						proc2Add.setAbstractProcessProfile(BPEL4ChorConstants.PBD_ABSTRACT_PROCESS_PROFILE);
 						ChoreographyPackage.this.pbds.add(proc2Add);
+					} else if (file.getFileName().toString().equals("participantset.xml")) {
+						XMLInputFactory factory = XMLInputFactory.newInstance();
+						XMLStreamReader parser;
+						try {
+							InputStream inputStream = Files.newInputStream(file);
+							parser = factory.createXMLStreamReader(inputStream);
+							
+							while (parser.hasNext()) {
+								 int eventType = parser.next();
+								 switch (eventType) {
+								 	case XMLStreamConstants.START_DOCUMENT :
+								 		parser.next();
+								 		break;
+								 	case XMLStreamConstants.START_ELEMENT :
+								 		if (parser.getLocalName().equals("participantSet")) {
+								 			parseParticipantSet(parser);
+								 		}
+								 		break;
+								 }
+							}
+						}catch (XMLStreamException e) {
+							e.printStackTrace();
+						}
 					} else {
 						ChoreographyPackage.this.log.log(Level.WARN, "Cannot process file, unknown file-suffix" + file.toUri() + " ... ");
 					}
 					
 					return FileVisitResult.CONTINUE;
 				}
-				
+
+
+				private void parseParticipantSet(XMLStreamReader parser) {
+		 				String psName = null;
+		 				String pname;
+						List<String> participants = new ArrayList<>();
+						
+						psName = parser.getAttributeValue(null, "name").toString();
+						
+						try {
+							while (parser.hasNext()) {
+								int eventType = parser.next();
+								switch (eventType) {
+									case XMLStreamConstants.START_ELEMENT :
+							 			if (parser.getLocalName().equals("participant")) {
+							 				pname = parser.getAttributeValue(null, "name").toString();
+							 				participants.add(pname);
+							 			}
+							 			break;
+									case XMLStreamConstants.END_ELEMENT :
+										break;
+								}
+							}
+							pSet2Participants.put(psName, participants);
+						} catch (XMLStreamException e) {
+							e.printStackTrace();
+						}
+				}
 			});
 			
 			zipFileSystem.close();
@@ -321,6 +393,11 @@ public class ChoreographyPackage implements Serializable {
 			Flow newFlow = BPELFactory.eINSTANCE.createFlow();
 			newFlow.setName("MergedFlow");
 			this.mergedProcess.setActivity(newFlow);
+		}
+		
+		// If there are participant sets, duplicate the required participant
+		if (this.getTopology().getParticipantSets() != null){
+			LoopUtil.participantDuplication(this);
 		}
 		
 		// Iterate over all PBDs and copy all Process Fragments in separate
@@ -447,4 +524,7 @@ public class ChoreographyPackage implements Serializable {
 		return this.pbd2MergedLinks;
 	}
 	
+	public Map<String, List<String>> getPSet2Participants() {
+		return this.pSet2Participants;
+	}
 }

@@ -72,6 +72,9 @@ public class AsyncPattern11 extends MergePattern {
 		ChoreoMergeUtil.replaceActivity(s, (newScope != null ? newScope : newAssign));
 		ChoreoMergeUtil.replaceActivity(r, newEmpty);
 		
-		ChoreoMergeUtil.optimizeEmpty(newEmpty);
+		//Shruthi
+		if (!ChoreoMergeUtil.isElementInLoop(newEmpty)){
+			ChoreoMergeUtil.optimizeEmpty(newEmpty);
+		}
 	}
 }

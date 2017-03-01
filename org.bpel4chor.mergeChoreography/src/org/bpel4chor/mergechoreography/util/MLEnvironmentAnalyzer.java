@@ -84,8 +84,8 @@ public class MLEnvironmentAnalyzer implements Serializable {
 		if (beforeInv != null) {
 			environment.getPreS().addAll(beforeInv);
 		}
-		
-		List<Activity> afterInv = ChoreoMergeUtil.getSucceedingActivities(s);
+		List<Activity> afterInv = ChoreoMergeUtil.getAllSucceedingActivities(s);
+		//List<Activity> afterInv = ChoreoMergeUtil.getSucceedingActivities(s);
 		if (afterInv != null) {
 			environment.getSuccS().addAll(afterInv);
 		}
@@ -98,7 +98,8 @@ public class MLEnvironmentAnalyzer implements Serializable {
 		}
 		
 		// Analyze environment after receive
-		List<Activity> afterRec = ChoreoMergeUtil.getSucceedingActivities(r);
+		List<Activity> afterRec = ChoreoMergeUtil.getAllSucceedingActivities(r);
+		//List<Activity> afterRec = ChoreoMergeUtil.getSucceedingActivities(r);
 		if (afterRec != null) {
 			environment.getSuccR().addAll(afterRec);
 		}

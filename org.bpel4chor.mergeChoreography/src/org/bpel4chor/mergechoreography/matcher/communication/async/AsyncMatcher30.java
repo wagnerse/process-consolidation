@@ -100,13 +100,13 @@ public class AsyncMatcher30 implements AsyncMatcher {
 		// }
 		
 		// check if s or r are in a Loop
-		if (ChoreoMergeUtil.isElementInLoop(s) || ChoreoMergeUtil.isElementInLoop(r)) {
-			this.log.info("s and/or r are in a Loop !! Is s in Loop : "
-					+ ChoreoMergeUtil.isElementInLoop(s) + " . Is r in Loop : " + ChoreoMergeUtil.isElementInLoop(r));
-			Condition cond = new Condition(true);
-			this.results.add(cond.evaluate());
-			pkg.addNMML(link);
-		}
+		//if (ChoreoMergeUtil.isElementInLoop(s) || ChoreoMergeUtil.isElementInLoop(r)) {
+		//	this.log.info("s and/or r are in a Loop !! Is s in Loop : "
+		//			+ ChoreoMergeUtil.isElementInLoop(s) + " . Is r in Loop : " + ChoreoMergeUtil.isElementInLoop(r));
+		//	Condition cond = new Condition(true);
+		//	this.results.add(cond.evaluate());
+		//	pkg.addNMML(link);
+		//}
 		
 		return this.pattern;
 		

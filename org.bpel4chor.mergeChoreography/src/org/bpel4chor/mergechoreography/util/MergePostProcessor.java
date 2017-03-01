@@ -25,7 +25,7 @@ public class MergePostProcessor {
 		// checks/processes if FaultHandler or TerminationHandler should be processed
 		FCTEUtil.processScopesFT(choreographyPackage.getMergedProcess(), choreographyPackage.getPbds());
 		// ### EXTEND PostProcessing code here EXTEND ###
-		
+		LoopUtil.process(choreographyPackage);
 
 	}
 }

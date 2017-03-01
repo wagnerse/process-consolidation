@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process
+    abstractProcessProfile="urn:HPI_IAAS:choreography:profile:2006/12"
+    exitOnStandardFault="yes" name="ProcessMerged"
+    suppressJoinFailure="yes"
+    targetNamespace="http://www.iaas.uni-stuttgart.de"
+    xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/abstract" xmlns:ns="http://www.iaas.uni-stuttgart.de">
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Airline.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="Agency.wsdl" namespace="http://www.iaas.uni-stuttgart.de"/>
+    <variables>
+        <variable messageType="ns:RequestPrice" name="varRec2"/>
+        <variable messageType="ns:RequestPrice" name="Emirates_varRec2"/>
+    </variables>
+    <flow name="MergedFlow">
+        <links>
+            <link name="RequestPriceTOReceiveFromAgencySYbd"/>
+            <link name="RequestPrice1TOReceiveFromAgency1ADUA"/>
+        </links>
+        <scope exitOnStandardFault="yes" name="Scope_Lufthansa" suppressJoinFailure="yes">
+            <variables>
+                <variable name="AirlineInput"/>
+                <variable messageType="ns:AirlineResponseMessage" name="output"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="AirlineProvider" name="client"
+                    partnerLinkType="ns:Airline" partnerRole="AirlineRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="Link2g3oL"/>
+                </links>
+                <receive createInstance="yes" name="receive" variable="AirlineInput">
+                    <sources>
+                        <source linkName="Link2g3oL"/>
+                    </sources>
+                </receive>
+                <empty name="EmptyActivity">
+                    <targets>
+                        <joinCondition><![CDATA[($RequestPriceTOReceiveFromAgencySYbd and ($Link2g3oL))]]></joinCondition>
+                        <target linkName="Link2g3oL"/>
+                        <target linkName="RequestPriceTOReceiveFromAgencySYbd"/>
+                    </targets>
+                </empty>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_Agency" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:AgencyRequestMessage" name="input"/>
+                <variable messageType="ns:AgencyResponseMessage" name="output"/>
+                <variable messageType="ns:RequestPrice" name="varInv1"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="AgencyProvider" name="client"
+                    partnerLinkType="ns:Agency" partnerRole="AgencyRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="Link1"/>
+                </links>
+                <receive createInstance="yes" name="receive" variable="input">
+                    <sources>
+                        <source linkName="Link1"/>
+                    </sources>
+                </receive>
+                <flow name="AgencyForEach_UnrolledLoop">
+                    <targets>
+                        <target linkName="Link1"/>
+                    </targets>
+                    <links/>
+                    <scope exitOnStandardFault="no" isolated="no" name="ForEachScope">
+                        <flow name="ForEachFlow">
+                            <links>
+                                <link name="InvokeToEmpty"/>
+                            </links>
+                            <assign name="RequestPrice" validate="no">
+                                <sources>
+                                    <source linkName="InvokeToEmpty"/>
+                                    <source linkName="RequestPriceTOReceiveFromAgencySYbd"/>
+                                </sources>
+                                <copy>
+                                    <from variable="varInv1"/>
+                                    <to variable="varRec2"/>
+                                </copy>
+                            </assign>
+                            <empty name="EmptyActivity">
+                                <targets>
+                                    <target linkName="InvokeToEmpty"/>
+                                </targets>
+                            </empty>
+                        </flow>
+                    </scope>
+                    <scope exitOnStandardFault="no" isolated="no" name="ForEachScope1">
+                        <flow name="ForEachFlow">
+                            <links>
+                                <link name="InvokeToEmpty"/>
+                            </links>
+                            <assign name="RequestPrice1" validate="no">
+                                <sources>
+                                    <source linkName="InvokeToEmpty"/>
+                                    <source linkName="RequestPrice1TOReceiveFromAgency1ADUA"/>
+                                </sources>
+                                <copy>
+                                    <from variable="varInv1"/>
+                                    <to variable="Emirates_varRec2"/>
+                                </copy>
+                            </assign>
+                            <empty name="EmptyActivity">
+                                <targets>
+                                    <target linkName="InvokeToEmpty"/>
+                                </targets>
+                            </empty>
+                        </flow>
+                    </scope>
+                </flow>
+            </flow>
+        </scope>
+        <scope exitOnStandardFault="yes" name="Scope_Emirates" suppressJoinFailure="yes">
+            <variables>
+                <variable messageType="ns:AirlineResponseMessage" name="output"/>
+                <variable name="Emirates_AirlineInput"/>
+            </variables>
+            <partnerLinks>
+                <partnerLink initializePartnerRole="no"
+                    myRole="AirlineProvider" name="client"
+                    partnerLinkType="ns:Airline" partnerRole="AirlineRequester"/>
+            </partnerLinks>
+            <faultHandlers>
+                <catchAll>
+                    <compensate/>
+                </catchAll>
+            </faultHandlers>
+            <flow name="main">
+                <links>
+                    <link name="Link2usUg"/>
+                </links>
+                <receive createInstance="yes" name="receive" variable="Emirates_AirlineInput">
+                    <sources>
+                        <source linkName="Link2usUg"/>
+                    </sources>
+                </receive>
+                <empty name="EmptyActivity">
+                    <targets>
+                        <joinCondition><![CDATA[($RequestPrice1TOReceiveFromAgency1ADUA and ($Link2usUg))]]></joinCondition>
+                        <target linkName="RequestPrice1TOReceiveFromAgency1ADUA"/>
+                        <target linkName="Link2usUg"/>
+                    </targets>
+                </empty>
+            </flow>
+        </scope>
+    </flow>
+</process>

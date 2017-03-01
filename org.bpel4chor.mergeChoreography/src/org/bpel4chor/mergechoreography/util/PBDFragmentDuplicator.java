@@ -13,6 +13,7 @@ import org.eclipse.bpel.model.CatchAll;
 import org.eclipse.bpel.model.Compensate;
 import org.eclipse.bpel.model.CompensateScope;
 import org.eclipse.bpel.model.CompensationHandler;
+import org.eclipse.bpel.model.Condition;
 import org.eclipse.bpel.model.Copy;
 import org.eclipse.bpel.model.Correlation;
 import org.eclipse.bpel.model.CorrelationSet;
@@ -60,6 +61,9 @@ import org.eclipse.bpel.model.partnerlinktype.PartnerLinkType;
 import org.eclipse.bpel.model.util.WSDLUtil;
 import org.eclipse.wst.wsdl.Definition;
 import org.eclipse.wst.wsdl.Message;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 import de.uni_stuttgart.iaas.bpel.model.utilities.FragmentDuplicator;
 import de.uni_stuttgart.iaas.bpel.model.utilities.MyWSDLUtil;
@@ -145,14 +149,38 @@ public class PBDFragmentDuplicator {
 			newActivity = PBDFragmentDuplicator.copyActivity((Wait) origAct);
 		}
 		
-		// If origAct is instance of PartnerActivity add it to old2New Map
-		String wsuID = origAct.getElement().getAttribute("wsu:id");
-		if (((wsuID) != null) && (!wsuID.equals(""))) {
-			PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement().getAttribute("wsu:id"), newActivity);
+		
+		//Shruthi
+		if (origAct.getElement() != null)
+		{
+			Element newActivityElement = origAct.getElement().getOwnerDocument().createElement(origAct.getElement().getTagName());
+			NamedNodeMap attrs = origAct.getElement().getAttributes();
+			if (attrs != null) {
+				 for (int i=0; i < attrs.getLength(); i++) {
+					 Node attr=attrs.item(i);
+				     String name=attr.getNodeName();
+				     String value=attr.getNodeValue();
+				     String namespaceURI = attr.getNamespaceURI();
+				     String localName = attr.getLocalName();
+				     newActivityElement.setAttributeNS(namespaceURI, name, localName);
+				     newActivityElement.setAttribute(name, value);
+				 }
+			 }
 			
-			// We also set the name if the newActivity to the wsu:id to make it
-			// unique
-			newActivity.setName(origAct.getElement().getAttribute("wsu:id"));
+			newActivity.setElement(newActivityElement);
+		}
+		if (origAct.getElement() != null && origAct.getElement().hasAttribute("wsu:id")) {
+		//Element newActivityElement = origAct.getElement().getNam;
+		//newActivity.setElement(newActivityElement);
+			// If origAct is instance of PartnerActivity add it to old2New Map
+			String wsuID = origAct.getElement().getAttribute("wsu:id");
+			if (((wsuID) != null) && (!wsuID.equals(""))) {
+				PBDFragmentDuplicator.pkg.addOld2NewRelation(origAct.getElement().getAttribute("wsu:id"), newActivity);
+				
+				// We also set the name if the newActivity to the wsu:id to make it
+				// unique
+				newActivity.setName(origAct.getElement().getAttribute("wsu:id"));
+			}
 		}
 		
 		return newActivity;
@@ -1382,9 +1410,9 @@ public class PBDFragmentDuplicator {
 			if (origTarget.getLink() != null) {
 				newTarget.setLink(ChoreoMergeUtil.resolveLinkInMergedProcess(origTarget.getLink()));
 			}
+			
 			newTarget.setActivity(container);
-		}
-		
+		}		
 	}
 	
 	/**

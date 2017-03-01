@@ -80,4 +80,19 @@ public interface Constants {
 	// XPATH constants
 	String XPATH_BOOLEAN_TRUE = "true()";
 	String XPATH_BOOLEAN_FALSE = "false()";
+	
+	/**
+	 * Name prefix for {@link Link} present in merged static loops
+	 */
+	String PREFIX_NAME_STATIC_LOOP_LINK = "SLOOP_";
+	
+	/**
+	 * Name prefix for {@link Link} present in merged dynamic loops
+	 */
+	String PREFIX_NAME_DYNAMIC_LOOP_LINK = "DLOOP_";
+	
+	/**
+	 * Name prefix for {@link Link} present in merged interaction loops
+	 */
+	String PREFIX_NAME_INTERACTIONPATTERN_LOOP_LINK = "ILOOP_";
 }

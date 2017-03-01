@@ -109,6 +109,9 @@ public class ChoreographyMerger implements Serializable {
 		// Debug: Check EH related Code
 		MergePreProcessorForEH.startPreProcessing(this.choreographyPackage);
 		
+		for (String s : this.choreographyPackage.getOld2New().keySet()) {
+			this.log.info("Link : " + s + " " + this.choreographyPackage.getOld2New().get(s));
+		}
 		// Now check the MessageLinks and merge
 		CommunicationMatcher matcher = new CommunicationMatcher();
 		for (MessageLink link : this.choreographyPackage.getTopology().getMessageLinks()) {
