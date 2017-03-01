@@ -150,7 +150,8 @@ public class PBDFragmentDuplicator {
 		}
 		
 		
-		//Shruthi
+		// If activity contains an element object, create a new element object and copy 
+		// the nodes of the old element to the newly created element
 		if (origAct.getElement() != null)
 		{
 			Element newActivityElement = origAct.getElement().getOwnerDocument().createElement(origAct.getElement().getTagName());
@@ -170,8 +171,6 @@ public class PBDFragmentDuplicator {
 			newActivity.setElement(newActivityElement);
 		}
 		if (origAct.getElement() != null && origAct.getElement().hasAttribute("wsu:id")) {
-		//Element newActivityElement = origAct.getElement().getNam;
-		//newActivity.setElement(newActivityElement);
 			// If origAct is instance of PartnerActivity add it to old2New Map
 			String wsuID = origAct.getElement().getAttribute("wsu:id");
 			if (((wsuID) != null) && (!wsuID.equals(""))) {
